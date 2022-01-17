@@ -30,3 +30,19 @@ public protocol OptionalProtocol {
 extension Optional : OptionalProtocol {
     
 }
+
+infix operator ??= : AssignmentPrecedence
+
+public func ??=<T>(lhs: inout T?, rhs: @autoclosure () -> T) -> T {
+    if lhs == nil {
+        lhs = rhs()
+    }
+    return lhs!
+}
+
+public func ??=<T>(lhs: inout T?, rhs: @autoclosure () -> T?) -> T? {
+    if lhs == nil {
+        lhs = rhs()
+    }
+    return lhs
+}
