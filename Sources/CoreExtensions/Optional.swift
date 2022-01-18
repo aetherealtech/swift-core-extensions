@@ -33,32 +33,32 @@ extension Optional : OptionalProtocol {
 
 infix operator ??= : AssignmentPrecedence
 
-public func ??=<T>(lhs: inout T?, rhs: @autoclosure () -> T) -> T {
+public func ??=<T>(lhs: inout T?, rhs: @autoclosure () throws -> T) rethrows -> T {
     if lhs == nil {
-        lhs = rhs()
+        lhs = try rhs()
     }
     return lhs!
 }
 
-public func ??=<T>(lhs: inout T?, rhs: @autoclosure () -> T?) -> T? {
+public func ??=<T>(lhs: inout T?, rhs: @autoclosure () throws -> T?) rethrows -> T? {
     if lhs == nil {
-        lhs = rhs()
+        lhs = try rhs()
     }
     return lhs
 }
 
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
-public func ??=<T>(lhs: inout T?, rhs: @autoclosure (() async -> T)) async -> T {
+public func ??=<T>(lhs: inout T?, rhs: @autoclosure (() async throws -> T)) async rethrows -> T {
     if lhs == nil {
-        lhs = await rhs()
+        lhs = try await rhs()
     }
     return lhs!
 }
 
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
-public func ??=<T>(lhs: inout T?, rhs: @autoclosure (() async -> T?)) async -> T? {
+public func ??=<T>(lhs: inout T?, rhs: @autoclosure (() async throws -> T?)) async rethrows -> T? {
     if lhs == nil {
-        lhs = await rhs()
+        lhs = try await rhs()
     }
     return lhs
 }
