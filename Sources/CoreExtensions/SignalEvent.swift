@@ -10,9 +10,13 @@ public class SignalEvent {
     public init() {
 
     }
-    
+
     public func wait() async {
 
+        guard !self.state.value.signaled else {
+            return
+        }
+        
         await withCheckedContinuation { continuation in
 
             state.value.waiters.append(continuation)
