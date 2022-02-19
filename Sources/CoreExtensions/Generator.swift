@@ -46,7 +46,7 @@ public struct Generators {
 
 extension Generators {
 
-    public static func sequence<T>(_ sequence: @escaping (Int) -> T) -> Generator<T> {
+    public static func sequence<T>(_ sequence: @escaping (Int) -> T?) -> Generator<T> {
 
         var index = 0
 
