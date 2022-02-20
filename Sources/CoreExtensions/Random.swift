@@ -52,6 +52,18 @@ extension Double: RangeRandomizable {}
 extension Float80: RangeRandomizable {}
 extension CGFloat: RangeRandomizable {}
 
+extension Character: Randomizable {
+
+    public static func random() -> Character {
+
+        while true {
+            if let scalar = Unicode.Scalar(UInt32.random()) {
+                return Character(scalar)
+            }
+        }
+    }
+}
+
 extension SetAlgebra {
 
     public init<Source>(_ source: Source) where Element == Source.Element, Source : Sequence {
@@ -66,9 +78,7 @@ extension SetAlgebra {
 
 extension Collection {
 
-    static func random(factory: (CoreExtensions.Generator<Element>) -> Self, elementGenerator: @escaping () -> Element) -> Self {
-
-        let count = Int.random(in: 0...Int.max)
+    static func random(factory: (CoreExtensions.Generator<Element>) -> Self, count: Int, elementGenerator: @escaping () -> Element) -> Self {
 
         let generator = Generators.sequence { index -> Element? in
 
@@ -85,55 +95,75 @@ extension Collection {
 
 extension RangeReplaceableCollection {
 
-    public static func random(elementGenerator: @escaping () -> Element) -> Self {
+    public static func random(count: Int, elementGenerator: @escaping () -> Element) -> Self {
 
-        random(factory: Self.init, elementGenerator: elementGenerator)
+        random(factory: Self.init, count: count, elementGenerator: elementGenerator)
     }
 }
 
 extension RangeReplaceableCollection where Element: Randomizable {
 
+    public static func random(count: Int) -> Self {
+
+        random(count: count, elementGenerator: Element.random)
+    }
+
     public static func random() -> Self {
 
-        random(elementGenerator: Element.random)
+        random(count: Int.random(in: 0...Int.max))
     }
 }
 
 extension RangeReplaceableCollection where Element: RangeRandomizable {
 
+    public static func random(count: Int, elementRange: ClosedRange<Element>) -> Self {
+
+        random(count: count, elementGenerator: { Element.random(in: elementRange) })
+    }
+
     public static func random(elementRange: ClosedRange<Element>) -> Self {
 
-        random(elementGenerator: { Element.random(in: elementRange) })
+        random(count: Int.random(in: 0...Int.max), elementRange: elementRange)
     }
 }
 
 extension SetAlgebra where Self: Collection {
 
-    public static func random(elementGenerator: @escaping () -> Element) -> Self {
+    public static func random(count: Int, elementGenerator: @escaping () -> Element) -> Self {
 
-        random(factory: Self.init, elementGenerator: elementGenerator)
+        random(factory: Self.init, count: count, elementGenerator: elementGenerator)
     }
 }
 
 extension SetAlgebra where Self: Collection, Element: Randomizable {
 
+    public static func random(count: Int) -> Self {
+
+        random(count: count, elementGenerator: Element.random)
+    }
+
     public static func random() -> Self {
 
-        random(elementGenerator: Element.random)
+        random(count: Int.random(in: 0...Int.max))
     }
 }
 
 extension SetAlgebra where Self: Collection, Element: RangeRandomizable {
 
+    public static func random(count: Int, elementRange: ClosedRange<Element>) -> Self {
+
+        random(count: count, elementGenerator: { Element.random(in: elementRange) })
+    }
+
     public static func random(elementRange: ClosedRange<Element>) -> Self {
 
-        random(elementGenerator: { Element.random(in: elementRange) })
+        random(count: Int.random(in: 0...Int.max), elementRange: elementRange)
     }
 }
 
 extension Dictionary {
 
-    public static func random(elementGenerator: @escaping () -> Element) -> Self {
+    public static func random(count: Int, elementGenerator: @escaping () -> Element) -> Self {
 
         random(factory: { generator in
 
@@ -145,14 +175,24 @@ extension Dictionary {
 
             return result
 
-        }, elementGenerator: elementGenerator)
+        }, count: count, elementGenerator: elementGenerator)
     }
 }
 
 extension Dictionary where Key: Randomizable, Value: Randomizable {
 
+    public static func random(count: Int) -> Self {
+
+        random(count: count, elementGenerator: { Element(key: Key.random(), value: Value.random()) })
+    }
+
     public static func random() -> Self {
 
-        random(elementGenerator: { Element(key: Key.random(), value: Value.random()) })
+        random(count: Int.random(in: 0...Int.max), elementGenerator: { Element(key: Key.random(), value: Value.random()) })
     }
 }
+
+extension Array: Randomizable where Element: Randomizable {}
+extension String: Randomizable {}
+extension Set: Randomizable where Element: Randomizable {}
+extension Dictionary: Randomizable where Key: Randomizable, Value: Randomizable {}
