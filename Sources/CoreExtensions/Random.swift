@@ -64,6 +64,8 @@ extension Character: Randomizable {
     }
 }
 
+public let maxRandomCollectionSize = 16384
+
 extension SetAlgebra {
 
     public init<Source>(_ source: Source) where Element == Source.Element, Source : Sequence {
@@ -110,7 +112,7 @@ extension RangeReplaceableCollection where Element: Randomizable {
 
     public static func random() -> Self {
 
-        random(count: Int.random(in: 0...Int.max))
+        random(count: Int.random(in: 0...maxRandomCollectionSize))
     }
 }
 
@@ -123,7 +125,7 @@ extension RangeReplaceableCollection where Element: RangeRandomizable {
 
     public static func random(elementRange: ClosedRange<Element>) -> Self {
 
-        random(count: Int.random(in: 0...Int.max), elementRange: elementRange)
+        random(count: Int.random(in: 0...maxRandomCollectionSize), elementRange: elementRange)
     }
 }
 
@@ -144,7 +146,7 @@ extension SetAlgebra where Self: Collection, Element: Randomizable {
 
     public static func random() -> Self {
 
-        random(count: Int.random(in: 0...Int.max))
+        random(count: Int.random(in: 0...maxRandomCollectionSize))
     }
 }
 
@@ -157,7 +159,7 @@ extension SetAlgebra where Self: Collection, Element: RangeRandomizable {
 
     public static func random(elementRange: ClosedRange<Element>) -> Self {
 
-        random(count: Int.random(in: 0...Int.max), elementRange: elementRange)
+        random(count: Int.random(in: 0...maxRandomCollectionSize), elementRange: elementRange)
     }
 }
 
@@ -188,7 +190,7 @@ extension Dictionary where Key: Randomizable, Value: Randomizable {
 
     public static func random() -> Self {
 
-        random(count: Int.random(in: 0...Int.max), elementGenerator: { Element(key: Key.random(), value: Value.random()) })
+        random(count: Int.random(in: 0...maxRandomCollectionSize), elementGenerator: { Element(key: Key.random(), value: Value.random()) })
     }
 }
 
