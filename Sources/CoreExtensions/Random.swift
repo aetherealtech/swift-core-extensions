@@ -13,6 +13,7 @@ public protocol Randomizable {
 public protocol RangeRandomizable : Randomizable where Self: Comparable {
 
     static func random(in range: ClosedRange<Self>) -> Self
+    static func random(in range: Range<Self>) -> Self
 }
 
 extension RangeRandomizable where Self: FixedWidthInteger {
@@ -127,6 +128,16 @@ extension RangeReplaceableCollection where Element: RangeRandomizable {
 
         random(count: Int.random(in: 0...maxRandomCollectionSize), elementRange: elementRange)
     }
+
+    public static func random(count: Int, elementRange: Range<Element>) -> Self {
+
+        random(count: count, elementGenerator: { Element.random(in: elementRange) })
+    }
+
+    public static func random(elementRange: Range<Element>) -> Self {
+
+        random(count: Int.random(in: 0...maxRandomCollectionSize), elementRange: elementRange)
+    }
 }
 
 extension SetAlgebra where Self: Collection {
@@ -158,6 +169,16 @@ extension SetAlgebra where Self: Collection, Element: RangeRandomizable {
     }
 
     public static func random(elementRange: ClosedRange<Element>) -> Self {
+
+        random(count: Int.random(in: 0...maxRandomCollectionSize), elementRange: elementRange)
+    }
+
+    public static func random(count: Int, elementRange: Range<Element>) -> Self {
+
+        random(count: count, elementGenerator: { Element.random(in: elementRange) })
+    }
+
+    public static func random(elementRange: Range<Element>) -> Self {
 
         random(count: Int.random(in: 0...maxRandomCollectionSize), elementRange: elementRange)
     }
