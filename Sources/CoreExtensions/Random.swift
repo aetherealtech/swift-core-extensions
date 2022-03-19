@@ -44,13 +44,18 @@ extension UInt16: RangeRandomizable {}
 extension UInt32: RangeRandomizable {}
 extension UInt64: RangeRandomizable {}
 
-#if !os(macOS)
+#if arch(arm64)
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 extension Float16: RangeRandomizable {}
 #endif
 
 extension Float: RangeRandomizable {}
 extension Double: RangeRandomizable {}
+
+#if (arch(i386) || arch(x86_64))
 extension Float80: RangeRandomizable {}
+#endif
+
 extension CGFloat: RangeRandomizable {}
 
 extension Character: Randomizable {
