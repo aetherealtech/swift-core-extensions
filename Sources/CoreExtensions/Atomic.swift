@@ -8,28 +8,28 @@ public struct Atomic<T> {
 
     public init(_ value: T) {
 
-        self._value = value
+        _value = value
     }
 
     public var value: T {
         get {
-            queue.sync { _value }
+            lock.lock { _value }
         }
         set {
-            queue.sync(flags: [.barrier]) { _value = newValue }
+            lock.exclusiveLock { _value = newValue }
         }
     }
 
     public mutating func getAndSet(_ setter: (inout T) -> Void) -> T {
 
-        queue.sync(flags: [.barrier]) {
+        lock.exclusiveLock {
 
-            let value = self._value
-            setter(&self._value)
+            let value = _value
+            setter(&_value)
             return value
         }
     }
 
     private var _value: T
-    private let queue = DispatchQueue(label: "com.aetherealtech.eventstreams.atomic", attributes: [.concurrent])
+    private let lock = ReadWriteLock()
 }
