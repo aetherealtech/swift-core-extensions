@@ -20,13 +20,23 @@ public struct Atomic<T> {
         }
     }
 
+    public func lock<Result>(_ getter: (T) -> Result) -> Result {
+
+        lock.lock({ getter(_value) })
+    }
+
+    public mutating func exclusiveLock<Result>(_ getter: (inout T) -> Result) -> Result {
+
+        lock.exclusiveLock({ getter(&_value) })
+    }
+
     public mutating func getAndSet(_ setter: (inout T) -> Void) -> T {
 
-        lock.exclusiveLock {
+        exclusiveLock { value in
 
-            let value = _value
-            setter(&_value)
-            return value
+            let originalValue = value
+            setter(&value)
+            return originalValue
         }
     }
 

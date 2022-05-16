@@ -4,7 +4,7 @@
 
 import Foundation
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public struct AsyncGenerator<Element> : AsyncSequence {
 
     public struct GeneratorIterator : AsyncIteratorProtocol {
@@ -40,13 +40,13 @@ public struct AsyncGenerator<Element> : AsyncSequence {
     private let generator: () async throws -> Element?
 }
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public struct AsyncGenerators {
 
     @available(*, unavailable) private init() {}
 }
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 extension AsyncGenerators {
 
     public static func sequence<T>(_ sequence: @escaping (Int) async throws -> T?) -> AsyncGenerator<T> {

@@ -4,7 +4,7 @@
 
 import Foundation
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 extension Task {
 
     public func map<Result>(_ transform: @escaping (Success) throws -> Result) -> Task<Result, Error> {
@@ -32,7 +32,7 @@ extension Task {
     }
 }
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 extension Task {
 
     public func flatMap<Result>(_ transform: @escaping (Success) async throws -> Result) -> Task<Result, Error> {
@@ -60,7 +60,7 @@ extension Task {
     }
 }
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 extension Task {
 
     public func combine<Other, OtherFailure>(
@@ -150,7 +150,7 @@ extension Task {
     }
 }
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 extension Collection {
 
     public func combine<Result>() -> Task<[Result], Error> where Element == Task<Result, Error>  {
@@ -175,17 +175,14 @@ extension Collection {
 
     private func tryAwaitAll<Result, Failure>() async throws -> [Result] where Element == Task<Result, Failure> {
 
-        var result = (0..<self.count).map { _ in nil as Result? }
-
-        let group = DispatchGroup()
+        var results = (0..<self.count).map { _ in nil as Result? }
 
         for (index, task) in self.enumerated() {
 
-            result[index] = try await task.value
+            let result = try await task.value
+            results[index] = result
         }
 
-        await group.waitAsync()
-
-        return result.compact()
+        return results.compact()
     }
 }

@@ -47,7 +47,7 @@ public func ??=<T>(lhs: inout T?, rhs: @autoclosure () throws -> T?) rethrows ->
     return lhs
 }
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public func ??=<T>(lhs: inout T?, rhs: @autoclosure (() async throws -> T)) async rethrows -> T {
     if lhs == nil {
         lhs = try await rhs()
@@ -55,7 +55,7 @@ public func ??=<T>(lhs: inout T?, rhs: @autoclosure (() async throws -> T)) asyn
     return lhs!
 }
 
-@available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public func ??=<T>(lhs: inout T?, rhs: @autoclosure (() async throws -> T?)) async rethrows -> T? {
     if lhs == nil {
         lhs = try await rhs()
