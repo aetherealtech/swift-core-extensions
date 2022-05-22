@@ -97,6 +97,15 @@ extension Result {
             }
     }
 
+    public func tryCompactMap<NewSuccess>(
+        _ transform: (Success) throws -> NewSuccess?
+    ) -> Result<NewSuccess, Error>? {
+
+        self
+            .tryMap(transform)
+            .compact()
+    }
+
     public func tryFlatMap<NewSuccess, NewFailure: Error>(
         _ transform: (Success) throws -> Result<NewSuccess, NewFailure>
     ) -> Result<NewSuccess, Error> {
