@@ -34,6 +34,18 @@ extension Result where Failure == Error {
 
 extension Result {
 
+    public func compact<InnerSuccess>() -> Result<InnerSuccess, Failure>? where Success == InnerSuccess? {
+
+        switch self {
+
+        case .success(let outerResult):
+            return outerResult.map { result in .success(result) }
+
+        case .failure(let error):
+            return .failure(error)
+        }
+    }
+
     public func flatten<InnerSuccess, InnerFailure: Error>() -> Result<InnerSuccess, Error> where Success == Result<InnerSuccess, InnerFailure> {
 
         switch self {
@@ -46,8 +58,17 @@ extension Result {
         }
     }
 
+    public func compactMap<NewSuccess>(
+        _ transform: (Success) -> NewSuccess?
+    ) -> Result<NewSuccess, Failure>? {
+
+        self
+            .map(transform)
+            .compact()
+    }
+
     public func tryMap<NewSuccess>(
-        _ transform: @escaping (Success) throws -> NewSuccess
+        _ transform: (Success) throws -> NewSuccess
     ) -> Result<NewSuccess, Error> {
 
         self
@@ -59,7 +80,7 @@ extension Result {
     }
 
     public func tryMapError(
-        _ transform: @escaping (Failure) throws -> Error
+        _ transform: (Failure) throws -> Error
     ) -> Result<Success, Error> {
 
         self
@@ -77,7 +98,7 @@ extension Result {
     }
 
     public func tryFlatMap<NewSuccess, NewFailure: Error>(
-        _ transform: @escaping (Success) throws -> Result<NewSuccess, NewFailure>
+        _ transform: (Success) throws -> Result<NewSuccess, NewFailure>
     ) -> Result<NewSuccess, Error> {
 
         self
@@ -86,7 +107,7 @@ extension Result {
     }
 
     public func `catch`(
-        _ catcher: @escaping (Failure) -> Success
+        _ catcher: (Failure) -> Success
     ) -> Success {
 
         switch self {
@@ -100,7 +121,7 @@ extension Result {
     }
 
     public func tryCatch(
-        _ catcher: @escaping (Failure) throws -> Success
+        _ catcher: (Failure) throws -> Success
     ) -> Result<Success, Error> {
 
         switch self {
