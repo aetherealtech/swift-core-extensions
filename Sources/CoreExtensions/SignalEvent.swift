@@ -13,13 +13,21 @@ public class SignalEvent {
 
     public func wait() async {
 
-        guard !self.state.value.signaled else {
-            return
-        }
-        
-        await withCheckedContinuation { continuation in
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
 
-            state.value.waiters.append(continuation)
+            let proceed = state.exclusiveLock { state -> Bool in
+
+                guard !state.signaled else {
+                    return true
+                }
+
+                state.waiters.append(continuation)
+                return false
+            }
+
+            if proceed {
+                continuation.resume()
+            }
         }
     }
 
@@ -27,9 +35,9 @@ public class SignalEvent {
 
         let waiters = self.state.getAndSet { state in
 
-                    state.waiters.removeAll()
-                    state.signaled = !reset
-                }.waiters
+                state.waiters.removeAll()
+                state.signaled = !reset
+            }.waiters
 
         for waiter in waiters {
             waiter.resume()
