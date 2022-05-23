@@ -7,6 +7,16 @@ import Foundation
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 extension Task {
 
+    public func finish() async throws -> Void where Success == Void, Failure == Error {
+
+        _ = try await value
+    }
+
+    public func finish() async -> Void where Success == Void, Failure == Never {
+
+        _ = await value
+    }
+
     public func map<Result>(_ transform: @escaping (Success) throws -> Result) -> Task<Result, Error> {
 
         Task<Result, Error> {
