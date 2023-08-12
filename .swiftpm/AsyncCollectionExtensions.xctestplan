@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "0C0BDF6F-75AF-4395-A273-C11EF6F561B3",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AsyncCollectionExtensionsTests",
+        "name" : "AsyncCollectionExtensionsTests"
+      }
+    }
+  ],
+  "version" : 1
+}

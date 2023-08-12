@@ -4,31 +4,13 @@
 
 import Foundation
 
-public protocol OptionalProtocol {
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+public func ??<T>(lhs: T?, rhs: @autoclosure () async throws -> T) async rethrows -> T {
+    if let lhs {
+        return lhs
+    }
     
-    associatedtype Wrapped
-    
-    init(_ some: Wrapped)
-    
-    func map<U>(_ transform: (Wrapped) throws -> U) rethrows -> U?
-
-    func flatMap<U>(_ transform: (Wrapped) throws -> U?) rethrows -> U?
-
-    init(nilLiteral: ())
-    
-    var unsafelyUnwrapped: Wrapped { get }
-    
-    static func ~= (lhs: _OptionalNilComparisonType, rhs: Self) -> Bool
-    
-    static func == (lhs: Self, rhs: _OptionalNilComparisonType) -> Bool
-    static func != (lhs: Self, rhs: _OptionalNilComparisonType) -> Bool
-    
-    static func == (lhs: _OptionalNilComparisonType, rhs: Self) -> Bool
-    static func != (lhs: _OptionalNilComparisonType, rhs: Self) -> Bool
-}
-
-extension Optional : OptionalProtocol {
-    
+    return try await rhs()
 }
 
 infix operator ??= : AssignmentPrecedence

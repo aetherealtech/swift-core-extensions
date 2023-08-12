@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "C8564746-1F65-4944-9E57-7DD515095221",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "CollectionExtensionsTests",
+        "name" : "CollectionExtensionsTests"
+      }
+    }
+  ],
+  "version" : 1
+}

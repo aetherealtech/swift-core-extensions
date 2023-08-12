@@ -1,7 +1,3 @@
-//
-// Created by Daniel Coleman on 2/19/22.
-//
-
 import Foundation
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
@@ -163,36 +159,36 @@ extension Task {
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 extension Collection {
 
-    public func combine<Result>() -> Task<[Result], Error> where Element == Task<Result, Error>  {
-
-        Task { try await self.awaitAll() }
-    }
-
-    public func combine<Result>() -> Task<[Result], Never> where Element == Task<Result, Never>  {
-
-        Task { await self.awaitAll() }
-    }
-
-    public func awaitAll<Result>() async throws -> [Result] where Element == Task<Result, Error> {
-
-        try await tryAwaitAll()
-    }
-
-    public func awaitAll<Result>() async -> [Result] where Element == Task<Result, Never> {
-
-        try! await tryAwaitAll()
-    }
-
-    private func tryAwaitAll<Result, Failure>() async throws -> [Result] where Element == Task<Result, Failure> {
-
-        var results = (0..<self.count).map { _ in nil as Result? }
-
-        for (index, task) in self.enumerated() {
-
-            let result = try await task.value
-            results[index] = result
-        }
-
-        return results.compact()
-    }
+//    public func combine<Result>() -> Task<[Result], Error> where Element == Task<Result, Error>  {
+//
+//        Task { try await self.awaitAll() }
+//    }
+//
+//    public func combine<Result>() -> Task<[Result], Never> where Element == Task<Result, Never>  {
+//
+//        Task { await self.awaitAll() }
+//    }
+//
+//    public func awaitAll<Result>() async throws -> [Result] where Element == Task<Result, Error> {
+//
+//        try await tryAwaitAll()
+//    }
+//
+//    public func awaitAll<Result>() async -> [Result] where Element == Task<Result, Never> {
+//
+//        try! await tryAwaitAll()
+//    }
+//
+//    private func tryAwaitAll<Result, Failure>() async throws -> [Result] where Element == Task<Result, Failure> {
+//
+//        var results = (0..<self.count).map { _ in nil as Result? }
+//
+//        for (index, task) in self.enumerated() {
+//
+//            let result = try await task.value
+//            results[index] = result
+//        }
+//
+//        return results.compact()
+//    }
 }

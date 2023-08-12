@@ -9,19 +9,14 @@ public struct Generator<Element> : Sequence {
     public struct GeneratorIterator : IteratorProtocol {
 
         init(generator: @escaping () -> Element?) {
-
             self.generator = generator
         }
 
         public mutating func next() -> Element? {
-
-            let current = generator()
-            self.current = current
-            return current
+            generator()
         }
 
         let generator: () -> Element?
-        var current: Element? = nil
     }
 
     public typealias Iterator = GeneratorIterator
@@ -39,9 +34,8 @@ public struct Generator<Element> : Sequence {
     private let generator: () -> Element?
 }
 
-public struct Generators {
+public enum Generators {
 
-    @available(*, unavailable) private init() {}
 }
 
 extension Generators {
