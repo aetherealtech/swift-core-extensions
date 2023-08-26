@@ -13,7 +13,7 @@ import Foundation
 public struct AsyncFunction<Result> {
     private let call: () async -> Result
     
-    init(call: @escaping () async -> Result) {
+    public init(call: @escaping () async -> Result) {
         self.call = call
     }
     
@@ -50,7 +50,7 @@ extension Sequence {
 public struct AsyncThrowingFunction<Result> {
     private let call: () async throws -> Result
     
-    init(call: @escaping () async throws -> Result) {
+    public init(call: @escaping () async throws -> Result) {
         self.call = call
     }
     

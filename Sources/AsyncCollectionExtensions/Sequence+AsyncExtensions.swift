@@ -1,58 +1,6 @@
 import CollectionExtensions
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension Sequence where Element == () async -> Void {
-    func awaitAll(maxConcurrency: Int = .max) async {
-        await withTaskGroup(of: Void.self) { group in
-            var iterator = makeIterator()
-            
-            let addTask: (inout TaskGroup<Void>) -> Bool = { group in
-                if let work = iterator.next() {
-                    group.addTask { await work() }
-                    return false
-                } else {
-                    return true
-                }
-            }
-            
-            for _ in 0 ..< maxConcurrency {
-                if addTask(&group) { break }
-            }
-            
-            for await _ in group {
-                _ = addTask(&group)
-            }
-        }
-    }
-}
-
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension Sequence where Element == () async throws -> Void {
-    func awaitAll(maxConcurrency: Int = .max) async throws {
-        try await withThrowingTaskGroup(of: Void.self) { group in
-            var iterator = makeIterator()
-            
-            let addTask: (inout ThrowingTaskGroup<Void, Error>) -> Bool = { group in
-                if let work = iterator.next() {
-                    group.addTask { try await work() }
-                    return false
-                } else {
-                    return true
-                }
-            }
-            
-            for _ in 0 ..< maxConcurrency {
-                if addTask(&group) { break }
-            }
- 
-            for try await _ in group {
-                _ = addTask(&group)
-            }
-        }
-    }
-}
-
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension Sequence {
     func forEachAsync(_ body: (Element) async throws -> Void) async rethrows {
         for element in self {
@@ -75,15 +23,29 @@ public extension Sequence {
     func compactMapAsync<R>(
         _ transform: @escaping (Element) async throws -> R?
     ) async rethrows -> [R] {
-        try await mapAsync(transform)
-            .compact()
+        var results = [R]()
+        
+        for element in self {
+            if let result = try await transform(element) {
+                results.append(result)
+            }
+        }
+        
+        return results
     }
     
     func flatMapAsync<R: Sequence, InnerR>(
         _ transform: @escaping (Element) async throws -> R
     ) async rethrows -> [InnerR] where R.Element == InnerR {
-        try await mapAsync(transform)
-            .flatten()
+        var results = [InnerR]()
+        
+        for element in self {
+            for result in try await transform(element) {
+                results.append(result)
+            }
+        }
+        
+        return results
     }
     
     func flattenAsync<InnerElement>() async throws -> [InnerElement] where Element: AsyncSequence, Element.Element == InnerElement {
@@ -101,8 +63,15 @@ public extension Sequence {
     func flatMapAsync<R: AsyncSequence, InnerR>(
         _ transform: @escaping (Element) async throws -> R
     ) async throws -> [InnerR] where R.Element == InnerR {
-        try await mapAsync(transform)
-            .flattenAsync()
+        var results = [InnerR]()
+        
+        for element in self {
+            for try await result in try await transform(element) {
+                results.append(result)
+            }
+        }
+        
+        return results
     }
     
     func parallelForEach(
@@ -135,5 +104,21 @@ public extension Sequence {
     ) async throws -> [R] {
         try await map { element in { try await transform(element) } }
             .awaitAll(maxConcurrency: maxConcurrency)
+    }
+    
+    func parallelFlatMap<R: Collection, InnerR>(
+        maxConcurrency: Int = .max,
+        _ transform: @escaping (Element) async -> R
+    ) async -> [InnerR] where R.Element == () async -> InnerR {
+        await map { element in { await transform(element) } }
+            .flattenAwaitAll(maxConcurrency: maxConcurrency)
+    }
+    
+    func parallelFlatMap<R: Collection, InnerR>(
+        maxConcurrency: Int = .max,
+        _ transform: @escaping (Element) async throws -> R
+    ) async throws -> [InnerR] where R.Element == () async throws -> InnerR {
+        try await map { element in { try await transform(element) } }
+            .flattenAwaitAll(maxConcurrency: maxConcurrency)
     }
 }

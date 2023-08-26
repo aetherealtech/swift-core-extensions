@@ -1,4 +1,5 @@
 import CoreExtensions
+import OptionalExtensions
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public struct AsyncLazyInsertedSequence<Source: AsyncSequence, Inserted: AsyncSequence>: AsyncSequence where Source.Element == Inserted.Element {
@@ -7,7 +8,11 @@ public struct AsyncLazyInsertedSequence<Source: AsyncSequence, Inserted: AsyncSe
     public struct AsyncIterator: AsyncIteratorProtocol {
         public mutating func next() async rethrows -> Source.Element? {
             if remainingUntilInsert == 0 {
-                return try await inserted.next() ?? (try await source.next())
+                if let next = try await inserted.next() {
+                    return next
+                } else {
+                    return try await source.next()
+                }
             } else {
                 remainingUntilInsert -= 1
                 return try await source.next()

@@ -1,10 +1,5 @@
 import CompareFunctions
-
-public extension Sequence where Element == String.Element {
-    func toString() -> String {
-        .init(self)
-    }
-}
+import Foundation
 
 public extension Sequence where Element: StringProtocol {
     func joinedNonEmpty<Separator: StringProtocol>(separator: Separator) -> JoinedSequence<[Element]> {
@@ -38,5 +33,29 @@ public extension Collection where Element == String.Element {
         }
         
         return first
+    }
+}
+
+public extension String {
+    var nsRange: NSRange {
+        .init(startIndex ..< endIndex, in: self)
+    }
+}
+
+public extension String {
+    var nilIfEmpty: String? {
+        isEmpty ? nil : self
+    }
+}
+
+public extension StringProtocol {
+    var embeddedAsLiteral: String {
+        try! .init(data: JSONEncoder().encode(store(in: String.self)), encoding: .utf8)!
+    }
+
+    var extractedStringLiteral: String {
+        get throws {
+            try JSONDecoder().decode(String.self, from: data(using: .utf8)!)
+        }
     }
 }

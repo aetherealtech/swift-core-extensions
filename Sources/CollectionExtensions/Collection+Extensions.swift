@@ -229,6 +229,14 @@ public extension RangeReplaceableCollection {
         }
     }
     
+    mutating func removeFirst(where condition: (Element) -> Bool) -> Element? {
+        if let index = firstIndex(where: condition) {
+            return remove(at: index)
+        }
+        
+        return nil
+    }
+    
     mutating func filterInPlace(_ condition: (Element) throws -> Bool) rethrows {
         try removeAll { element in try !condition(element) }
     }
@@ -334,5 +342,39 @@ public extension RangeReplaceableCollection where Element: Equatable {
     
     func removingDuplicates() -> Self {
         removingDuplicates(by: ==)
+    }
+}
+
+public extension RandomAccessCollection where Self: MutableCollection {
+    mutating func sort(using compare: CompareFunction<Element>) {
+        sort(by: { lhs, rhs in compare(lhs, rhs) == .orderedAscending })
+    }
+
+    mutating func sort<R>(by transform: (Element) -> R, using compare: SimpleCompareFunction<R>) {
+        sort(by: { lhs, rhs in compare(transform(lhs), transform(rhs)) })
+    }
+    
+    mutating func sort<R: Comparable>(by transform: (Element) -> R) {
+        sort(by: transform, using: <)
+    }
+    
+    mutating func sort<R>(by transform: (Element) -> R, using compare: CompareFunction<R>) {
+        sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: transform, using: compare) }
+    }
+    
+    mutating func sort(using compares: CompareFunction<Element>...) {
+        sort(using: compares)
+    }
+    
+    mutating func sort<Compares: Sequence>(using compares: Compares) where Compares.Element == CompareFunction<Element> {
+        sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, using: compares) }
+    }
+    
+    mutating func sort<R: Comparable & Equatable>(by transforms: (Element) -> R...) {
+        sort(by: transforms)
+    }
+    
+    mutating func sort<R: Comparable & Equatable, Transforms: Sequence>(by transforms: Transforms) where Transforms.Element == (Element) -> R {
+        sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: transforms) }
     }
 }

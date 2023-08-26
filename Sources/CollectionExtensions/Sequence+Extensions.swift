@@ -6,6 +6,24 @@ public extension Sequence {
         .init(self)
     }
     
+    func store(in type: Set<Element>.Type = Set.self) -> Set<Element> where Element: Hashable {
+        .init(self)
+    }
+    
+    func store<Key, Value>(in type: [Key: Value].Type = [Key: Value].self) -> [Key: Value] where Element == (Key, Value) {
+        .init(uniqueKeysWithValues: self)
+    }
+    
+    func store<Key, Value>(
+        in type: [Key: Value].Type = [Key: Value].self,
+        uniquingKeysWith: (Value, Value) -> Value
+    ) -> [Key: Value] where Element == (Key, Value) {
+        .init(
+            self,
+            uniquingKeysWith: uniquingKeysWith
+        )
+    }
+    
     func compact<Wrapped>() -> [Wrapped] where Element == Wrapped? {
         compactMap { element in element }
     }
