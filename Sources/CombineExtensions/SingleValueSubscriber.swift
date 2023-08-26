@@ -1,24 +1,31 @@
 import Combine
+import Synchronization
 
 // Allows receiving of just the next value from a publisher without having to retain and then throw away a Cancellable.
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension Publisher {
+    @discardableResult
     func subscribeNext(
         receiveValue: @escaping (Output) -> Void,
         receiveCompletion: @escaping (Subscribers.Completion<Failure>) -> Void
-    ) {
-        subscribe(SingleValueSubscriber(
+    ) -> some Cancellable {
+        let subscriber = SingleValueSubscriber(
             receiveValue: receiveValue,
             receiveCompletion: receiveCompletion
-        ))
+        )
+        
+        subscribe(subscriber)
+        
+        return subscriber
     }
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension Publisher where Failure == Never {
+    @discardableResult
     func subscribeNext(
         receiveValue: @escaping (Output) -> Void
-    ) {
+    ) -> some Cancellable {
         subscribeNext(
             receiveValue: receiveValue,
             receiveCompletion: { _ in }
@@ -27,7 +34,13 @@ public extension Publisher where Failure == Never {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-final class SingleValueSubscriber<Input, Failure: Error>: Subscriber {
+final class SingleValueSubscriber<Input, Failure: Error>: Subscriber, Cancellable {
+    private enum State {
+        case ready
+        case subscribed(Subscription)
+        case cancelled
+    }
+    
     init(
         receiveValue: @escaping (Input) -> Void,
         receiveCompletion: @escaping (Subscribers.Completion<Failure>) -> Void
@@ -37,24 +50,63 @@ final class SingleValueSubscriber<Input, Failure: Error>: Subscriber {
     }
 
     func receive(subscription: Subscription) {
-        self.subscription = subscription
-        subscription.request(.max(1))
+        _state.write { state in
+            switch state {
+                case .cancelled:
+                    subscription.cancel()
+                default:
+                    state = .subscribed(subscription)
+                    subscription.request(.max(1))
+            }
+        }
     }
 
     func receive(_ input: Input) -> Subscribers.Demand {
-        receiveValue(input)
-        subscription?.cancel()
+        let send = _state.write { state in
+            if case let .subscribed(subscription) = state {
+                subscription.cancel()
+                return true
+            } else {
+                return false
+            }
+        }
+        
+        if send {
+            receiveValue(input)
+        }
+        
         return .none
     }
 
     func receive(completion: Subscribers.Completion<Failure>) {
-        receiveCompletion(completion)
-        subscription?.cancel()
+        let send = _state.write { state in
+            if case let .subscribed(subscription) = state {
+                subscription.cancel()
+                return true
+            } else {
+                return false
+            }
+        }
+        
+        if send {
+            receiveCompletion(completion)
+        }
+    }
+    
+    func cancel() {
+        _state.write { state in
+            if case let .subscribed(subscription) = state {
+                subscription.cancel()
+            }
+            
+            state = .cancelled
+        }
     }
 
     private let receiveValue: (Input) -> Void
     private let receiveCompletion: (Subscribers.Completion<Failure>) -> Void
 
-    private var subscription: Subscription?
+    @Synchronized
+    private var state: State = .ready
 }
 

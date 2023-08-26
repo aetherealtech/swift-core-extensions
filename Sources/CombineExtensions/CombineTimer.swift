@@ -6,7 +6,7 @@ public extension Scheduler {
     func timer(
         start: SchedulerTimeType,
         interval: SchedulerTimeType.Stride
-    ) -> TimerPublisher<Self> {
+    ) -> some Publisher<Void, Never> {
         TimerPublisher(
             scheduler: self,
             start: start,
@@ -16,12 +16,12 @@ public extension Scheduler {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-private protocol BaseTimerSubscription: Subscription, AnyObject {
+private protocol BaseTimerSubscription: Subscription {
     func receive()
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public class TimerPublisher<S: Scheduler>: ConnectablePublisher {
+final class TimerPublisher<S: Scheduler>: ConnectablePublisher {
     public typealias Output = Void
     public typealias Failure = Never
 
@@ -46,7 +46,7 @@ public class TimerPublisher<S: Scheduler>: ConnectablePublisher {
     public func receive<Sub>(subscriber: Sub) where Sub: Subscriber, Failure == Sub.Failure, Output == Sub.Input {
         let subscription = TimerSubscription(
             subscriber: subscriber,
-            cancel: { subscription in self._subscriptions.write { subscriptions in subscriptions.removeAll(where: { sub in sub === subscription }) } }
+            cancel: { subscription in self._subscriptions.write { subscriptions in subscriptions.removeAll(where: { sub in sub.combineIdentifier == subscription.combineIdentifier }) } }
         )
 
         _subscriptions.write { subscriptions in subscriptions.append(subscription) }
@@ -78,7 +78,6 @@ public class TimerPublisher<S: Scheduler>: ConnectablePublisher {
                 }
 
                 demand -= 1
-
                 demand += subscriber.receive(())
             }
         }
@@ -93,7 +92,8 @@ public class TimerPublisher<S: Scheduler>: ConnectablePublisher {
     private let start: S.SchedulerTimeType
     private let interval: S.SchedulerTimeType.Stride
 
-    @Synchronized private var subscriptions: [BaseTimerSubscription] = []
+    @Synchronized
+    private var subscriptions: [BaseTimerSubscription] = []
 
     private func fire() {
         for subscription in subscriptions {

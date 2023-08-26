@@ -3,7 +3,7 @@ import Combine
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension Future where Failure == Never {
     convenience init(
-        executing function: @escaping () async -> Output
+        executing function: @escaping @Sendable () async -> Output
     ) {
         self.init { promise in
             Task {
@@ -16,7 +16,7 @@ public extension Future where Failure == Never {
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension Future where Failure == Error {
     convenience init(
-        executing function: @escaping () async throws -> Output
+        executing function: @escaping @Sendable () async throws -> Output
     ) {
         self.init { promise in
             Task {

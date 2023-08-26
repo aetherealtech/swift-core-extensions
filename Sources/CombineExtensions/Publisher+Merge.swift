@@ -2,14 +2,14 @@ import Combine
 import Synchronization
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension Collection where Element: Publisher {
+public extension Sequence where Element: Publisher {
     func merge() -> some Publisher<Element.Output, Element.Failure> {
         MergePublisher(sources: self)
     }
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-struct MergePublisher<Sources: Collection>: Publisher where Sources.Element: Publisher {
+struct MergePublisher<Sources: Sequence>: Publisher where Sources.Element: Publisher {
     typealias Output = Sources.Element.Output
     typealias Failure = Sources.Element.Failure
 
@@ -32,74 +32,50 @@ struct MergePublisher<Sources: Collection>: Publisher where Sources.Element: Pub
             subscriber: S
         ) {
             state = .init(
-                subscriber: subscriber,
-                subscriptions: sources.map { _ in nil }
+                subscriber: subscriber
             )
 
-            sources.enumerated().forEach { index, source in
-
-                source.receive(subscriber: makeSubscriber(index: index, source: source))
+            sources.forEach { source in
+                source.receive(subscriber: MergeSubscriber(
+                    state: _state
+                ))
             }
         }
 
         func request(_ demand: Subscribers.Demand) {
-            if demand == .none {
-                return
-            } else if demand == .unlimited {
-                let subscriptions = _state.write { state -> [Subscription] in
-                    state.subscriptions.compact()
+            guard demand > .none else { return }
+            
+            let requestUpstream = _state.write { state -> () -> Void in
+                state.demand += demand
+                let pendingValues = state.pendingValues.dropFirst(state.demand.max ?? .max)
+                state.demand -= pendingValues.count
+                
+                for pendingValue in pendingValues {
+                    state.demand += state.subscriber.receive(pendingValue)
                 }
-
-                subscriptions.forEach { subscription in subscription.request(.unlimited) }
-            } else {
-                fatalError("merge currently only supports unlimited demand subscribers")
+             
+                return { [demand = state.demand, subscriptions = state.subscriptions.values] in
+                    if demand > .none {
+                        let upstreamDemand = demand == .unlimited ? Subscribers.Demand.unlimited : .none
+                        subscriptions.forEach { subscription in subscription.request(upstreamDemand) }
+                    }
+                }
             }
+            
+            requestUpstream()
         }
 
         func cancel() {
             _state.write { state in
-                state.subscriptions.compact().forEach { subscription in subscription.cancel() }
-                state.subscriptions = (0 ..< state.subscriptions.count).map { _ in nil }
-                state.subscriber = nil
+                state.subscriptions.values.forEach { subscription in subscription.cancel() }
             }
         }
 
-        private func makeSubscriber(index: Int, source: Sources.Element) -> MergeSubscriber {
-            MergeSubscriber(
-                source: source,
-                index: index,
-                receiveSubscription: { [weak self] index, subscription in
-                    self?._state.subscriptions[index] = subscription
-                },
-                receiveValue: { [weak self] _, value in
-                    guard let strongSelf = self else {
-                        return .none
-                    }
-
-                    _ = strongSelf._state.subscriber?.receive(value)
-
-                    return .none
-                },
-                receiveCompletion: { [weak self] index, completion in
-                    if case .failure = completion {
-                        self?._state.subscriber?.receive(completion: completion)
-                        return
-                    }
-
-                    self?._state.write { state in
-                        state.subscriptions[index] = nil
-
-                        if state.subscriptions.compact().isEmpty {
-                            state.subscriber?.receive(completion: .finished)
-                        }
-                    }
-                }
-            )
-        }
-
         private struct State {
-            var subscriber: S?
-            var subscriptions: [Subscription?]
+            var subscriber: S
+            var subscriptions: [CombineIdentifier: Subscription] = [:]
+            var demand: Subscribers.Demand = .none
+            var pendingValues: [Sources.Element.Output] = []
         }
 
         private class MergeSubscriber: Subscriber {
@@ -107,36 +83,49 @@ struct MergePublisher<Sources: Collection>: Publisher where Sources.Element: Pub
             typealias Failure = Sources.Element.Failure
 
             init(
-                source _: Sources.Element,
-                index: Int,
-                receiveSubscription: @escaping (Int, Subscription) -> Void,
-                receiveValue: @escaping (Int, Sources.Element.Output) -> Subscribers.Demand,
-                receiveCompletion: @escaping (Int, Subscribers.Completion<Sources.Element.Failure>) -> Void
+                state: Synchronized<State>
             ) {
-                self.index = index
-
-                self.receiveSubscription = receiveSubscription
-                self.receiveValue = receiveValue
-                self.receiveCompletion = receiveCompletion
+                _state = state
             }
 
             func receive(subscription: Subscription) {
-                receiveSubscription(index, subscription)
+                subscriptionId = subscription.combineIdentifier
+                _state.subscriptions[subscription.combineIdentifier] = subscription
             }
 
             func receive(_ input: Sources.Element.Output) -> Subscribers.Demand {
-                receiveValue(index, input)
+                _state.write { state in
+                    if state.demand > .none {
+                        state.demand -= 1
+                        state.demand += state.subscriber.receive(input)
+                    } else {
+                        state.pendingValues.append(input)
+                    }
+                    
+                    return state.demand > .none ? .max(1) : .none
+                }
             }
 
             func receive(completion: Subscribers.Completion<Sources.Element.Failure>) {
-                receiveCompletion(index, completion)
+                _state.write { state in
+                    switch completion {
+                        case let .failure(error):
+                            state.subscriber.receive(completion: .failure(error))
+                        case .finished:
+                            if let subscriptionId {
+                                state.subscriptions[subscriptionId] = nil
+                            }
+                            
+                            if state.subscriptions.isEmpty {
+                                state.subscriber.receive(completion: .finished)
+                            }
+                    }
+                }
             }
 
-            private let index: Int
-
-            private let receiveSubscription: (Int, Subscription) -> Void
-            private let receiveValue: (Int, Sources.Element.Output) -> Subscribers.Demand
-            private let receiveCompletion: (Int, Subscribers.Completion<Sources.Element.Failure>) -> Void
+            private var subscriptionId: CombineIdentifier?
+            
+            @Synchronized private var state: State
         }
 
         @Synchronized private var state: State
