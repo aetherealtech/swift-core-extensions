@@ -4,8 +4,12 @@
 
 import Foundation
 
-@inlinable public func stride<T>(from start: T, by stride: T.Stride, count: Int) -> StrideCount<T> where T : Strideable {
-
+@inlinable
+public func stride<T>(
+    from start: T,
+    by stride: T.Stride,
+    count: Int
+) -> StrideCount<T> where T : Strideable {
     StrideCount(
         start: start,
         stride: stride,
@@ -13,10 +17,9 @@ import Foundation
     )
 }
 
-@frozen public struct StrideCount<Element> : Sequence where Element : Strideable {
-
+@frozen
+public struct StrideCount<Element> : Sequence where Element : Strideable {
     public struct StrideCountIterator : IteratorProtocol {
-
         public init(
             start: Element,
             stride: Element.Stride,
@@ -29,18 +32,14 @@ import Foundation
         }
 
         public mutating func next() -> Element? {
-
             guard let current = self.current else {
                 return nil
             }
 
             if index < count - 1 {
-
                 self.current = current.advanced(by: stride)
                 index += 1
-
             } else {
-
                 self.current = nil
             }
 
@@ -65,8 +64,8 @@ import Foundation
         self.count = count
     }
 
-    @inlinable public func makeIterator() -> StrideCountIterator {
-
+    @inlinable
+    public func makeIterator() -> StrideCountIterator {
         StrideCountIterator(
             start: start,
             stride: stride,
