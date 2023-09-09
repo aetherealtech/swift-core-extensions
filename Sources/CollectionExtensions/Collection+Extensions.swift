@@ -239,7 +239,11 @@ public extension RangeReplaceableCollection {
             result.remove(at: indices)
         }
     }
-    
+
+    mutating func safelyRemoveFirst() -> Element? {
+        isEmpty ? nil : removeFirst()
+    }
+
     mutating func removeFirst(where condition: (Element) -> Bool) -> Element? {
         if let index = firstIndex(where: condition) {
             return remove(at: index)
@@ -387,5 +391,20 @@ public extension RandomAccessCollection where Self: MutableCollection {
     
     mutating func sort<R: Comparable & Equatable, Transforms: Sequence>(by transforms: Transforms) where Transforms.Element == (Element) -> R {
         sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: transforms) }
+    }
+}
+
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+public extension Collection where Element: Identifiable {
+    subscript(id id: Element.ID) -> Element? {
+        first { $0.id == id }
+    }
+}
+
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+public extension RangeReplaceableCollection where Element: Identifiable {
+    @discardableResult
+    mutating func remove(id: Element.ID) -> Element? {
+        removeFirst { $0.id == id }
     }
 }
