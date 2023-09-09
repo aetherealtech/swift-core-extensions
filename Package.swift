@@ -9,37 +9,48 @@ let package = Package(
         // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(
             name: "AsyncCollectionExtensions",
-            targets: ["AsyncCollectionExtensions"]),
+            targets: ["AsyncCollectionExtensions"]
+        ),
         .library(
             name: "AsyncExtensions",
-            targets: ["AsyncExtensions"]),
+            targets: ["AsyncExtensions"]
+        ),
         .library(
             name: "CodableExtensions",
-            targets: ["CodableExtensions"]),
+            targets: ["CodableExtensions"]
+        ),
         .library(
             name: "CollectionExtensions",
-            targets: ["CollectionExtensions"]),
+            targets: ["CollectionExtensions"]
+        ),
         .library(
             name: "CombineExtensions",
-            targets: ["CombineExtensions"]),
+            targets: ["CombineExtensions"]
+        ),
         .library(
             name: "CompareFunctions",
-            targets: ["CompareFunctions"]),
+            targets: ["CompareFunctions"]
+        ),
         .library(
             name: "CoreExtensions",
-            targets: ["CoreExtensions"]),
+            targets: ["CoreExtensions"]
+        ),
         .library(
             name: "FileSystemExtensions",
-            targets: ["FileSystemExtensions"]),
+            targets: ["FileSystemExtensions"]
+        ),
         .library(
             name: "LazyCollectionExtensions",
-            targets: ["LazyCollectionExtensions"]),
+            targets: ["LazyCollectionExtensions"]
+        ),
         .library(
             name: "NumericExtensions",
-            targets: ["NumericExtensions"]),
+            targets: ["NumericExtensions"]
+        ),
         .library(
             name: "OptionalExtensions",
-            targets: ["OptionalExtensions"]),
+            targets: ["OptionalExtensions"]
+        ),
     ],
     dependencies: [
         .package(path: "../Synchronization"),
@@ -52,20 +63,29 @@ let package = Package(
             dependencies: [
                 "AsyncExtensions",
                 "CollectionExtensions",
-                "CoreExtensions"
-            ]),
+                "CoreExtensions",
+                .product(name: "Synchronization", package: "Synchronization"),
+            ],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
         .target(
             name: "AsyncExtensions",
-            dependencies: []),
+            dependencies: [],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
         .target(
             name: "CodableExtensions",
-            dependencies: []),
+            dependencies: [],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
         .target(
             name: "CollectionExtensions",
             dependencies: [
                 "CompareFunctions",
                 "OptionalExtensions"
-            ]),
+            ],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
         .target(
             name: "CombineExtensions",
             dependencies: [
@@ -74,43 +94,83 @@ let package = Package(
                 "CollectionExtensions",
                 .product(name: "Synchronization", package: "Synchronization"),
                 "OptionalExtensions"
-            ]),
+            ],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
         .target(
             name: "CompareFunctions",
-            dependencies: []),
+            dependencies: [],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
         .target(
             name: "CoreExtensions",
             dependencies: [
                 "OptionalExtensions"
-            ]),
+            ],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
         .target(
             name: "FileSystemExtensions",
-            dependencies: []),
+            dependencies: [],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
         .target(
             name: "LazyCollectionExtensions",
             dependencies: [
                 "CollectionExtensions"
-            ]),
+            ],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
         .target(
             name: "NumericExtensions",
-            dependencies: []),
+            dependencies: [],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
         .target(
             name: "OptionalExtensions",
-            dependencies: []),
+            dependencies: [],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
         .testTarget(
             name: "AsyncCollectionExtensionsTests",
-            dependencies: ["AsyncCollectionExtensions"]),
+            dependencies: ["AsyncCollectionExtensions"],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
         .testTarget(
             name: "AsyncExtensionsTests",
-            dependencies: ["AsyncExtensions"]),
+            dependencies: ["AsyncExtensions"],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
         .testTarget(
             name: "CollectionExtensionsTests",
-            dependencies: ["CollectionExtensions"]),
+            dependencies: ["CollectionExtensions"],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
         .testTarget(
             name: "CoreExtensionsTests",
-            dependencies: ["CoreExtensions"]),
+            dependencies: ["CoreExtensions"],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
         .testTarget(
             name: "LazyCollectionExtensionsTests",
-            dependencies: ["LazyCollectionExtensions"]),
+            dependencies: ["LazyCollectionExtensions"],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
     ]
 )
+
+extension SwiftSetting {
+    enum ConcurrencyChecking: String {
+        case complete
+        case minimal
+        case targeted
+    }
+    
+    static func concurrencyChecking(_ setting: ConcurrencyChecking = .minimal) -> Self {
+        unsafeFlags([
+            "-Xfrontend", "-strict-concurrency=\(setting)",
+            "-Xfrontend", "-warn-concurrency",
+            "-Xfrontend", "-enable-actor-data-race-checks",
+        ])
+    }
+}

@@ -2,9 +2,6 @@ import Combine
 import Foundation
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-extension Date: Strideable {}
-
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 extension TimeInterval: SchedulerTimeIntervalConvertible {
     public static func seconds(_ s: Int) -> TimeInterval {
         TimeInterval(s)
@@ -25,19 +22,36 @@ extension TimeInterval: SchedulerTimeIntervalConvertible {
     public static func nanoseconds(_ ns: Int) -> TimeInterval {
         TimeInterval(ns) / 1e9
     }
+    
+    func stride<I: Comparable & Numeric & SchedulerTimeIntervalConvertible>() -> I {
+        I.nanoseconds(Int(self * 1e9))
+    }
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public struct AnyScheduler: Scheduler {
-    public typealias SchedulerTimeType = Date
+    public struct AnyTime: Strideable {
+        public func distance(to other: AnyTime) -> TimeInterval {
+            other.date.timeIntervalSince(date)
+        }
+        
+        public func advanced(by n: TimeInterval) -> AnyTime {
+            .init(date: date.addingTimeInterval(n))
+        }
+        
+        func schedulerTime<S: Scheduler>(scheduler: S) -> S.SchedulerTimeType {
+            scheduler.now.advanced(by: date.timeIntervalSinceNow.stride())
+        }
+        
+        let date: Date
+    }
+    
+    public typealias SchedulerTimeType = AnyTime
     public typealias SchedulerOptions = Void
 
     init<S: Scheduler>(
         erasing: S
     ) {
-        let convertTimeStride: (TimeInterval) -> S.SchedulerTimeType.Stride = { interval in S.SchedulerTimeType.Stride.nanoseconds(Int(interval * 1e9)) }
-        let convertTimeType: (Date) -> S.SchedulerTimeType = { date in erasing.now.advanced(by: convertTimeStride(date.timeIntervalSinceNow)) }
-
         erased = erasing
         
         scheduleImp = { erased, action in
@@ -45,19 +59,21 @@ public struct AnyScheduler: Scheduler {
         }
 
         scheduleAfterImp = { erased, date, tolerance, action in
-            (erased as! S).schedule(
-                after: convertTimeType(date),
-                tolerance: convertTimeStride(tolerance),
+            let scheduler = erased as! S
+            scheduler.schedule(
+                after: date.schedulerTime(scheduler: scheduler),
+                tolerance: tolerance.stride(),
                 options: nil,
                 action
             )
         }
 
         scheduleRepeatingImp = { erased, date, interval, tolerance, action in
-            (erased as! S).schedule(
-                after: convertTimeType(date),
-                interval: convertTimeStride(interval),
-                tolerance: convertTimeStride(tolerance),
+            let scheduler = erased as! S
+            return scheduler.schedule(
+                after: date.schedulerTime(scheduler: scheduler),
+                interval: interval.stride(),
+                tolerance: tolerance.stride(),
                 options: nil,
                 action
             )
@@ -73,7 +89,7 @@ public struct AnyScheduler: Scheduler {
         scheduleRepeatingImp = erasing.scheduleRepeatingImp
     }
 
-    public var now: SchedulerTimeType { Date() }
+    public var now: SchedulerTimeType { .init(date: Date()) }
     public var minimumTolerance: SchedulerTimeType.Stride { 1e-9 }
 
     public func schedule(options _: SchedulerOptions?, _ action: @escaping () -> Void) {
@@ -91,8 +107,8 @@ public struct AnyScheduler: Scheduler {
     private var erased: Any
     
     private let scheduleImp: (Any, _ action: @escaping () -> Void) -> Void
-    private let scheduleAfterImp: (Any, _ date: Date, _ tolerance: TimeInterval, _ action: @escaping () -> Void) -> Void
-    private let scheduleRepeatingImp: (Any, _ date: Date, _ interval: TimeInterval, _ tolerance: TimeInterval, _ action: @escaping () -> Void) -> Cancellable
+    private let scheduleAfterImp: (Any, _ date: AnyTime, _ tolerance: TimeInterval, _ action: @escaping () -> Void) -> Void
+    private let scheduleRepeatingImp: (Any, _ date: AnyTime, _ interval: TimeInterval, _ tolerance: TimeInterval, _ action: @escaping () -> Void) -> Cancellable
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)

@@ -23,12 +23,15 @@ public struct AsyncTerminatingSequence<Base: AsyncSequence>: AsyncSequence {
     }
     
     let base: Base
-    let terminateCondition: (Base.Element) async -> Bool
+    let terminateCondition: @Sendable (Base.Element) async -> Bool
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+extension AsyncTerminatingSequence: Sendable where Base: Sendable {}
+
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension AsyncSequence {
-    func terminate(when condition: @escaping (Element) async -> Bool) -> AsyncTerminatingSequence<Self> {
+    func terminate(when condition: @escaping @Sendable (Element) async -> Bool) -> AsyncTerminatingSequence<Self> {
         .init(
             base: self,
             terminateCondition: condition

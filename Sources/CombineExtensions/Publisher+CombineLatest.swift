@@ -4,15 +4,15 @@ import Synchronization
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension Collection where Element: Publisher {
-    func combineLatest() -> some Publisher<[Element.Output], Element.Failure> {
+    func combineLatest() -> CombineLatestPublisher<Self> {
         CombineLatestPublisher<Self>(sources: self)
     }
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-struct CombineLatestPublisher<Sources: Collection>: Publisher where Sources.Element: Publisher {
-    typealias Output = [Sources.Element.Output]
-    typealias Failure = Sources.Element.Failure
+public struct CombineLatestPublisher<Sources: Collection>: Publisher where Sources.Element: Publisher {
+    public typealias Output = [Sources.Element.Output]
+    public typealias Failure = Sources.Element.Failure
 
     init(
         sources: Sources
@@ -20,7 +20,7 @@ struct CombineLatestPublisher<Sources: Collection>: Publisher where Sources.Elem
         self.sources = sources
     }
 
-    func receive<S>(subscriber: S) where S: Subscriber, S.Failure == Failure, S.Input == Output {
+    public func receive<S>(subscriber: S) where S: Subscriber, S.Failure == Failure, S.Input == Output {
         subscriber.receive(subscription: CombineLatestSubscription(
             sources: sources,
             subscriber: subscriber

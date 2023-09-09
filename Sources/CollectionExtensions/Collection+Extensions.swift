@@ -106,6 +106,17 @@ public extension MutableCollection {
     }
     
     @discardableResult
+    mutating func mutate(
+        safe index: Index,
+        _ body: (inout Element) throws -> Void
+    ) rethrows -> Bool {
+        try mutate(safe: index) { element in
+            try body(&element)
+            return true
+        } ?? false
+    }
+    
+    @discardableResult
     mutating func mutate<R>(
         safe index: Index,
         _ body: (inout Element) throws -> R,

@@ -10,7 +10,7 @@ final class AsyncCollectionTests: XCTestCase {
         
         let results = await (0..<50)
             .map { index in
-                {
+                { @Sendable in
                     print("STARTING \(index)")
                     try! await Task.sleep(timeInterval: 1.0)
                     print("ENDING \(index)")
@@ -28,7 +28,7 @@ final class AsyncCollectionTests: XCTestCase {
         
         let results = try await (0..<50)
             .map { index in
-                {
+                { @Sendable in
                     print("STARTING \(index)")
                     try await Task.sleep(timeInterval: 1.0)
                     print("ENDING \(index)")
@@ -64,7 +64,7 @@ final class AsyncCollectionTests: XCTestCase {
                 
                 return (0..<10)
                     .map { innerIndex in
-                        {
+                        { @Sendable in
                             print("PROCESSING INNER: \(innerIndex)")
                             try! await Task.sleep(timeInterval: 1.0)
                             return "VALUE: \(outerIndex)-\(innerIndex)"

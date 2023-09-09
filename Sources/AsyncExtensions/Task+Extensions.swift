@@ -99,12 +99,12 @@ public func withTimeout<R: Sendable, C: Clock>(
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 fileprivate func withTimeout<R: Sendable>(
-    sleep: @escaping () async throws -> Void,
-    @_inheritActorContext @_implicitSelfCapture _ work: __owned @Sendable @escaping () async throws -> R
+    sleep: @escaping @Sendable () async throws -> Void,
+    @_inheritActorContext @_implicitSelfCapture _ work: __owned @escaping @Sendable () async throws -> R
 ) async throws -> R {
     try await [
         work,
-        {
+        { @Sendable in
             try await sleep()
             throw TimedOut()
         }

@@ -26,3 +26,5 @@ public struct LazyInsertedSequence<Source: Sequence, Inserted: Sequence>: LazySe
     let inserted: Inserted
     let insertAt: Int
 }
+
+extension LazyInsertedSequence: Sendable where Source: Sendable, Inserted: Sendable {}

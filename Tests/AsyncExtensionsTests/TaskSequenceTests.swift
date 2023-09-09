@@ -10,7 +10,7 @@ final class TaskSequenceTests: XCTestCase {
         
         let stream = (0..<50)
             .map { index in
-                {
+                { @Sendable in
                     try! await Task.sleep(timeInterval: 1.0)
                     return index
                 }
@@ -29,7 +29,7 @@ final class TaskSequenceTests: XCTestCase {
         
         let stream = (0..<50)
             .map { index in
-                {
+                { @Sendable in
                     try await Task.sleep(timeInterval: 1.0)
                     return index
                 }
@@ -48,12 +48,12 @@ final class TaskSequenceTests: XCTestCase {
         
         let stream = (0..<50)
             .map { outerIndex in
-                {
+                { @Sendable in
                     try! await Task.sleep(timeInterval: 1.0)
 
                     return (0..<10)
                         .map { innerIndex in
-                            {
+                            { @Sendable in
                                 try! await Task.sleep(timeInterval: 1.0)
                                 return "\(outerIndex)-\(innerIndex)"
                             }
@@ -74,7 +74,7 @@ final class TaskSequenceTests: XCTestCase {
         
         await (0..<50)
             .map { index in
-                {
+                { @Sendable in
                     print("STARTING \(index)")
                     try! await Task.sleep(timeInterval: 1.0)
                     print("ENDING \(index)")
@@ -90,7 +90,7 @@ final class TaskSequenceTests: XCTestCase {
         
         try await (0..<50)
             .map { index in
-                {
+                { @Sendable in
                     print("STARTING \(index)")
                     try await Task.sleep(timeInterval: 1.0)
                     print("ENDING \(index)")

@@ -24,6 +24,9 @@ public struct AsyncEnumeratedSequence<Source: AsyncSequence>: AsyncSequence {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+extension AsyncEnumeratedSequence: Sendable where Source: Sendable {}
+
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension AsyncSequence {
     func enumerated() -> AsyncEnumeratedSequence<Self> {
         .init(source: self)

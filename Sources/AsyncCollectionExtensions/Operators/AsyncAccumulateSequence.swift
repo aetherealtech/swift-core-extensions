@@ -40,12 +40,15 @@ public struct AsyncAccumulateSequence<Source: AsyncSequence, Result>: AsyncSeque
     
     let source: Source
     let initial: Result
-    let accumulator: (Result, Source.Element) async -> Result
+    let accumulator: @Sendable (Result, Source.Element) async -> Result
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+extension AsyncAccumulateSequence: Sendable where Source: Sendable, Result: Sendable {}
+
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension AsyncSequence {
-    func accumulate<R>(_ initialValue: R, _ accumulate: @escaping (R, Element) -> R) async throws -> AsyncAccumulateSequence<Self, R> {
+    func accumulate<R>(_ initialValue: R, _ accumulate: @escaping @Sendable (R, Element) -> R) async throws -> AsyncAccumulateSequence<Self, R> {
         .init(
             source: self,
             initial: initialValue,

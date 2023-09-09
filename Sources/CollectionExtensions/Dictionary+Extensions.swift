@@ -2,6 +2,16 @@ import CompareFunctions
 import Foundation
 
 public extension Dictionary {
+    mutating func value(at key: Key, orInsert newValue: @autoclosure () -> Value) -> Value {
+        guard let existing = self[key] else {
+            let newValue = newValue()
+            self[key] = newValue
+            return newValue
+        }
+        
+        return existing
+    }
+    
     func inserting(key: Key, value: Value) -> Self {
         immutable { result in
             result[key] = value
@@ -212,6 +222,14 @@ public extension Dictionary {
         }
     }
     
+    func whereKeys(_ condition: (Key) -> Bool) -> Self {
+        filterKeys { key in !condition(key) }
+    }
+    
+    func whereValues(_ condition: (Value) -> Bool) -> Self {
+        filterValues { key in !condition(key) }
+    }
+
     mutating func remove(where condition: (Element) -> Bool) {
         inPlaceFilter { element in !condition(element) }
     }

@@ -1,22 +1,13 @@
-//
-//  File.swift
-//  
-//
-//  Created by Daniel Coleman on 8/10/23.
-//
-
-import Foundation
-
 // Crash compiler: https://github.com/apple/swift/issues/67861
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public struct AsyncFunction<Result> {
     private let call: () async -> Result
-    
+
     public init(call: @escaping () async -> Result) {
         self.call = call
     }
-    
+
     public func callAsFunction() async -> Result {
         await call()
     }

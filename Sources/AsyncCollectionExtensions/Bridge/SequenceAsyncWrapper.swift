@@ -18,7 +18,7 @@ public struct SequenceAsyncWrapper<Source: Sequence>: AsyncSequence {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-extension Sequence {
+public extension Sequence {
     var async: SequenceAsyncWrapper<Self> {
         .init(source: self)
     }

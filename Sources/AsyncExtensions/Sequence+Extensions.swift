@@ -1,13 +1,16 @@
 import Foundation
 
-private enum FlattenResult<R: Sequence, InnerR> {
+private enum FlattenResult<R: Sequence & Sendable, InnerR>: Sendable {
     case outer(R)
-    case inner(UUID, InnerR)
+    case inner(UUID)
 }
 
+public typealias AsyncElement<R> = @Sendable () async -> R
+public typealias AsyncThrowingElement<R> = @Sendable () async throws -> R
+
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension Sequence {
-    func stream<R>(maxConcurrency: Int = .max) -> AsyncStream<R> where Element == () async -> R {
+public extension Sequence where Self: Sendable {
+    func stream<R>(maxConcurrency: Int = .max) -> AsyncStream<R> where Element == AsyncElement<R> {
         .init { continuation in
             let task = Task {
                 await withTaskGroup(of: Void.self) { group in
@@ -38,15 +41,15 @@ public extension Sequence {
         }
     }
     
-    func stream<R>(maxConcurrency: Int = .max) -> AsyncThrowingStream<R, Error> where Element == () async throws -> R {
+    func stream<R>(maxConcurrency: Int = .max) -> AsyncThrowingStream<R, Error> where Element == AsyncThrowingElement<R> {
         .init { continuation in
             let task = Task {
-                await withThrowingTaskGroup(of: R.self) { group in
+                await withThrowingTaskGroup(of: Void.self) { group in
                     var iterator = makeIterator()
                     
-                    let addTask: (inout ThrowingTaskGroup<R, Error>) -> Bool = { group in
+                    let addTask: (inout ThrowingTaskGroup<Void, Error>) -> Bool = { group in
                         if let work = iterator.next() {
-                            group.addTask { try await work() }
+                            group.addTask { continuation.yield(with: await .init { try await work() }) }
                             return true
                         } else {
                             return false
@@ -58,8 +61,7 @@ public extension Sequence {
                     }
                     
                     do {
-                        for try await result in group {
-                            continuation.yield(result)
+                        for try await _ in group {
                             _ = addTask(&group)
                         }
                         
@@ -75,7 +77,7 @@ public extension Sequence {
         }
     }
     
-    func flattenStream<R: Sequence, InnerR>(maxConcurrency: Int = .max) -> AsyncStream<InnerR> where Element == () async -> R, R.Element == () async -> InnerR {
+    func flattenStream<R: Sequence & Sendable, InnerR>(maxConcurrency: Int = .max) -> AsyncStream<InnerR> where Element == AsyncElement<R>, R.Element == AsyncElement<InnerR> {
         .init { continuation in
             let task = Task {
                 await withTaskGroup(of: FlattenResult<R, InnerR>.self) { group in
@@ -94,7 +96,10 @@ public extension Sequence {
                     
                     let addInnerTask: (inout TaskGroup<FlattenResult<R, InnerR>>, UUID) -> Bool = { group, id in
                         if let work =  innerIterators[id]!.next() {
-                            group.addTask { .inner(id, await work()) }
+                            group.addTask {
+                                continuation.yield(await work())
+                                return .inner(id)
+                            }
                             return true
                         } else {
                             return false
@@ -118,8 +123,7 @@ public extension Sequence {
                                 while capacity > 0, addInnerTask(&group, id) {
                                     capacity -= 1
                                 }
-                            case let .inner(id, innerResult):
-                                continuation.yield(innerResult)
+                            case let .inner(id):
                                 while capacity > 0, addInnerTask(&group, id) {
                                     capacity -= 1
                                 }
@@ -138,7 +142,7 @@ public extension Sequence {
         }
     }
     
-    func flattenStream<R: Sequence, InnerR>(maxConcurrency: Int = .max) -> AsyncThrowingStream<InnerR, Error> where Element == () async throws -> R, R.Element == () async throws -> InnerR {
+    func flattenStream<R: Sequence & Sendable, InnerR>(maxConcurrency: Int = .max) -> AsyncThrowingStream<InnerR, Error> where Element == AsyncThrowingElement<R>, R.Element == AsyncThrowingElement<InnerR> {
         .init { continuation in
             let task = Task {
                 await withThrowingTaskGroup(of: FlattenResult<R, InnerR>.self) { group in
@@ -157,7 +161,10 @@ public extension Sequence {
                     
                     let addInnerTask: (inout ThrowingTaskGroup<FlattenResult<R, InnerR>, Error>, UUID) -> Bool = { group, id in
                         if let work =  innerIterators[id]!.next() {
-                            group.addTask { .inner(id, try await work()) }
+                            group.addTask {
+                                continuation.yield(with: await .init { try await work() })
+                                return .inner(id)
+                            }
                             return true
                         } else {
                             return false
@@ -182,8 +189,7 @@ public extension Sequence {
                                     while capacity > 0, addInnerTask(&group, id) {
                                         capacity -= 1
                                     }
-                                case let .inner(id, innerResult):
-                                    continuation.yield(innerResult)
+                                case let .inner(id):
                                     while capacity > 0, addInnerTask(&group, id) {
                                         capacity -= 1
                                     }
@@ -215,7 +221,7 @@ public extension AsyncSequence where Element == Void {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension Sequence where Element == () async -> Void {
+public extension Sequence where Self: Sendable, Element == AsyncElement<Void> {
     func awaitAll(maxConcurrency: Int = .max) async {
         await stream(maxConcurrency: maxConcurrency)
             .waitUntilDone()
@@ -223,8 +229,8 @@ public extension Sequence where Element == () async -> Void {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension Sequence {
-    func awaitAny<R>(maxConcurrency: Int = .max) async -> R? where Element == () async -> R {
+public extension Sequence where Self: Sendable {
+    func awaitAny<R>(maxConcurrency: Int = .max) async -> R? where Element == AsyncElement<R> {
         let stream = stream(maxConcurrency: maxConcurrency)
 
         for await element in stream {
@@ -236,7 +242,7 @@ public extension Sequence {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension Sequence where Element == () async throws -> Void {
+public extension Sequence where Self: Sendable, Element == AsyncThrowingElement<Void> {
     func awaitAll(maxConcurrency: Int = .max) async throws {
         try await stream(maxConcurrency: maxConcurrency)
             .waitUntilDone()
@@ -244,8 +250,8 @@ public extension Sequence where Element == () async throws -> Void {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension Sequence {
-    func awaitAny<R>(maxConcurrency: Int = .max) async throws -> R? where Element == () async throws -> R {
+public extension Sequence where Self: Sendable {
+    func awaitAny<R>(maxConcurrency: Int = .max) async throws -> R? where Element == AsyncThrowingElement<R> {
         let stream = stream(maxConcurrency: maxConcurrency)
 
         for try await element in stream {
@@ -257,13 +263,13 @@ public extension Sequence {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension Sequence {
-    func flattenAwaitAll<S: Sequence>(maxConcurrency: Int = .max) async where Element == () async -> S, S.Element == () async -> Void {
+public extension Sequence where Self: Sendable {
+    func flattenAwaitAll<S: Sequence & Sendable>(maxConcurrency: Int = .max) async where Element == AsyncElement<S>, S.Element == AsyncElement<Void> {
         await flattenStream(maxConcurrency: maxConcurrency)
             .waitUntilDone()
     }
     
-    func flattenAwaitAll<S: Sequence>(maxConcurrency: Int = .max) async throws where Element == () async throws -> S, S.Element == () async throws -> Void {
+    func flattenAwaitAll<S: Sequence & Sendable>(maxConcurrency: Int = .max) async throws where Element == AsyncThrowingElement<S>, S.Element == AsyncThrowingElement<Void> {
         try await flattenStream(maxConcurrency: maxConcurrency)
             .waitUntilDone()
     }

@@ -1,3 +1,4 @@
+import AsyncExtensions
 import CollectionExtensions
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
@@ -76,49 +77,49 @@ public extension Sequence {
     
     func parallelForEach(
         maxConcurrency: Int = .max,
-        _ body: @escaping (Element) async -> Void
-    ) async {
-        await map { element in { await body(element) } }
+        _ body: @escaping @Sendable (Element) async -> Void
+    ) async where Element: Sendable {
+        await map { element in { @Sendable in await body(element) } }
             .awaitAll(maxConcurrency: maxConcurrency)
     }
     
     func parallelForEach(
         maxConcurrency: Int = .max,
-        _ body: @escaping (Element) async throws -> Void
-    ) async throws {
-        try await map { element in { try await body(element) } }
+        _ body: @escaping @Sendable (Element) async throws -> Void
+    ) async throws where Element: Sendable {
+        try await map { element in { @Sendable in try await body(element) } }
             .awaitAll(maxConcurrency: maxConcurrency)
     }
     
     func parallelMap<R>(
         maxConcurrency: Int = .max,
-        _ transform: @escaping (Element) async -> R
-    ) async -> [R] {
-        await map { element in { await transform(element) } }
+        _ transform: @escaping @Sendable (Element) async -> R
+    ) async -> [R] where Element: Sendable {
+        await map { element in { @Sendable in await transform(element) } }
             .awaitAll(maxConcurrency: maxConcurrency)
     }
     
     func parallelMap<R>(
         maxConcurrency: Int = .max,
-        _ transform: @escaping (Element) async throws -> R
-    ) async throws -> [R] {
-        try await map { element in { try await transform(element) } }
+        _ transform: @escaping @Sendable (Element) async throws -> R
+    ) async throws -> [R] where Element: Sendable {
+        try await map { element in { @Sendable in try await transform(element) } }
             .awaitAll(maxConcurrency: maxConcurrency)
     }
     
-    func parallelFlatMap<R: Collection, InnerR>(
+    func parallelFlatMap<R: Collection & Sendable, InnerR>(
         maxConcurrency: Int = .max,
-        _ transform: @escaping (Element) async -> R
-    ) async -> [InnerR] where R.Element == () async -> InnerR {
-        await map { element in { await transform(element) } }
+        _ transform: @escaping @Sendable (Element) async -> R
+    ) async -> [InnerR] where Element: Sendable, R.Element == AsyncElement<InnerR> {
+        await map { element in { @Sendable in await transform(element) } }
             .flattenAwaitAll(maxConcurrency: maxConcurrency)
     }
     
-    func parallelFlatMap<R: Collection, InnerR>(
+    func parallelFlatMap<R: Collection & Sendable, InnerR>(
         maxConcurrency: Int = .max,
-        _ transform: @escaping (Element) async throws -> R
-    ) async throws -> [InnerR] where R.Element == () async throws -> InnerR {
-        try await map { element in { try await transform(element) } }
+        _ transform: @escaping @Sendable (Element) async throws -> R
+    ) async throws -> [InnerR] where Element: Sendable, R.Element == AsyncThrowingElement<InnerR> {
+        try await map { element in { @Sendable in try await transform(element) } }
             .flattenAwaitAll(maxConcurrency: maxConcurrency)
     }
 }
