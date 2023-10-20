@@ -11,7 +11,7 @@ final class TaskSequenceTests: XCTestCase {
         let stream = (0..<50)
             .map { index in
                 { @Sendable in
-                    try! await Task.sleep(timeInterval: 1.0)
+                    try! await Task.sleep(timeInterval: 0.01)
                     return index
                 }
             }
@@ -30,7 +30,7 @@ final class TaskSequenceTests: XCTestCase {
         let stream = (0..<50)
             .map { index in
                 { @Sendable in
-                    try await Task.sleep(timeInterval: 1.0)
+                    try await Task.sleep(timeInterval: 0.01)
                     return index
                 }
             }
@@ -49,12 +49,12 @@ final class TaskSequenceTests: XCTestCase {
         let stream = (0..<50)
             .map { outerIndex in
                 { @Sendable in
-                    try! await Task.sleep(timeInterval: 1.0)
+                    try! await Task.sleep(timeInterval: 0.01)
 
                     return (0..<10)
                         .map { innerIndex in
                             { @Sendable in
-                                try! await Task.sleep(timeInterval: 1.0)
+                                try! await Task.sleep(timeInterval: 0.01)
                                 return "\(outerIndex)-\(innerIndex)"
                             }
                         }
@@ -76,7 +76,7 @@ final class TaskSequenceTests: XCTestCase {
             .map { index in
                 { @Sendable in
                     print("STARTING \(index)")
-                    try! await Task.sleep(timeInterval: 1.0)
+                    try! await Task.sleep(timeInterval: 0.01)
                     print("ENDING \(index)")
                 }
             }
@@ -92,7 +92,7 @@ final class TaskSequenceTests: XCTestCase {
             .map { index in
                 { @Sendable in
                     print("STARTING \(index)")
-                    try await Task.sleep(timeInterval: 1.0)
+                    try await Task.sleep(timeInterval: 0.01)
                     print("ENDING \(index)")
                 }
             }

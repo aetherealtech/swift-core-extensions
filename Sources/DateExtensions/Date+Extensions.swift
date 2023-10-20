@@ -1,3 +1,4 @@
+import CollectionExtensions
 import Foundation
 
 extension Date : Strideable {
@@ -9,32 +10,6 @@ extension Date : Strideable {
 
     public func advanced(by n: TimeInterval) -> Date {
         addingTimeInterval(n)
-    }
-}
-
-public extension Strideable {
-    static func regularIntervals(
-        startingAt start: Self,
-        _ interval: Stride,
-        until limit: Self
-    ) -> StrideTo<Self> {
-        stride(
-            from: start,
-            to: limit,
-            by: interval
-        )
-    }
-
-    static func regularIntervals(
-        startingAt start: Self,
-        _ interval: Stride,
-        count: Int
-    ) -> StrideCount<Self> {
-        stride(
-            from: start,
-            by: interval,
-            count: count
-        )
     }
 }
 

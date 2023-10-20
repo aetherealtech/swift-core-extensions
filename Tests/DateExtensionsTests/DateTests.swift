@@ -1,6 +1,6 @@
 import XCTest
 
-@testable import CoreExtensions
+@testable import DateExtensions
 
 final class DateTests: XCTestCase {
 

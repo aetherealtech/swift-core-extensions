@@ -1,0 +1,45 @@
+{
+  "configurations" : [
+    {
+      "id" : "FA8D3D01-2D07-490A-A657-ABDEE0362E8B",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AsyncCollectionExtensionsTests",
+        "name" : "AsyncCollectionExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AsyncExtensionsTests",
+        "name" : "AsyncExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "CollectionExtensionsTests",
+        "name" : "CollectionExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "DateExtensionsTests",
+        "name" : "DateExtensionsTests"
+      }
+    }
+  ],
+  "version" : 1
+}

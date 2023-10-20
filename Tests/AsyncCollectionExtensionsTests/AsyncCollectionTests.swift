@@ -12,7 +12,7 @@ final class AsyncCollectionTests: XCTestCase {
             .map { index in
                 { @Sendable in
                     print("STARTING \(index)")
-                    try! await Task.sleep(timeInterval: 1.0)
+                    try! await Task.sleep(timeInterval: 0.01)
                     print("ENDING \(index)")
                     
                     return "VALUE: \(index)"
@@ -30,7 +30,7 @@ final class AsyncCollectionTests: XCTestCase {
             .map { index in
                 { @Sendable in
                     print("STARTING \(index)")
-                    try await Task.sleep(timeInterval: 1.0)
+                    try await Task.sleep(timeInterval: 0.01)
                     print("ENDING \(index)")
                     
                     return "VALUE: \(index)"
@@ -47,7 +47,7 @@ final class AsyncCollectionTests: XCTestCase {
         let results = await (0..<50)
             .parallelMap(maxConcurrency: 5) { index in
                 print("PROCESSING: \(index)")
-                try! await Task.sleep(timeInterval: 1.0)
+                try! await Task.sleep(timeInterval: 0.01)
                 return "VALUE: \(index)"
             }
         
@@ -60,13 +60,13 @@ final class AsyncCollectionTests: XCTestCase {
         let results = await (0..<10)
             .parallelFlatMap(maxConcurrency: 5) { outerIndex in
                 print("PROCESSING OUTER: \(outerIndex)")
-                try! await Task.sleep(timeInterval: 1.0)
+                try! await Task.sleep(timeInterval: 0.01)
                 
                 return (0..<10)
                     .map { innerIndex in
                         { @Sendable in
                             print("PROCESSING INNER: \(innerIndex)")
-                            try! await Task.sleep(timeInterval: 1.0)
+                            try! await Task.sleep(timeInterval: 0.01)
                             return "VALUE: \(outerIndex)-\(innerIndex)"
                         }
                     }

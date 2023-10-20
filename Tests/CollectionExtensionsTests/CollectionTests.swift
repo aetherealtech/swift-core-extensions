@@ -1,6 +1,6 @@
 import XCTest
 
-@testable import CoreExtensions
+@testable import CollectionExtensions
 
 final class CollectionTests: XCTestCase {
 

@@ -17,6 +17,32 @@ public func stride<T>(
     )
 }
 
+public extension Strideable {
+    static func regularIntervals(
+        startingAt start: Self,
+        _ interval: Stride,
+        until limit: Self
+    ) -> StrideTo<Self> {
+        stride(
+            from: start,
+            to: limit,
+            by: interval
+        )
+    }
+
+    static func regularIntervals(
+        startingAt start: Self,
+        _ interval: Stride,
+        count: Int
+    ) -> StrideCount<Self> {
+        stride(
+            from: start,
+            by: interval,
+            count: count
+        )
+    }
+}
+
 @frozen
 public struct StrideCount<Element> : Sequence where Element : Strideable {
     public struct StrideCountIterator : IteratorProtocol {

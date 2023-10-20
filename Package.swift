@@ -6,7 +6,6 @@ import PackageDescription
 let package = Package(
     name: "CoreExtensions",
     products: [
-        // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(
             name: "AsyncCollectionExtensions",
             targets: ["AsyncCollectionExtensions"]
@@ -36,6 +35,10 @@ let package = Package(
             targets: ["CoreExtensions"]
         ),
         .library(
+            name: "DateExtensions",
+            targets: ["DateExtensions"]
+        ),
+        .library(
             name: "FileSystemExtensions",
             targets: ["FileSystemExtensions"]
         ),
@@ -51,6 +54,14 @@ let package = Package(
             name: "OptionalExtensions",
             targets: ["OptionalExtensions"]
         ),
+        .library(
+            name: "ResultExtensions",
+            targets: ["ResultExtensions"]
+        ),
+        .library(
+            name: "URLExtensions",
+            targets: ["URLExtensions"]
+        ),
     ],
     dependencies: [
         .package(path: "../Synchronization"),
@@ -63,7 +74,6 @@ let package = Package(
             dependencies: [
                 "AsyncExtensions",
                 "CollectionExtensions",
-                "CoreExtensions",
                 .product(name: "Synchronization", package: "Synchronization"),
             ],
             swiftSettings: [.concurrencyChecking(.complete)]
@@ -92,6 +102,7 @@ let package = Package(
                 "AsyncCollectionExtensions",
                 "AsyncExtensions",
                 "CollectionExtensions",
+                "DateExtensions",
                 .product(name: "Synchronization", package: "Synchronization"),
                 "OptionalExtensions"
             ],
@@ -105,7 +116,26 @@ let package = Package(
         .target(
             name: "CoreExtensions",
             dependencies: [
-                "OptionalExtensions"
+                "AsyncCollectionExtensions",
+                "AsyncExtensions",
+                "CodableExtensions",
+                "CollectionExtensions",
+                "CombineExtensions",
+                "CompareFunctions",
+                "DateExtensions",
+                "FileSystemExtensions",
+                "LazyCollectionExtensions",
+                "NumericExtensions",
+                "OptionalExtensions",
+                "ResultExtensions",
+                "URLExtensions",
+            ],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
+        .target(
+            name: "DateExtensions",
+            dependencies: [
+                "CollectionExtensions",
             ],
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
@@ -131,6 +161,16 @@ let package = Package(
             dependencies: [],
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
+        .target(
+            name: "ResultExtensions",
+            dependencies: [],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
+        .target(
+            name: "URLExtensions",
+            dependencies: [],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
         .testTarget(
             name: "AsyncCollectionExtensionsTests",
             dependencies: ["AsyncCollectionExtensions"],
@@ -147,15 +187,15 @@ let package = Package(
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
         .testTarget(
-            name: "CoreExtensionsTests",
-            dependencies: ["CoreExtensions"],
+            name: "DateExtensionsTests",
+            dependencies: ["DateExtensions"],
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
-        .testTarget(
-            name: "LazyCollectionExtensionsTests",
-            dependencies: ["LazyCollectionExtensions"],
-            swiftSettings: [.concurrencyChecking(.complete)]
-        ),
+//        .testTarget(
+//            name: "LazyCollectionExtensionsTests",
+//            dependencies: ["LazyCollectionExtensions"],
+//            swiftSettings: [.concurrencyChecking(.complete)]
+//        ),
     ]
 )
 

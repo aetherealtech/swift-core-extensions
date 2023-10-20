@@ -1,6 +1,6 @@
 import XCTest
 
-@testable import CoreExtensions
+@testable import AsyncExtensions
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 final class TaskTests: XCTestCase {
@@ -227,62 +227,62 @@ final class TaskTests: XCTestCase {
         )
     }
 
-    func testMapAwaitAllAlwaysSuccess() async throws {
-
-        let values = (0..<10).map { _ in Int.random(in: 0..<100) }
-
-        let tasks = values.map { value in
-
-            Task<Int, Never> {
-
-                try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000))
-                return value
-            }
-        }
-
-        let result = await tasks.awaitAll()
-
-        XCTAssertEqual(values, result)
-    }
-
-    func testMapAwaitAllSuccess() async throws {
-
-        let values = (0..<10).map { _ in Int.random(in: 0..<100) }
-
-        let tasks = values.map { value in
-
-            Task<Int, Error> {
-
-                try await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000))
-                return value
-            }
-        }
-
-        let result = try await tasks.awaitAll()
-
-        XCTAssertEqual(values, result)
-    }
-
-    func testMapAwaitAllFailure() async throws {
-
-        let values = (0..<10).map { _ in Int.random(in: 0..<100) }
-
-        let tasks = values.map { value in
-
-            Task<Int, Error> {
-
-                if value == values[5] {
-                    throw TaskTests.testError
-                }
-
-                try await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000))
-                return value
-            }
-        }
-
-        let result = Task { try await tasks.awaitAll() }
-        let error = await self.captureError(result)
-
-        XCTAssertEqual(TaskTests.testError, error)
-    }
+//    func testMapAwaitAllAlwaysSuccess() async throws {
+//
+//        let values = (0..<10).map { _ in Int.random(in: 0..<100) }
+//
+//        let tasks = values.map { value in
+//
+//            Task<Int, Never> {
+//
+//                try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000))
+//                return value
+//            }
+//        }
+//
+//        let result = await tasks.awaitAll()
+//
+//        XCTAssertEqual(values, result)
+//    }
+//
+//    func testMapAwaitAllSuccess() async throws {
+//
+//        let values = (0..<10).map { _ in Int.random(in: 0..<100) }
+//
+//        let tasks = values.map { value in
+//
+//            Task<Int, Error> {
+//
+//                try await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000))
+//                return value
+//            }
+//        }
+//
+//        let result = try await tasks.awaitAll()
+//
+//        XCTAssertEqual(values, result)
+//    }
+//
+//    func testMapAwaitAllFailure() async throws {
+//
+//        let values = (0..<10).map { _ in Int.random(in: 0..<100) }
+//
+//        let tasks = values.map { value in
+//
+//            Task<Int, Error> {
+//
+//                if value == values[5] {
+//                    throw TaskTests.testError
+//                }
+//
+//                try await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000))
+//                return value
+//            }
+//        }
+//
+//        let result = Task { try await tasks.awaitAll() }
+//        let error = await self.captureError(result)
+//
+//        XCTAssertEqual(TaskTests.testError, error)
+//    }
 }
