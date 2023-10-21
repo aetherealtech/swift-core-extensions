@@ -12,10 +12,10 @@ final class DateTests: XCTestCase {
 
             let interval = TimeInterval.random(in: 0..<10.0)
 
-            let sequence = stride(
-                from: initialFireTime,
-                through: latestFireTime,
-                by: interval
+            let sequence = Date.regularIntervals(
+                startingAt: initialFireTime,
+                interval,
+                until: latestFireTime
             )
 
             let fireTimes = Array(sequence)
@@ -49,10 +49,10 @@ final class DateTests: XCTestCase {
 
             let interval = TimeInterval.random(in: 0..<10.0)
 
-            let sequence = stride(
-                from: initialFireTime,
-                by: interval,
-                count: 20
+            let sequence = Date.regularIntervals(
+                startingAt: initialFireTime,
+                interval,
+                count: count
             )
 
             let fireTimes = Array(sequence)
