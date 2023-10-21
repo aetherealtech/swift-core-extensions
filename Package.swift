@@ -189,7 +189,11 @@ let package = Package(
         ),
         .testTarget(
             name: "DateExtensionsTests",
-            dependencies: ["DateExtensions"],
+            dependencies: [
+                "CollectionExtensions",
+                "DateExtensions",
+                .product(name: "Assertions", package: "Assertions"),
+            ],
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
 //        .testTarget(
