@@ -1,10 +1,11 @@
 import Foundation
 
-struct UnwrappedNil<Wrapped>: LocalizedError {
-    let message: String
-
+public struct UnwrappedNil: LocalizedError {
+    public let message: String
+    public let type: Any.Type
+    
     public var errorDescription: String? {
-        "Attempted to unwrap nil Optional<\(String(describing: Wrapped.self))>: \(message)"
+        "Attempted to unwrap nil Optional<\(String(describing: type))>: \(message)"
     }
 }
 
@@ -14,7 +15,7 @@ public extension Optional {
     }
 
     func require(_ messageIfNil: @autoclosure () -> String) throws -> Wrapped {
-        try require(UnwrappedNil<Wrapped>(message: messageIfNil()))
+        try require(UnwrappedNil(message: messageIfNil(), type: Wrapped.self))
     }
 
     func filter(_ condition: (Wrapped) throws -> Bool) rethrows -> Self {
@@ -91,5 +92,22 @@ public enum Optionals {
         } catch {
             return nil
         }
+    }
+}
+
+public extension Collection {
+    func combine<Wrapped>() -> [Wrapped]? where Element == Wrapped? {
+        var result = [Wrapped]()
+        result.reserveCapacity(count)
+        
+        for value in self {
+            guard let value else {
+                return nil
+            }
+            
+            result.append(value)
+        }
+        
+        return result
     }
 }
