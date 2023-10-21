@@ -77,76 +77,18 @@ public func ?? <T>(optional: T?, defaultValue: () async throws -> T?) async reth
 }
 
 public extension Optional {
-    func combine<R>(_ other: R?) -> (Wrapped, R)? {
-        Optionals.combine(self, other)
+    func combine<each Rs>(_ others: repeat (each Rs)?) -> (Wrapped, repeat each Rs)? {
+        Optionals.combine(self, repeat each others)
     }
 }
 
 public enum Optionals {
-    public static func combine<
-        T1,
-        T2
-    >(
-        _ value1: T1?,
-        _ value2: T2?
-    ) -> (T1, T2)? {
-        if let value1, let value2 {
-            return (value1, value2)
-        } else {
-            return nil
-        }
-    }
-    
-    public static func combine<
-        T1,
-        T2,
-        T3
-    >(
-        _ value1: T1?,
-        _ value2: T2?,
-        _ value3: T3?
-    ) -> (T1, T2, T3)? {
-        if let (value1, value2) = combine(value1, value2), let value3 {
-            return (value1, value2, value3)
-        } else {
-            return nil
-        }
-    }
-    
-    public static func combine<
-        T1,
-        T2,
-        T3,
-        T4
-    >(
-        _ value1: T1?,
-        _ value2: T2?,
-        _ value3: T3?,
-        _ value4: T4?
-    ) -> (T1, T2, T3, T4)? {
-        if let (value1, value2, value3) = combine(value1, value2, value3), let value4 {
-            return (value1, value2, value3, value4)
-        } else {
-            return nil
-        }
-    }
-    
-    public static func combine<
-        T1,
-        T2,
-        T3,
-        T4,
-        T5
-    >(
-        _ value1: T1?,
-        _ value2: T2?,
-        _ value3: T3?,
-        _ value4: T4?,
-        _ value5: T5?
-    ) -> (T1, T2, T3, T4, T5)? {
-        if let (value1, value2, value3, value4) = combine(value1, value2, value3, value4), let value5 {
-            return (value1, value2, value3, value4, value5)
-        } else {
+    public static func combine<each Ts>(
+        _ values: repeat (each Ts)?
+    ) -> (repeat each Ts)? {
+        do {
+            return (repeat try (each values).require(""))
+        } catch {
             return nil
         }
     }

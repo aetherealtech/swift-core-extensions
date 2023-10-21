@@ -9,13 +9,13 @@ public func ??= <T>(lhs: inout T?, rhs: @autoclosure () throws -> T?) rethrows -
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public func ??= <T>(lhs: inout T?, rhs: @autoclosure () async throws -> T) async rethrows -> T {
-    try await lhs.assignIfNil(await rhs())
+public func ??= <T>(lhs: inout T?, rhs: () async throws -> T) async rethrows -> T {
+    try await lhs.assignIfNil(rhs)
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public func ??= <T>(lhs: inout T?, rhs: @autoclosure () async throws -> T?) async rethrows -> T? {
-    try await lhs.assignIfNil(await rhs())
+public func ??= <T>(lhs: inout T?, rhs: () async throws -> T?) async rethrows -> T? {
+    try await lhs.assignIfNil(rhs)
 }
 
 public extension Optional {
@@ -45,7 +45,7 @@ public extension Optional {
     
     @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
     @discardableResult
-    mutating func assignIfNil(_ value: @autoclosure () async throws -> Wrapped) async rethrows -> Wrapped {
+    mutating func assignIfNil(_ value: () async throws -> Wrapped) async rethrows -> Wrapped {
         switch self {
             case .none:
                 let newValue = try await value()
@@ -58,7 +58,7 @@ public extension Optional {
     
     @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
     @discardableResult
-    mutating func assignIfNil(_ value: @autoclosure () async throws -> Wrapped?) async rethrows -> Wrapped? {
+    mutating func assignIfNil(_ value: () async throws -> Wrapped?) async rethrows -> Wrapped? {
         switch self {
             case .none:
                 let newValue = try await value()

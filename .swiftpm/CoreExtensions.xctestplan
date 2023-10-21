@@ -39,6 +39,13 @@
         "identifier" : "DateExtensionsTests",
         "name" : "DateExtensionsTests"
       }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "OptionalExtensionsTests",
+        "name" : "OptionalExtensionsTests"
+      }
     }
   ],
   "version" : 1
