@@ -404,4 +404,366 @@ final class ResultExtensionsTests: XCTestCase {
             try assertEqual(error.details, errorDetails + errorDetailsExtra)
         }
     }
+    
+    func testMapAsyncSuccess() async throws {
+        let result = await Result<String, TestError>.success("5")
+            .mapAsync { Int($0)! }
+        
+        try assertEqual(try result.get(), 5)
+    }
+    
+    func testMapAsyncFailure() async throws {
+        let errorDetails = "Something"
+        
+        let result = await Result<String, TestError>.failure(.init(details: errorDetails))
+            .mapAsync { Int($0)! }
+                
+        try assertThrowsError(try result.get()) { error in
+            guard let error = error as? TestError else {
+                throw Fail("Error should be TestError")
+            }
+            
+            try assertEqual(error.details, errorDetails)
+        }
+    }
+    
+    func testMapErrorAsyncSuccess() async throws {
+        let result = await Result<Int, TestError>.success(5)
+            .mapErrorAsync { _ in TestError(details: "") }
+        
+        try assertEqual(try result.get(), 5)
+    }
+    
+    func testMapErrorAsyncFailure() async throws {
+        let errorDetails = "Something"
+        let errorDetailsExtra = " Else"
+        
+        let result = await Result<String, TestError>.failure(.init(details: errorDetails))
+            .mapErrorAsync { error in TestError(details: error.details + errorDetailsExtra) }
+                
+        try assertThrowsError(try result.get()) { error in
+            guard let error = error as? TestError else {
+                throw Fail("Error should be TestError")
+            }
+            
+            try assertEqual(error.details, errorDetails + errorDetailsExtra)
+        }
+    }
+    
+    func testFlatMapAsyncSuccessSuccess() async throws {
+        let result = await Result<String, TestError>.success("5")
+            .flatMapAsync { string in Result<Int, TestError>.success(Int(string)!) }
+        
+        try assertEqual(try result.get(), 5)
+    }
+    
+    func testFlatMapAsyncSuccessFailure() async throws {
+        let errorDetails = "Something"
+        
+        let result = await Result<String, TestError>.success("5")
+            .flatMapAsync { string in Result<Int, TestError>.failure(.init(details: errorDetails)) }
+        
+        try assertThrowsError(try result.get()) { error in
+            guard let error = error as? TestError else {
+                throw Fail("Error should be TestError")
+            }
+            
+            try assertEqual(error.details, errorDetails)
+        }
+    }
+    
+    func testFlatMapAsyncFailure() async throws {
+        let errorDetails = "Something"
+        
+        let result = await Result<String, TestError>.failure(.init(details: errorDetails))
+            .flatMapAsync { string in Result<Int, TestError>.success(Int(string)!) }
+
+        try assertThrowsError(try result.get()) { error in
+            guard let error = error as? TestError else {
+                throw Fail("Error should be TestError")
+            }
+            
+            try assertEqual(error.details, errorDetails)
+        }
+    }
+    
+    func testFlatMapErrorAsyncSuccessSuccess() async throws {
+        let result = await Result<Int, TestError>.success(5)
+            .flatMapErrorAsync { _ in .failure(TestError(details: "")) }
+        
+        try assertEqual(try result.get(), 5)
+    }
+ 
+    func testTryFlatErrorMapAsyncFailureSuccess() async throws {
+        let errorDetails = "5"
+        
+        let result = await Result<Int, TestError>.failure(.init(details: errorDetails))
+            .flatMapErrorAsync { error in Result<Int, TestError>.success(Int(error.details)!) }
+        
+        try assertEqual(try result.get(), 5)
+    }
+    
+    func testFlatMapErrorAsyncFailureFailure() async throws {
+        let errorDetails = "Something"
+        let errorDetailsExtra = " Else"
+        
+        let result = await Result<String, TestError>.failure(.init(details: errorDetails))
+            .flatMapErrorAsync { error in .failure(TestError(details: error.details + errorDetailsExtra)) }
+        
+        try assertThrowsError(try result.get()) { error in
+            guard let error = error as? TestError else {
+                throw Fail("Error should be TestError")
+            }
+            
+            try assertEqual(error.details, errorDetails + errorDetailsExtra)
+        }
+    }
+    
+    func testCompactMapAsyncSuccessNotNil() async throws {
+        let result = await Result<String, TestError>.success("5")
+            .compactMapAsync(Int.init)
+        
+        try assertEqual(try result?.get(), 5)
+    }
+    
+    func testCompactMapAsyncSuccessNil() async throws {
+        let result = await Result<String, TestError>.success("")
+            .compactMapAsync(Int.init)
+        
+        try assertNil(result)
+    }
+    
+    func testCompactMapAsyncFailure() async throws {
+        let errorDetails = "Something"
+        
+        let result = await Result<String, TestError>.failure(.init(details: errorDetails))
+            .compactMapAsync(Int.init)
+                
+        try assertThrowsError(try result?.get()) { error in
+            guard let error = error as? TestError else {
+                throw Fail("Error should be TestError")
+            }
+            
+            try assertEqual(error.details, errorDetails)
+        }
+    }
+    
+    func testTryMapAsyncSuccessSuccess() async throws {
+        let result = await Result<String, TestError>.success("5")
+            .tryMapAsync { try Int($0) ?? { throw TestError(details: "") }() }
+        
+        try assertEqual(try result.get(), 5)
+    }
+    
+    func testTryMapAsyncSuccessThrows() async throws {
+        let errorDetails = "Something"
+        
+        let result = await Result<String, TestError>.success("")
+            .tryMapAsync { try Int($0) ?? { throw TestError(details: errorDetails) }() }
+        
+        try assertThrowsError(try result.get()) { error in
+            guard let error = error as? TestError else {
+                throw Fail("Error should be TestError")
+            }
+            
+            try assertEqual(error.details, errorDetails)
+        }
+    }
+    
+    func testTryMapAsyncFailure() async throws {
+        let errorDetails = "Something"
+        
+        let result = await Result<String, TestError>.failure(.init(details: errorDetails))
+            .tryMapAsync { try Int($0) ?? { throw TestError(details: "") }() }
+                
+        try assertThrowsError(try result.get()) { error in
+            guard let error = error as? TestError else {
+                throw Fail("Error should be TestError")
+            }
+            
+            try assertEqual(error.details, errorDetails)
+        }
+    }
+    
+    func testTryMapErrorAsyncSuccessSuccess() async throws {
+        let result = await Result<Int, TestError>.success(5)
+            .tryMapErrorAsync { _ in TestError(details: "") }
+        
+        try assertEqual(try result.get(), 5)
+    }
+    
+    func testTryMapErrorAsyncFailureSuccess() async throws {
+        let errorDetails = "Something"
+        let errorDetailsExtra = " Else"
+        
+        let result = await Result<Int, TestError>.failure(.init(details: errorDetails))
+            .tryMapErrorAsync { error in TestError(details: error.details + errorDetailsExtra) }
+        
+        try assertThrowsError(try result.get()) { error in
+            guard let error = error as? TestError else {
+                throw Fail("Error should be TestError")
+            }
+            
+            try assertEqual(error.details, errorDetails + errorDetailsExtra)
+        }
+    }
+    
+    func testTryMapErrorAsyncFailure() async throws {
+        let errorDetails = "Something"
+        
+        let result = await Result<Int, TestError>.failure(.init(details: ""))
+            .tryMapErrorAsync { error -> TestError in throw TestError(details: errorDetails) }
+                
+        try assertThrowsError(try result.get()) { error in
+            guard let error = error as? TestError else {
+                throw Fail("Error should be TestError")
+            }
+            
+            try assertEqual(error.details, errorDetails)
+        }
+    }
+    
+    func testTryCompactMapAsyncSuccessSuccessNotNil() async throws {
+        let result = await Result<String, TestError>.success("5")
+            .tryCompactMapAsync(Int.init)
+        
+        try assertEqual(try result?.get(), 5)
+    }
+    
+    func testTryCompactMapAsyncSuccessSuccessNil() async throws {
+        let result = await Result<String, TestError>.success("")
+            .tryCompactMapAsync(Int.init)
+        
+        try assertNil(result)
+    }
+    
+    func testTryCompactMapAsyncSuccessThrows() async throws {
+        let errorDetails = "Something"
+        
+        let result = await Result<String, TestError>.success("")
+            .tryCompactMapAsync { _ in throw TestError(details: errorDetails) }
+        
+        try assertThrowsError(try result?.get()) { error in
+            guard let error = error as? TestError else {
+                throw Fail("Error should be TestError")
+            }
+            
+            try assertEqual(error.details, errorDetails)
+        }
+    }
+
+    func testTryCompactMapAsyncFailure() async throws {
+        let errorDetails = "Something"
+        
+        let result = await Result<String, TestError>.failure(.init(details: errorDetails))
+            .tryCompactMapAsync(Int.init)
+                
+        try assertThrowsError(try result?.get()) { error in
+            guard let error = error as? TestError else {
+                throw Fail("Error should be TestError")
+            }
+            
+            try assertEqual(error.details, errorDetails)
+        }
+    }
+    
+    func testTryFlatMapAsyncSuccessSuccessSuccess() async throws {
+        let result = await Result<String, TestError>.success("5")
+            .tryFlatMapAsync { string in Result<Int, TestError>.success(Int(string)!) }
+        
+        try assertEqual(try result.get(), 5)
+    }
+    
+    func testTryFlatMapAsyncSuccessFailure() async throws {
+        let errorDetails = "Something"
+        
+        let result = await Result<String, TestError>.success("5")
+            .tryFlatMapAsync { string in Result<Int, TestError>.failure(.init(details: errorDetails)) }
+        
+        try assertThrowsError(try result.get()) { error in
+            guard let error = error as? TestError else {
+                throw Fail("Error should be TestError")
+            }
+            
+            try assertEqual(error.details, errorDetails)
+        }
+    }
+    
+    func testTryFlatMapAsyncSuccessSuccessThrows() async throws {
+        let errorDetails = "Something"
+        
+        let result = await Result<String, TestError>.success("")
+            .tryFlatMapAsync { _ -> Result<Int, TestError> in throw TestError(details: errorDetails) }
+        
+        try assertThrowsError(try result.get()) { error in
+            guard let error = error as? TestError else {
+                throw Fail("Error should be TestError")
+            }
+            
+            try assertEqual(error.details, errorDetails)
+        }
+    }
+
+    func testTryFlatMapAsyncFailure() async throws {
+        let errorDetails = "Something"
+        
+        let result = await Result<String, TestError>.failure(.init(details: errorDetails))
+            .tryFlatMapAsync { string in Result<Int, TestError>.success(Int(string)!) }
+
+        try assertThrowsError(try result.get()) { error in
+            guard let error = error as? TestError else {
+                throw Fail("Error should be TestError")
+            }
+            
+            try assertEqual(error.details, errorDetails)
+        }
+    }
+    
+    func testCatchAsyncSuccess() async throws {
+        let result = await Result<Int, TestError>.success(5)
+            .catchAsync { _ in 6 }
+        
+        try assertEqual(result, 5)
+    }
+    
+    func testCatchAsyncFailure() async throws {
+        let errorDetails = "5"
+        
+        let result = await Result<Int, TestError>.failure(.init(details: errorDetails))
+            .catchAsync { error in Int(errorDetails) ?? 0 }
+        
+        try assertEqual(result, 5)
+    }
+    
+    func testTryCatchAsyncSuccessSuccess() async throws {
+        let result = await Result<Int, TestError>.success(5)
+            .tryCatchAsync { _ in 6 }
+        
+        try assertEqual(try result.get(), 5)
+    }
+
+    func testTryCatchAsyncFailureSuccess() async throws {
+        let errorDetails = "5"
+        
+        let result = await Result<Int, TestError>.failure(.init(details: errorDetails))
+            .tryCatchAsync { error in Int(errorDetails) ?? 0 }
+        
+        try assertEqual(try result.get(), 5)
+    }
+    
+    func testTryCatchAsyncFailureThrows() async throws {
+        let errorDetails = "Something"
+        let errorDetailsExtra = " Else"
+        
+        let result = await Result<Int, TestError>.failure(.init(details: errorDetails))
+            .tryCatchAsync { error in throw TestError(details: error.details + errorDetailsExtra) }
+        
+        try assertThrowsError(try result.get()) { error in
+            guard let error = error as? TestError else {
+                throw Fail("Error should be TestError")
+            }
+            
+            try assertEqual(error.details, errorDetails + errorDetailsExtra)
+        }
+    }
 }
