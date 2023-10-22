@@ -53,6 +53,13 @@
         "identifier" : "ResultExtensionsTests",
         "name" : "ResultExtensionsTests"
       }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "URLExtensionsTests",
+        "name" : "URLExtensionsTests"
+      }
     }
   ],
   "version" : 1

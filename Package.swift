@@ -217,6 +217,17 @@ let package = Package(
             ],
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
+        .testTarget(
+            name: "URLExtensionsTests",
+            dependencies: [
+                "URLExtensions",
+                .product(name: "Assertions", package: "Assertions"),
+            ],
+            resources: [
+                .process("dummy.pdf")
+            ],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
     ]
 )
 

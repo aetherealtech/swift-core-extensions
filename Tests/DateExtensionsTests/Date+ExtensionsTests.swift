@@ -4,7 +4,7 @@ import XCTest
 
 @testable import DateExtensions
 
-final class DateTests: XCTestCase {
+final class DateExtensionsTests: XCTestCase {
     func testDateStrideThrough() throws {
         for _ in 0..<100 {
             let initialFireTime = Date()
