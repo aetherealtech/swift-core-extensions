@@ -46,6 +46,13 @@
         "identifier" : "OptionalExtensionsTests",
         "name" : "OptionalExtensionsTests"
       }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "ResultExtensionsTests",
+        "name" : "ResultExtensionsTests"
+      }
     }
   ],
   "version" : 1

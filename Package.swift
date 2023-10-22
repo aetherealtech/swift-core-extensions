@@ -209,6 +209,14 @@ let package = Package(
             ],
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
+        .testTarget(
+            name: "ResultExtensionsTests",
+            dependencies: [
+                "ResultExtensions",
+                .product(name: "Assertions", package: "Assertions"),
+            ],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
     ]
 )
 
