@@ -1,3 +1,4 @@
+import Assertions
 import XCTest
 
 @testable import AsyncExtensions
@@ -11,29 +12,29 @@ final class TaskTests: XCTestCase {
         userInfo: nil
     )
 
-    let alwaysSuccessMapFunction: (Int) -> String = { value in "\(value)" }
-    let successMapFunction: (Int) throws -> String = { value in "\(value)" }
-    let failureMapFunction: (Int) throws -> String = { _ in throw TaskTests.testError }
+    let alwaysSuccessMapFunction: @Sendable (Int) -> String = { value in "\(value)" }
+    let successMapFunction: @Sendable (Int) throws -> String = { value in "\(value)" }
+    let failureMapFunction: @Sendable (Int) throws -> String = { _ in throw TaskTests.testError }
 
-    let alwaysSuccessFlatMapFunction: (Int) async -> String = { value in "\(value)" }
-    let successFlatMapFunction: (Int) async throws -> String = { value in "\(value)" }
-    let failureFlatMapFunction: (Int) async throws -> String = { _ in throw TaskTests.testError }
+    let alwaysSuccessFlatMapFunction: @Sendable (Int) -> Task<String, Never> = { value in .init { "\(value)" } }
+    let successFlatMapFunction: @Sendable (Int) -> Task<String, Error> = { value in .init { "\(value)" } }
+    let failureFlatMapFunction: @Sendable (Int) -> Task<String, Error> = { _ in .init { throw TaskTests.testError } }
 
     let testValue = 5
     var testMappedValue: String { alwaysSuccessMapFunction(testValue) }
 
-    var alwaysSuccessTask: () -> Task<Int, Never> { { Task {
+    var alwaysSuccessTask: () -> Task<Int, Never> { { [testValue] in Task {
 
-        self.testValue
+        testValue
     } } }
 
-    var successTask: () -> Task<Int, Error> { { Task {
+    var successTask: () -> Task<Int, Error> { { [testValue] in Task {
 
-        self.testValue
+        testValue
     } } }
 
     var failureTask: () -> Task<Int, Error> { { Task {
-
+        
         throw TaskTests.testError
     } } }
 
@@ -73,8 +74,7 @@ final class TaskTests: XCTestCase {
         let task = failureTask()
         let mappedTask = task.map(alwaysSuccessMapFunction)
 
-        let actualError = await captureError(mappedTask)
-        XCTAssertEqual(TaskTests.testError, actualError)
+        try await assertThrowsError(expectedError: Self.testError) { try await mappedTask.value }
     }
 
     func testMapWithMapErrorSuccess() async throws {
@@ -83,7 +83,7 @@ final class TaskTests: XCTestCase {
         let mappedTask = task.map(successMapFunction)
 
         let result = try await mappedTask.value
-        XCTAssertEqual(testMappedValue, result)
+        try assertEqual(testMappedValue, result)
     }
 
     func testMapWithMapErrorMapFailure() async throws {
@@ -91,8 +91,7 @@ final class TaskTests: XCTestCase {
         let task = alwaysSuccessTask()
         let mappedTask = task.map(failureMapFunction)
 
-        let actualError = await captureError(mappedTask)
-        XCTAssertEqual(TaskTests.testError, actualError)
+        try await assertThrowsError(expectedError: Self.testError) { try await mappedTask.value }
     }
 
     func testMapWithSourceAndMapErrorSuccess() async throws {
@@ -101,7 +100,7 @@ final class TaskTests: XCTestCase {
         let mappedTask = task.map(successMapFunction)
 
         let result = try await mappedTask.value
-        XCTAssertEqual(testMappedValue, result)
+        try assertEqual(testMappedValue, result)
     }
 
     func testMapWithSourceAndMapErrorSourceFailure() async throws {
@@ -109,8 +108,7 @@ final class TaskTests: XCTestCase {
         let task = failureTask()
         let mappedTask = task.map(successMapFunction)
 
-        let actualError = await captureError(mappedTask)
-        XCTAssertEqual(TaskTests.testError, actualError)
+        try await assertThrowsError(expectedError: Self.testError) { try await mappedTask.value }
     }
 
     func testMapWithSourceAndMapErrorMapFailure() async throws {
@@ -118,17 +116,16 @@ final class TaskTests: XCTestCase {
         let task = successTask()
         let mappedTask = task.map(failureMapFunction)
 
-        let actualError = await captureError(mappedTask)
-        XCTAssertEqual(TaskTests.testError, actualError)
+        try await assertThrowsError(expectedError: Self.testError) { try await mappedTask.value }
     }
 
-    func testFlatMap() async {
+    func testFlatMap() async throws {
 
         let task = alwaysSuccessTask()
         let mappedTask = task.flatMap(alwaysSuccessFlatMapFunction)
 
         let result = await mappedTask.value
-        XCTAssertEqual(testMappedValue, result)
+        try assertEqual(testMappedValue, result)
     }
 
     func testFlatMapWithSourceErrorSuccess() async throws {
@@ -137,7 +134,7 @@ final class TaskTests: XCTestCase {
         let mappedTask = task.flatMap(alwaysSuccessFlatMapFunction)
 
         let result = try await mappedTask.value
-        XCTAssertEqual(testMappedValue, result)
+        try assertEqual(testMappedValue, result)
     }
 
     func testFlatMapWithSourceErrorFailure() async throws {
@@ -145,8 +142,7 @@ final class TaskTests: XCTestCase {
         let task = failureTask()
         let mappedTask = task.flatMap(alwaysSuccessFlatMapFunction)
 
-        let actualError = await captureError(mappedTask)
-        XCTAssertEqual(TaskTests.testError, actualError)
+        try await assertThrowsError(expectedError: Self.testError) { try await mappedTask.value }
     }
 
     func testFlatMapWithFlatMapErrorSuccess() async throws {
@@ -155,7 +151,7 @@ final class TaskTests: XCTestCase {
         let mappedTask = task.flatMap(successFlatMapFunction)
 
         let result = try await mappedTask.value
-        XCTAssertEqual(testMappedValue, result)
+        try assertEqual(testMappedValue, result)
     }
 
     func testFlatMapWithFlatMapErrorFlatMapFailure() async throws {
@@ -163,8 +159,7 @@ final class TaskTests: XCTestCase {
         let task = alwaysSuccessTask()
         let mappedTask = task.flatMap(failureFlatMapFunction)
 
-        let actualError = await captureError(mappedTask)
-        XCTAssertEqual(TaskTests.testError, actualError)
+        try await assertThrowsError(expectedError: Self.testError) { try await mappedTask.value }
     }
 
     func testFlatMapWithSourceAndFlatMapErrorSuccess() async throws {
@@ -173,7 +168,7 @@ final class TaskTests: XCTestCase {
         let mappedTask = task.flatMap(successFlatMapFunction)
 
         let result = try await mappedTask.value
-        XCTAssertEqual(testMappedValue, result)
+        try assertEqual(testMappedValue, result)
     }
 
     func testFlatMapWithSourceAndFlatMapErrorSourceFailure() async throws {
@@ -181,8 +176,7 @@ final class TaskTests: XCTestCase {
         let task = failureTask()
         let mappedTask = task.flatMap(successFlatMapFunction)
 
-        let actualError = await captureError(mappedTask)
-        XCTAssertEqual(TaskTests.testError, actualError)
+        try await assertThrowsError(expectedError: Self.testError) { try await mappedTask.value }
     }
 
     func testFlatMapWithSourceAndFlatMapErrorFlatMapFailure() async throws {
@@ -190,17 +184,83 @@ final class TaskTests: XCTestCase {
         let task = successTask()
         let mappedTask = task.flatMap(failureFlatMapFunction)
 
-        let actualError = await captureError(mappedTask)
-        XCTAssertEqual(TaskTests.testError, actualError)
+        try await assertThrowsError(expectedError: Self.testError) { try await mappedTask.value }
     }
 
     func testCombine() async throws {
+        
+        let results = (0, "1", "2" as Character)
+        
+        let tasks = (
+            Task<Int, Never> { try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000)); return results.0 },
+            Task<String, Never> { try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000)); return results.1 },
+            Task<Character, Never> { try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000)); return results.2 }
+        )
+
+        let combinedTask = Task.combine(
+            tasks.0,
+            tasks.1,
+            tasks.2
+        )
+        
+        let result = await combinedTask.value
+        
+        try assertTrue(result.0 == results.0 &&
+                      result.1 == results.1 &&
+                      result.2 == results.2
+        )
+    }
+    
+    func testCombineThrowingNoErrors() async throws {
+        
+        let results = (0, "1", "2" as Character)
+        
+        let tasks = (
+            Task<Int, Error> { try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000)); return results.0 },
+            Task<String, Error> { try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000)); return results.1 },
+            Task<Character, Error> { try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000)); return results.2 }
+        )
+
+        let combinedTask = Task.combineThrowing(
+            tasks.0,
+            tasks.1,
+            tasks.2
+        )
+        
+        let result = try await combinedTask.value
+        
+        try assertTrue(result.0 == results.0 &&
+                      result.1 == results.1 &&
+                      result.2 == results.2
+        )
+    }
+    
+    func testCombineThrowingErrors() async throws {
+        
+        let results = (0, "1", "2" as Character)
+        
+        let tasks = (
+            Task<Int, Error> { try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000)); return results.0 },
+            Task<String, Error> { try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000)); throw Self.testError },
+            Task<Character, Error> { try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000)); return results.2 }
+        )
+
+        let combinedTask = Task.combineThrowing(
+            tasks.0,
+            tasks.1,
+            tasks.2
+        )
+        
+        try await assertThrowsError(expectedError: Self.testError) { try await combinedTask.value }
+    }
+    
+    func testCombineSequence() async throws {
 
         let results = (0..<5).map { index in
 
             "Task \(index)"
         }
-
+ 
         let tasks = results.map { result in
 
             Task<String, Never> {
@@ -210,21 +270,11 @@ final class TaskTests: XCTestCase {
             }
         }
 
-        let combinedTask = tasks[0].combine(
-            tasks[1],
-            tasks[2],
-            tasks[3],
-            tasks[4]
-        )
+        let combinedTask = tasks.combine()
 
         let result = await combinedTask.value
 
-        XCTAssertTrue(result.0 == results[0] &&
-            result.1 == results[1] &&
-            result.2 == results[2] &&
-            result.3 == results[3] &&
-            result.4 == results[4]
-        )
+        try assertTrue(result == results)
     }
 
 //    func testMapAwaitAllAlwaysSuccess() async throws {

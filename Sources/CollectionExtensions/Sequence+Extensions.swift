@@ -49,7 +49,11 @@ public extension Sequence {
     }
     
     func sorted<R: Comparable>(by transform: (Element) -> R) -> [Element] {
-        sorted(by: transform, using: <)
+        sorted { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: transform) }
+    }
+    
+    func sorted<each Rs: Comparable>(by transforms: repeat (Element) -> each Rs) -> [Element] {
+        sorted { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: repeat each transforms) }
     }
     
     func sorted<R>(by transform: (Element) -> R, using compare: CompareFunction<R>) -> [Element] {
@@ -70,58 +74,6 @@ public extension Sequence {
     
     func sorted<R: Comparable & Equatable, Transforms: Sequence>(by transforms: Transforms) -> [Element] where Transforms.Element == (Element) -> R {
         sorted { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: transforms) }
-    }
-    
-    func sorted<
-        R1: Comparable & Equatable,
-        R2: Comparable & Equatable
-    >(
-        by transform1: (Element) -> R1,
-        by transform2: (Element) -> R2
-    ) -> [Element] {
-        sorted { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: transform1, transform2) }
-    }
-    
-    func sorted<
-        R1: Comparable & Equatable,
-        R2: Comparable & Equatable,
-        R3: Comparable & Equatable
-    >(
-        by transform1: (Element) -> R1,
-        by transform2: (Element) -> R2,
-        by transform3: (Element) -> R3
-    ) -> [Element] {
-        sorted { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: transform1, transform2, transform3) }
-    }
-    
-    func sorted<
-        R1: Comparable & Equatable,
-        R2: Comparable & Equatable,
-        R3: Comparable & Equatable,
-        R4: Comparable & Equatable
-    >(
-        by transform1: (Element) -> R1,
-        by transform2: (Element) -> R2,
-        by transform3: (Element) -> R3,
-        by transform4: (Element) -> R4
-    ) -> [Element] {
-        sorted { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: transform1, transform2, transform3, transform4) }
-    }
-    
-    func sorted<
-        R1: Comparable & Equatable,
-        R2: Comparable & Equatable,
-        R3: Comparable & Equatable,
-        R4: Comparable & Equatable,
-        R5: Comparable & Equatable
-    >(
-        by transform1: (Element) -> R1,
-        by transform2: (Element) -> R2,
-        by transform3: (Element) -> R3,
-        by transform4: (Element) -> R4,
-        by transform5: (Element) -> R5
-    ) -> [Element] {
-        sorted { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: transform1, transform2, transform3, transform4, transform5) }
     }
     
     func erase() -> AnySequence<Element> {

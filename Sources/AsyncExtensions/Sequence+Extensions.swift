@@ -1,4 +1,5 @@
 import Foundation
+import ResultExtensions
 
 private enum FlattenResult<R: Sequence & Sendable, InnerR>: Sendable {
     case outer(R)
@@ -95,7 +96,7 @@ public extension Sequence where Self: Sendable {
                     var innerIterators: [UUID: R.Iterator] = [:]
                     
                     let addInnerTask: (inout TaskGroup<FlattenResult<R, InnerR>>, UUID) -> Bool = { group, id in
-                        if let work =  innerIterators[id]!.next() {
+                        if let work = innerIterators[id]!.next() {
                             group.addTask {
                                 continuation.yield(await work())
                                 return .inner(id)

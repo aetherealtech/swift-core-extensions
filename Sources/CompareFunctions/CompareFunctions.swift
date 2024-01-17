@@ -79,137 +79,42 @@ public func compare<T, R: Comparable & Equatable, Transforms: Sequence>(
     )
 }
 
-public func compare<
-    T,
-    R1: Comparable & Equatable,
-    R2: Comparable & Equatable
->(
-    _ lhs: T,
-    _ rhs: T,
-    by transform1: (T) -> R1,
-    _ transform2: (T) -> R2
-) -> ComparisonResult {
-    var result = compare(lhs, rhs, by: transform1)
-    if result != .orderedSame {
-        return result
-    }
+private struct CompareShortCircuit: Error {
+    let result: ComparisonResult
     
-    result = compare(lhs, rhs, by: transform2)
-    if result != .orderedSame {
-        return result
+    static func tryCompare<T, R: Comparable & Equatable>(
+        _ lhs: T,
+        _ rhs: T,
+        by transform: (T) -> R
+    ) throws -> ComparisonResult {
+        let result = compare(
+            lhs,
+            rhs,
+            by: transform
+        )
+        
+        if result != .orderedSame {
+            throw CompareShortCircuit(result: result)
+        }
+        
+        return .orderedSame
     }
-    
-    return .orderedSame
 }
 
 public func compare<
     T,
-    R1: Comparable & Equatable,
-    R2: Comparable & Equatable,
-    R3: Comparable & Equatable
+    each Rs: Comparable & Equatable
 >(
     _ lhs: T,
     _ rhs: T,
-    by transform1: (T) -> R1,
-    _ transform2: (T) -> R2,
-    _ transform3: (T) -> R3
+    by transforms: repeat (T) -> each Rs
 ) -> ComparisonResult {
-    var result = compare(lhs, rhs, by: transform1)
-    if result != .orderedSame {
-        return result
+    do {
+        let _ = (repeat try CompareShortCircuit.tryCompare(lhs, rhs, by: each transforms))
+    } catch {
+        return (error as! CompareShortCircuit).result
     }
-    
-    result = compare(lhs, rhs, by: transform2)
-    if result != .orderedSame {
-        return result
-    }
-    
-    result = compare(lhs, rhs, by: transform3)
-    if result != .orderedSame {
-        return result
-    }
-    
-    return .orderedSame
-}
 
-public func compare<
-    T,
-    R1: Comparable & Equatable,
-    R2: Comparable & Equatable,
-    R3: Comparable & Equatable,
-    R4: Comparable & Equatable
->(
-    _ lhs: T,
-    _ rhs: T,
-    by transform1: (T) -> R1,
-    _ transform2: (T) -> R2,
-    _ transform3: (T) -> R3,
-    _ transform4: (T) -> R4
-) -> ComparisonResult {
-    var result = compare(lhs, rhs, by: transform1)
-    if result != .orderedSame {
-        return result
-    }
-    
-    result = compare(lhs, rhs, by: transform2)
-    if result != .orderedSame {
-        return result
-    }
-    
-    result = compare(lhs, rhs, by: transform3)
-    if result != .orderedSame {
-        return result
-    }
-    
-    result = compare(lhs, rhs, by: transform4)
-    if result != .orderedSame {
-        return result
-    }
-    
-    return .orderedSame
-}
-
-public func compare<
-    T,
-    R1: Comparable & Equatable,
-    R2: Comparable & Equatable,
-    R3: Comparable & Equatable,
-    R4: Comparable & Equatable,
-    R5: Comparable & Equatable
->(
-    _ lhs: T,
-    _ rhs: T,
-    by transform1: (T) -> R1,
-    _ transform2: (T) -> R2,
-    _ transform3: (T) -> R3,
-    _ transform4: (T) -> R4,
-    _ transform5: (T) -> R5
-) -> ComparisonResult {
-    var result = compare(lhs, rhs, by: transform1)
-    if result != .orderedSame {
-        return result
-    }
-    
-    result = compare(lhs, rhs, by: transform2)
-    if result != .orderedSame {
-        return result
-    }
-    
-    result = compare(lhs, rhs, by: transform3)
-    if result != .orderedSame {
-        return result
-    }
-    
-    result = compare(lhs, rhs, by: transform4)
-    if result != .orderedSame {
-        return result
-    }
-    
-    result = compare(lhs, rhs, by: transform5)
-    if result != .orderedSame {
-        return result
-    }
-    
     return .orderedSame
 }
 

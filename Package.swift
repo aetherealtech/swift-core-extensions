@@ -68,8 +68,6 @@ let package = Package(
         .package(path: "../Synchronization"),
     ],
     targets: [
-        // Targets are the basic building blocks of a package. A target can define a module or a test suite.
-        // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
             name: "AsyncCollectionExtensions",
             dependencies: [
@@ -81,7 +79,9 @@ let package = Package(
         ),
         .target(
             name: "AsyncExtensions",
-            dependencies: [],
+            dependencies: [
+                "ResultExtensions",
+            ],
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
         .target(
@@ -179,12 +179,18 @@ let package = Package(
         ),
         .testTarget(
             name: "AsyncExtensionsTests",
-            dependencies: ["AsyncExtensions"],
+            dependencies: [
+                "AsyncExtensions",
+                .product(name: "Assertions", package: "Assertions"),
+            ],
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
         .testTarget(
             name: "CollectionExtensionsTests",
-            dependencies: ["CollectionExtensions"],
+            dependencies: [
+                "CollectionExtensions",
+                .product(name: "Assertions", package: "Assertions"),
+            ],
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
         .testTarget(

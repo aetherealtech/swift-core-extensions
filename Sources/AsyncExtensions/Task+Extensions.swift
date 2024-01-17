@@ -112,37 +112,35 @@ fileprivate func withTimeout<R: Sendable>(
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-extension Task {
-    public func finish() async throws -> Void where Success == Void, Failure == Error {
-
+extension Task where Success == Void, Failure == Error {
+    public func finish() async throws {
         _ = try await value
     }
+}
 
-    public func finish() async -> Void where Success == Void, Failure == Never {
-
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+extension Task where Success == Void, Failure == Never {
+    public func finish() async {
         _ = await value
     }
+}
 
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+extension Task {
     public func map<Result>(_ transform: @escaping @Sendable (Success) throws -> Result) -> Task<Result, Error> {
-
-        Task<Result, Error> {
-
+        .init {
             try transform(try await self.value)
         }
     }
 
     public func map<Result>(_ transform: @escaping @Sendable (Success) -> Result) -> Task<Result, Error> where Failure == Error {
-
-        Task<Result, Error> {
-
+        .init {
             transform(try await self.value)
         }
     }
 
     public func map<Result>(_ transform: @escaping @Sendable (Success) -> Result) -> Task<Result, Never> where Failure == Never {
-
-        Task<Result, Never> {
-
+        .init {
             transform(await self.value)
         }
     }
@@ -150,118 +148,148 @@ extension Task {
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 extension Task {
-
-    public func flatMap<Result>(_ transform: @escaping @Sendable (Success) async throws -> Result) -> Task<Result, Error> {
-
-        Task<Result, Error> {
-
-            try await transform(try await self.value)
+    public func flatten<InnerSuccess, InnerFailure: Error>() -> Task<InnerSuccess, Error> where Success == Task<InnerSuccess, InnerFailure> {
+        .init {
+            try await value.value
         }
     }
-
-    public func flatMap<Result>(_ transform: @escaping @Sendable (Success) async -> Result) -> Task<Result, Error> where Failure == Error {
-
-        Task<Result, Error> {
-
-            await transform(try await self.value)
+    
+    public func flatten<InnerSuccess>() -> Task<InnerSuccess, Never> where Success == Task<InnerSuccess, Never>, Failure == Never {
+        .init {
+            await value.value
         }
     }
-
-    public func flatMap<Result>(_ transform: @escaping @Sendable (Success) async -> Result) -> Task<Result, Never> where Failure == Never {
-
-        Task<Result, Never> {
-
-            await transform(await self.value)
-        }
+    
+    public func flatMap<Result, ResultFailure: Error>(_ transform: @escaping @Sendable (Success) -> Task<Result, ResultFailure>) -> Task<Result, Error> {
+        map(transform)
+            .flatten()
+    }
+    
+    public func flatMap<Result>(_ transform: @escaping @Sendable (Success) -> Task<Result, Never>) -> Task<Result, Never> where Failure == Never {
+        map(transform)
+            .flatten()
     }
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 extension Task {
+    func combineThrowing<each Successes, each Failures>(
+        _ tasks: repeat Task<each Successes, each Failures>
+    ) -> Task<(Success, repeat each Successes), Error> {
+        Task<Void, Never>.combineThrowing(
+            self,
+            repeat each tasks
+        )
+    }
+}
 
-    public func combine<Other, OtherFailure>(
-        _ other: Task<Other, OtherFailure>
-    ) -> Task<(Success, Other), Error> {
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+extension Task where Failure == Never {
+    func combine<each Successes>(
+        _ tasks: repeat Task<each Successes, Never>
+    ) -> Task<(Success, repeat each Successes), Never> {
+        Task<Void, Never>.combine(
+            self,
+            repeat each tasks
+        )
+    }
+}
 
-        Task<(Success, Other), Error> {
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+extension Task where Success == Void {
+    func combineThrowing<each Failures>(
+        _ tasks: repeat Task<Void, each Failures>
+    ) -> Task<Void, Error> {
+        Task<Void, Never>.combineThrowing(
+            self,
+            repeat each tasks
+        )
+    }
+}
 
-            (try await self.value, try await other.value)
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+extension Task where Success == Void, Failure == Never {
+    func combine(
+        _ tasks: Task<Void, Never>...
+    ) -> Task<Void, Never> {
+        Task<Void, Never>.combine(
+            [[self], tasks].flatMap { $0 }
+        )
+    }
+    
+    func combine(
+        _ tasks: some Sequence<Task<Void, Never>> & Sendable
+    ) -> Task<Void, Never> {
+        Task<Void, Never>.combine(
+            [[self], Array(tasks)].flatMap { $0 }
+        )
+    }
+}
+
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+public extension Task where Success == Void, Failure == Never {
+    static func combineThrowing<each Successes, each Failures>(
+        _ tasks: repeat Task<each Successes, each Failures>
+    ) -> Task<(repeat each Successes), Error> {
+        .init {
+            (repeat try await (each tasks).value)
         }
     }
-
-    public func combine<Other1, OtherFailure1, Other2, OtherFailure2>(
-        _ other1: Task<Other1, OtherFailure1>,
-        _ other2: Task<Other2, OtherFailure2>
-    ) -> Task<(Success, Other1, Other2), Error> {
-
-        self.combine(other1)
-                .combine(other2)
-                .map { (first, last) in (first.0, first.1, last) }
-    }
-
-    public func combine<Other1, OtherFailure1, Other2, OtherFailure2, Other3, OtherFailure3>(
-        _ other1: Task<Other1, OtherFailure1>,
-        _ other2: Task<Other2, OtherFailure2>,
-        _ other3: Task<Other3, OtherFailure3>
-    ) -> Task<(Success, Other1, Other2, Other3), Error> {
-
-        self.combine(other1, other2)
-                .combine(other3)
-                .map { (first, last) in (first.0, first.1, first.2, last) }
-    }
-
-    public func combine<Other1, OtherFailure1, Other2, OtherFailure2, Other3, OtherFailure3, Other4, OtherFailure4>(
-        _ other1: Task<Other1, OtherFailure1>,
-        _ other2: Task<Other2, OtherFailure2>,
-        _ other3: Task<Other3, OtherFailure3>,
-        _ other4: Task<Other4, OtherFailure4>
-    ) -> Task<(Success, Other1, Other2, Other3, Other4), Error> {
-
-        self.combine(other1, other2, other3)
-                .combine(other4)
-                .map { (first, last) in (first.0, first.1, first.2, first.3, last) }
-    }
-
-    public func combine<Other>(
-        _ other: Task<Other, Never>
-    ) -> Task<(Success, Other), Never> where Failure == Never {
-
-        Task<(Success, Other), Never> {
-
-            (await self.value, await other.value)
+    
+    static func combineThrowing<each Failures>(
+        _ tasks: repeat Task<Void, each Failures>
+    ) -> Task<Void, Error> {
+        .init {
+            (repeat try await (each tasks).value)
         }
     }
-
-    public func combine<Other1, Other2>(
-        _ other1: Task<Other1, Never>,
-        _ other2: Task<Other2, Never>
-    ) -> Task<(Success, Other1, Other2), Never> where Failure == Never {
-
-        self.combine(other1)
-                .combine(other2)
-                .map { (first, last) in (first.0, first.1, last) }
+    
+    static func combine<each Successes>(
+        _ tasks: repeat Task<each Successes, Never>
+    ) -> Task<(repeat each Successes), Never> {
+        .init {
+            (repeat await (each tasks).value)
+        }
     }
-
-    public func combine<Other1, Other2, Other3>(
-        _ other1: Task<Other1, Never>,
-        _ other2: Task<Other2, Never>,
-        _ other3: Task<Other3, Never>
-    ) -> Task<(Success, Other1, Other2, Other3), Never> where Failure == Never {
-
-        self.combine(other1, other2)
-                .combine(other3)
-                .map { (first, last) in (first.0, first.1, first.2, last) }
+    
+    static func combine(
+        _ tasks: Task<Void, Never>...
+    ) -> Task<Void, Never> {
+        combine(tasks)
     }
+    
+    static func combine(
+        _ tasks: some Sequence<Task<Void, Never>> & Sendable
+    ) -> Task<Void, Never> {
+        .init {
+            for task in tasks { await task.value }
+        }
+    }
+}
 
-    public func combine<Other1, Other2, Other3, Other4>(
-        _ other1: Task<Other1, Never>,
-        _ other2: Task<Other2, Never>,
-        _ other3: Task<Other3, Never>,
-        _ other4: Task<Other4, Never>
-    ) -> Task<(Success, Other1, Other2, Other3, Other4), Never> where Failure == Never {
-
-        self.combine(other1, other2, other3)
-                .combine(other4)
-                .map { (first, last) in (first.0, first.1, first.2, first.3, last) }
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+public extension Sequence where Self: Sendable {
+    func combine<Success>() -> Task<[Success], Error> where Element == Task<Success, Error> {
+        .init {
+            var results = [Success]()
+            
+            for task in self {
+                results.append(try await task.value)
+            }
+            
+            return results
+        }
+    }
+    
+    func combine<Success>() -> Task<[Success], Never> where Element == Task<Success, Never> {
+        .init {
+            var results = [Success]()
+            
+            for task in self {
+                results.append(await task.value)
+            }
+            
+            return results
+        }
     }
 }

@@ -23,13 +23,11 @@ public extension Collection {
     func contains(_ element: Element, by compare: SimpleCompareFunction<Element>) -> Bool {
         contains { otherElement in compare(element, otherElement) }
     }
-    
-    func cartesianProduct<Other: Collection>(with other: Other) -> [(Element, Other.Element)] {
-        flatMap { element in
-            other.map { otherElement in
-                (element, otherElement)
-            }
-        }
+
+    func cartesianProduct<each Others: Collection>(
+        with others: repeat each Others
+    ) -> [(Element, repeat (each Others).Element)] {
+        Collections.cartesianProduct(self, repeat each others)
     }
     
     func indices(where condition: (Element) -> Bool) -> [Index] {
@@ -56,6 +54,82 @@ public extension Collection {
         let elementsToFind = elementsToFind.store(in: Array.self)
         
         return indices { element in elementsToFind.contains(element, by: compare) }
+    }
+}
+
+private enum PackNormalizer<T, R> {
+    typealias Result = R
+    
+    static func normalize(_ value: T, result: R) -> R {
+        result
+    }
+}
+
+private extension Int {
+    mutating func postIncrement() -> Int {
+        let result = self
+        self += 1
+        return result
+    }
+}
+
+private func tupleToArray<each Ts>(_ values: repeat each Ts) -> [Any] {
+    var result = [Any]()
+    
+    repeat (result.append(each values))
+    
+    return result
+}
+
+private func arrayToTuple<each Ts>(_ values: [Any]) -> (repeat each Ts) {
+    var index = 0
+    
+    return (repeat values[index.postIncrement()] as! each Ts)
+}
+
+public enum Collections {
+    static func cartesianProduct<each C: Collection>(
+        _ collections: repeat each C
+    ) -> [(repeat (each C).Element)] {
+        var erasedCollections = [[Any]]()
+        
+        repeat (erasedCollections.append(.init(each collections)))
+        
+        let erasedResult = cartesianProduct(erasedCollections)
+        
+        return erasedResult
+            .map { erasedValue in arrayToTuple(erasedValue) }
+    }
+    
+    private static func cartesianProduct<Element>(
+        _ collections: [[Element]]
+    ) -> [[Element]] {
+        var result = [[Element]]()
+        
+        let count = collections
+            .map(\.count)
+            .reduce(1, *)
+        
+        for resultIndex in 0..<count {
+            let indices = collections.indices
+                .map { outerIndex in
+                    let innerCount = collections.suffix(from: outerIndex + 1)
+                        .map(\.count)
+                        .reduce(1, *)
+                    
+                    return (resultIndex / innerCount) % collections[outerIndex].count
+                }
+            
+            let element = indices
+                .enumerated()
+                .map { collectionIndex, index in
+                    collections[collectionIndex][index]
+                }
+            
+            result.append(element)
+        }
+        
+        return result
     }
 }
 
@@ -370,7 +444,13 @@ public extension RandomAccessCollection where Self: MutableCollection {
     }
     
     mutating func sort<R: Comparable>(by transform: (Element) -> R) {
-        sort(by: transform, using: <)
+        sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: transform) }
+    }
+    
+    mutating func sort<each Rs: Comparable>(
+        by transforms: repeat (Element) -> each Rs
+    ) {
+        sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: repeat each transforms) }
     }
     
     mutating func sort<R>(by transform: (Element) -> R, using compare: CompareFunction<R>) {
