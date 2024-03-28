@@ -1,4 +1,4 @@
-// swift-tools-version:5.9
+// swift-tools-version:5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -64,8 +64,8 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../Assertions"),
-        .package(path: "../Synchronization"),
+        .package(url: "https://github.com/aetherealtech/swift-assertions", branch: "master"),
+        .package(url: "https://github.com/aetherealtech/swift-synchronization", branch: "master"),
     ],
     targets: [
         .target(
@@ -73,7 +73,7 @@ let package = Package(
             dependencies: [
                 "AsyncExtensions",
                 "CollectionExtensions",
-                .product(name: "Synchronization", package: "Synchronization"),
+                .product(name: "Synchronization", package: "swift-synchronization"),
             ],
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
@@ -104,7 +104,7 @@ let package = Package(
                 "AsyncExtensions",
                 "CollectionExtensions",
                 "DateExtensions",
-                .product(name: "Synchronization", package: "Synchronization"),
+                .product(name: "Synchronization", package: "swift-synchronization"),
                 "OptionalExtensions"
             ],
             swiftSettings: [.concurrencyChecking(.complete)]
@@ -181,7 +181,7 @@ let package = Package(
             name: "AsyncExtensionsTests",
             dependencies: [
                 "AsyncExtensions",
-                .product(name: "Assertions", package: "Assertions"),
+                .product(name: "Assertions", package: "swift-assertions"),
             ],
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
@@ -189,7 +189,7 @@ let package = Package(
             name: "CollectionExtensionsTests",
             dependencies: [
                 "CollectionExtensions",
-                .product(name: "Assertions", package: "Assertions"),
+                .product(name: "Assertions", package: "swift-assertions"),
             ],
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
@@ -198,7 +198,7 @@ let package = Package(
             dependencies: [
                 "CollectionExtensions",
                 "DateExtensions",
-                .product(name: "Assertions", package: "Assertions"),
+                .product(name: "Assertions", package: "swift-assertions"),
             ],
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
@@ -211,7 +211,7 @@ let package = Package(
             name: "OptionalExtensionsTests",
             dependencies: [
                 "OptionalExtensions",
-                .product(name: "Assertions", package: "Assertions"),
+                .product(name: "Assertions", package: "swift-assertions"),
             ],
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
@@ -219,7 +219,7 @@ let package = Package(
             name: "ResultExtensionsTests",
             dependencies: [
                 "ResultExtensions",
-                .product(name: "Assertions", package: "Assertions"),
+                .product(name: "Assertions", package: "swift-assertions"),
             ],
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
@@ -227,7 +227,7 @@ let package = Package(
             name: "URLExtensionsTests",
             dependencies: [
                 "URLExtensions",
-                .product(name: "Assertions", package: "Assertions"),
+                .product(name: "Assertions", package: "swift-assertions"),
             ],
             resources: [
                 .process("dummy.pdf")

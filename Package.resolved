@@ -1,12 +1,30 @@
 {
   "pins" : [
     {
+      "identity" : "swift-assertions",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/aetherealtech/swift-assertions",
+      "state" : {
+        "branch" : "master",
+        "revision" : "a0c00dd92e5e7d010101643b54d0720a05f8542f"
+      }
+    },
+    {
       "identity" : "swift-custom-dump",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-custom-dump",
       "state" : {
         "revision" : "3efbfba0e4e56c7187cc19137ee16b7c95346b79",
         "version" : "1.1.0"
+      }
+    },
+    {
+      "identity" : "swift-synchronization",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/aetherealtech/swift-synchronization",
+      "state" : {
+        "branch" : "master",
+        "revision" : "3b0873158485426e5c8e2daaeb19d5cc9802296a"
       }
     },
     {
