@@ -56,7 +56,7 @@ struct MergePublisher<Sources: Sequence>: Publisher where Sources.Element: Publi
              
                 return { [demand = state.demand, subscriptions = state.subscriptions.values] in
                     if demand > .none {
-                        let upstreamDemand = demand == .unlimited ? Subscribers.Demand.unlimited : .none
+                        let upstreamDemand = demand == .unlimited ? Subscribers.Demand.unlimited : .max(1)
                         subscriptions.forEach { subscription in subscription.request(upstreamDemand) }
                     }
                 }

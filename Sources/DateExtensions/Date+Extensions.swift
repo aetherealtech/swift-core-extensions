@@ -1,10 +1,10 @@
 import CollectionExtensions
 import Foundation
 
-@available(macOS, obsoleted: 13.0, message: "Date itself is not Strideable")
-@available(iOS, obsoleted: 16.0, message: "Date itself is not Strideable")
-@available(tvOS, obsoleted: 16.0, message: "Date itself is not Strideable")
-@available(watchOS, obsoleted: 9.0, message: "Date itself is not Strideable")
+@available(macOS, obsoleted: 13.0, message: "Date itself is now Strideable")
+@available(iOS, obsoleted: 16.0, message: "Date itself is now Strideable")
+@available(tvOS, obsoleted: 16.0, message: "Date itself is now Strideable")
+@available(watchOS, obsoleted: 9.0, message: "Date itself is now Strideable")
 public struct StrideableDate: Strideable {
     public typealias Stride = TimeInterval
 
@@ -19,6 +19,10 @@ public struct StrideableDate: Strideable {
     public let date: Date
 }
 
+@available(macOS, obsoleted: 13.0, message: "Date itself is now Strideable")
+@available(iOS, obsoleted: 16.0, message: "Date itself is now Strideable")
+@available(tvOS, obsoleted: 16.0, message: "Date itself is now Strideable")
+@available(watchOS, obsoleted: 9.0, message: "Date itself is now Strideable")
 public struct DateStrideTo: Sequence {
     public struct Iterator: IteratorProtocol {
         public mutating func next() -> Date? {
@@ -35,6 +39,10 @@ public struct DateStrideTo: Sequence {
     let strideTo: StrideTo<StrideableDate>
 }
 
+@available(macOS, obsoleted: 13.0, message: "Date itself is now Strideable")
+@available(iOS, obsoleted: 16.0, message: "Date itself is now Strideable")
+@available(tvOS, obsoleted: 16.0, message: "Date itself is now Strideable")
+@available(watchOS, obsoleted: 9.0, message: "Date itself is now Strideable")
 public struct DateStrideCount: Sequence {
     public struct Iterator: IteratorProtocol {
         public mutating func next() -> Date? {
@@ -78,10 +86,10 @@ public extension Date {
         )
     }
     
-    @available(macOS, obsoleted: 13.0, message: "Date itself is not Strideable")
-    @available(iOS, obsoleted: 16.0, message: "Date itself is not Strideable")
-    @available(tvOS, obsoleted: 16.0, message: "Date itself is not Strideable")
-    @available(watchOS, obsoleted: 9.0, message: "Date itself is not Strideable")
+    @available(macOS, obsoleted: 13.0, message: "Date itself is now Strideable")
+    @available(iOS, obsoleted: 16.0, message: "Date itself is now Strideable")
+    @available(tvOS, obsoleted: 16.0, message: "Date itself is now Strideable")
+    @available(watchOS, obsoleted: 9.0, message: "Date itself is now Strideable")
     static func regularIntervals(
         startingAt start: Date = Date(),
         _ interval: TimeInterval,
@@ -94,10 +102,10 @@ public extension Date {
         ))
     }
 
-    @available(macOS, obsoleted: 13.0, message: "Date itself is not Strideable")
-    @available(iOS, obsoleted: 16.0, message: "Date itself is not Strideable")
-    @available(tvOS, obsoleted: 16.0, message: "Date itself is not Strideable")
-    @available(watchOS, obsoleted: 9.0, message: "Date itself is not Strideable")
+    @available(macOS, obsoleted: 13.0, message: "Date itself is now Strideable")
+    @available(iOS, obsoleted: 16.0, message: "Date itself is now Strideable")
+    @available(tvOS, obsoleted: 16.0, message: "Date itself is now Strideable")
+    @available(watchOS, obsoleted: 9.0, message: "Date itself is now Strideable")
     static func regularIntervals(
         startingAt start: Date = Date(),
         _ interval: TimeInterval,

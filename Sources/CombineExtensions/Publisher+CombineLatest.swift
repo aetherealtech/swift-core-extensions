@@ -60,7 +60,7 @@ public struct CombineLatestPublisher<Sources: Collection>: Publisher where Sourc
              
                 return { [demand = state.demand, subscriptions = state.subscriptions.compact()] in
                     if demand > .none {
-                        let upstreamDemand = demand == .unlimited ? Subscribers.Demand.unlimited : .none
+                        let upstreamDemand: Subscribers.Demand = demand == .unlimited ? .unlimited : .max(1)
                         subscriptions.forEach { subscription in subscription.request(upstreamDemand) }
                     }
                 }
