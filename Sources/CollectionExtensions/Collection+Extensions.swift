@@ -150,6 +150,46 @@ public extension MutableCollection {
         }
     }
     
+    mutating func mutableMap<R>(
+        _ transform: (inout Element) throws -> R
+    ) rethrows -> [R] {
+        var results = [R]()
+        results.reserveCapacity(count)
+        
+        for index in indices {
+            results.append(try transform(&self[index]))
+        }
+        
+        return results
+    }
+    
+    mutating func mutableCompactMap<R>(
+        _ transform: (inout Element) throws -> R?
+    ) rethrows -> [R] {
+        var results = [R]()
+        results.reserveCapacity(count)
+        
+        for index in indices {
+            if let result = try transform(&self[index]) {
+                results.append(result)
+            }
+        }
+        
+        return results
+    }
+    
+    mutating func mutableFlatMap<R: Sequence>(
+        _ transform: (inout Element) throws -> R
+    ) rethrows -> [R.Element] {
+        var results = [R.Element]()
+        
+        for index in indices {
+            results.append(contentsOf: try transform(&self[index]))
+        }
+        
+        return results
+    }
+    
     mutating func mapInPlace(
         _ transform: (Element) throws -> Element
     ) rethrows {
