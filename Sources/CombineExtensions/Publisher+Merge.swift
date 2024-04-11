@@ -78,7 +78,7 @@ struct MergePublisher<Sources: Sequence>: Publisher where Sources.Element: Publi
             var pendingValues: [Sources.Element.Output] = []
         }
 
-        private class MergeSubscriber: Subscriber {
+        private final class MergeSubscriber: Subscriber {
             typealias Input = Sources.Element.Output
             typealias Failure = Sources.Element.Failure
 

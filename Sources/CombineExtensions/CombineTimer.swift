@@ -54,7 +54,7 @@ final class TimerPublisher<S: Scheduler>: ConnectablePublisher {
         subscriber.receive(subscription: subscription)
     }
 
-    private class TimerSubscription<Sub: Subscriber>: BaseTimerSubscription where Sub.Input == Void, Sub.Failure == Never {
+    private final class TimerSubscription<Sub: Subscriber>: BaseTimerSubscription where Sub.Input == Void, Sub.Failure == Never {
         init(
             subscriber: Sub,
             cancel: @escaping (BaseTimerSubscription) -> Void

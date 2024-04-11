@@ -8,7 +8,7 @@ public extension Publisher {
     func subscribeNext(
         receiveValue: @escaping (Output) -> Void,
         receiveCompletion: @escaping (Subscribers.Completion<Failure>) -> Void
-    ) -> some Cancellable {
+    ) -> SingleValueSubscriber<Output, Failure> {
         let subscriber = SingleValueSubscriber(
             receiveValue: receiveValue,
             receiveCompletion: receiveCompletion
@@ -25,7 +25,7 @@ public extension Publisher where Failure == Never {
     @discardableResult
     func subscribeNext(
         receiveValue: @escaping (Output) -> Void
-    ) -> some Cancellable {
+    ) -> SingleValueSubscriber<Output, Failure> {
         subscribeNext(
             receiveValue: receiveValue,
             receiveCompletion: { _ in }
@@ -34,7 +34,7 @@ public extension Publisher where Failure == Never {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-final class SingleValueSubscriber<Input, Failure: Error>: Subscriber, Cancellable {
+public final class SingleValueSubscriber<Input, Failure: Error>: Subscriber, Cancellable {
     private enum State {
         case ready
         case subscribed(Subscription)
@@ -49,7 +49,7 @@ final class SingleValueSubscriber<Input, Failure: Error>: Subscriber, Cancellabl
         self.receiveCompletion = receiveCompletion
     }
 
-    func receive(subscription: Subscription) {
+    public func receive(subscription: Subscription) {
         _state.write { state in
             switch state {
                 case .cancelled:
@@ -61,7 +61,7 @@ final class SingleValueSubscriber<Input, Failure: Error>: Subscriber, Cancellabl
         }
     }
 
-    func receive(_ input: Input) -> Subscribers.Demand {
+    public func receive(_ input: Input) -> Subscribers.Demand {
         let send = _state.write { state in
             if case let .subscribed(subscription) = state {
                 subscription.cancel()
@@ -78,7 +78,7 @@ final class SingleValueSubscriber<Input, Failure: Error>: Subscriber, Cancellabl
         return .none
     }
 
-    func receive(completion: Subscribers.Completion<Failure>) {
+    public func receive(completion: Subscribers.Completion<Failure>) {
         let send = _state.write { state in
             if case let .subscribed(subscription) = state {
                 subscription.cancel()
@@ -93,7 +93,7 @@ final class SingleValueSubscriber<Input, Failure: Error>: Subscriber, Cancellabl
         }
     }
     
-    func cancel() {
+    public func cancel() {
         _state.write { state in
             if case let .subscribed(subscription) = state {
                 subscription.cancel()

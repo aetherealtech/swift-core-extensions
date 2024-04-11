@@ -7,7 +7,7 @@ import Combine
 public extension Publisher where Failure == Never {
     func compactMapAsync<R>(
         _ transform: @escaping @Sendable (Output) async -> R?
-    ) -> Publishers.CompactMap<Publishers.FlatMap<Future<R?, Never>, Publishers.Map<Self, AsyncElement<R?>>>, R> where Output: Sendable {
+    ) -> Publishers.CompactMap<Publishers.FlatMap<AsyncFuture<R?, Never>, Publishers.Map<Self, AsyncElement<R?>>>, R> where Output: Sendable {
         mapAsync(transform)
             .compact()
     }
@@ -17,7 +17,7 @@ public extension Publisher where Failure == Never {
 public extension Publisher {
     func tryCompactMapAsync<R>(
         _ transform: @escaping @Sendable (Output) async throws -> R?
-    ) -> Publishers.CompactMap<Publishers.FlatMap<Future<R?, any Error>, Publishers.MapError<Publishers.Map<Self, AsyncThrowingElement<R?>>, any Error>>, R> where Output: Sendable {
+    ) -> Publishers.CompactMap<Publishers.FlatMap<AsyncFuture<R?, any Error>, Publishers.MapError<Publishers.Map<Self, AsyncThrowingElement<R?>>, any Error>>, R> where Output: Sendable {
         mapAsync(transform)
             .compact()
     }

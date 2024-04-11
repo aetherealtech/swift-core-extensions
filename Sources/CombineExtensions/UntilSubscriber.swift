@@ -38,7 +38,7 @@ public extension Publisher where Failure == Never {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-final class UntilSubscriber<Input, Failure: Error>: Subscriber, Cancellable {
+public final class UntilSubscriber<Input, Failure: Error>: Subscriber, Cancellable {
     private enum State {
         case ready
         case subscribed(Subscription)
@@ -55,7 +55,7 @@ final class UntilSubscriber<Input, Failure: Error>: Subscriber, Cancellable {
         self.until = until
     }
 
-    func receive(subscription: Subscription) {
+    public func receive(subscription: Subscription) {
         _state.write { state in
             switch state {
                 case .cancelled:
@@ -67,7 +67,7 @@ final class UntilSubscriber<Input, Failure: Error>: Subscriber, Cancellable {
         }
     }
 
-    func receive(_ input: Input) -> Subscribers.Demand {
+    public func receive(_ input: Input) -> Subscribers.Demand {
         let (send, extra) = _state.write { state -> (Bool, Subscribers.Demand) in
             if case let .subscribed(subscription) = state {
                 let stop = until(input)
@@ -87,7 +87,7 @@ final class UntilSubscriber<Input, Failure: Error>: Subscriber, Cancellable {
         return extra
     }
 
-    func receive(completion: Subscribers.Completion<Failure>) {
+    public func receive(completion: Subscribers.Completion<Failure>) {
         let send = _state.write { state in
             if case let .subscribed(subscription) = state {
                 subscription.cancel()
@@ -102,7 +102,7 @@ final class UntilSubscriber<Input, Failure: Error>: Subscriber, Cancellable {
         }
     }
 
-    func cancel() {
+    public func cancel() {
         _state.write { state in
             if case let .subscribed(subscription) = state {
                 subscription.cancel()
