@@ -1,6 +1,22 @@
 import Foundation
 
 public extension Result where Failure == Error {
+    var value: Success? {
+        if case let .success(value) = self {
+            return value
+        }
+        
+        return nil
+    }
+    
+    var error: Failure? {
+        if case let .failure(error) = self {
+            return error
+        }
+        
+        return nil
+    }
+    
     /// Identical to `Result.init(catching:)`, except the `body` can be `async`.
     @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
     init(catching body: () async throws -> Success) async {

@@ -8,7 +8,7 @@ public extension LazySequenceProtocol {
     func flatten<InnerElement>() -> LazySequence<FlattenSequence<LazyMapSequence<Elements, LazySequence<Element>>>> where Element: Sequence, Element.Element == InnerElement {
         flatMap { element in element.lazy }
     }
-    
+
     func of<T>(type: T.Type) -> LazyMapSequence<LazyFilterSequence<LazyMapSequence<Elements, T?>>, T> {
         compactMap { element in element as? T }
     }
