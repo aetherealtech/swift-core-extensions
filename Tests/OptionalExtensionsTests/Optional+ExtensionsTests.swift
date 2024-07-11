@@ -45,6 +45,8 @@ final class OptionalExtensionsTests: XCTestCase {
             
             try assertEqual(error.message, testMessage)
             try assertTrue(error.type == Int.self)
+            
+            try assertEqual(error.errorDescription, "Attempted to unwrap nil Optional<Int>: \(testMessage)")
         }
     }
     
@@ -307,6 +309,34 @@ final class OptionalExtensionsTests: XCTestCase {
             value5
         )
         .map(Results.init)
+        
+        try assertNil(result)
+    }
+    
+    func testCombineCollectionNotNil() throws {
+        let values: [Int?] = [
+            3,
+            2,
+            5,
+            8,
+            1
+        ]
+        
+        let result = values.combine()
+        
+        try assertEqual(result, [3, 2, 5, 8, 1])
+    }
+    
+    func testCombineCollectionNil() throws {
+        let values: [Int?] = [
+            3,
+            2,
+            5,
+            nil,
+            1
+        ]
+        
+        let result = values.combine()
         
         try assertNil(result)
     }
