@@ -10,22 +10,20 @@ public extension ConnectablePublisher {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public final class AnyConnectablePublisher<Output, Failure: Error>: ConnectablePublisher {
+public struct AnyConnectablePublisher<Output, Failure: Error>: ConnectablePublisher {
     public init<P: ConnectablePublisher>(
         erasing: P
     ) where P.Output == Output, P.Failure == Failure {
-        erased = erasing.eraseToAnyPublisher()
-        connectImp = { erased in (erased as! P).connect() }
+        unwrap = erasing
     }
 
-    public func connect() -> Cancellable {
-        connectImp(erased)
+    public func connect() -> any Cancellable {
+        unwrap.connect()
     }
 
-    public func receive<S>(subscriber: S) where S: Combine.Subscriber, S.Failure == Failure, S.Input == Output {
-        erased.receive(subscriber: subscriber)
+    public func receive<S: Subscriber<Output, Failure>>(subscriber: S) {
+        unwrap.receive(subscriber: subscriber)
     }
     
-    private let erased: AnyPublisher<Output, Failure>
-    private let connectImp: (AnyPublisher<Output, Failure>) -> Cancellable
+    public let unwrap: any ConnectablePublisher<Output, Failure>
 }

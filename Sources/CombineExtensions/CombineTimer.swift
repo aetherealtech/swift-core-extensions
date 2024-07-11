@@ -43,7 +43,7 @@ final class TimerPublisher<S: Scheduler>: ConnectablePublisher {
         )
     }
 
-    public func receive<Sub>(subscriber: Sub) where Sub: Subscriber, Failure == Sub.Failure, Output == Sub.Input {
+    public func receive<Sub: Subscriber<Output, Failure>>(subscriber: Sub) {
         let subscription = TimerSubscription(
             subscriber: subscriber,
             cancel: { subscription in self._subscriptions.write { subscriptions in subscriptions.removeAll(where: { sub in sub.combineIdentifier == subscription.combineIdentifier }) } }
@@ -54,7 +54,7 @@ final class TimerPublisher<S: Scheduler>: ConnectablePublisher {
         subscriber.receive(subscription: subscription)
     }
 
-    private final class TimerSubscription<Sub: Subscriber>: BaseTimerSubscription where Sub.Input == Void, Sub.Failure == Never {
+    private final class TimerSubscription<Sub: Subscriber<Output, Failure>>: BaseTimerSubscription {
         init(
             subscriber: Sub,
             cancel: @escaping (BaseTimerSubscription) -> Void
@@ -85,7 +85,8 @@ final class TimerPublisher<S: Scheduler>: ConnectablePublisher {
         private let subscriber: Sub
         private let cancelImp: (BaseTimerSubscription) -> Void
 
-        @Synchronized private var demand: Subscribers.Demand = .none
+        @Synchronized 
+        private var demand: Subscribers.Demand = .none
     }
 
     private let scheduler: S

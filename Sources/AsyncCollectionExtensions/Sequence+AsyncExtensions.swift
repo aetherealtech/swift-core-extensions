@@ -13,6 +13,9 @@ public extension Sequence {
         _ transform: @escaping (Element) async throws -> R
     ) async rethrows -> [R] {
         var results = [R]()
+        if let collection = self as? any Collection {
+            results.reserveCapacity(collection.count)
+        }
         
         for element in self {
             results.append(try await transform(element))
@@ -25,6 +28,9 @@ public extension Sequence {
         _ transform: @escaping (Element) async throws -> R?
     ) async rethrows -> [R] {
         var results = [R]()
+        if let collection = self as? any Collection {
+            results.reserveCapacity(collection.count)
+        }
         
         for element in self {
             if let result = try await transform(element) {

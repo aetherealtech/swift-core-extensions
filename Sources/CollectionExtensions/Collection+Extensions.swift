@@ -381,7 +381,7 @@ public extension RangeReplaceableCollection {
         of elementToRemove: Element,
         by compare: SimpleCompareFunction<Element>
     ) -> Self {
-        filter { element in compare(element, elementToRemove) }
+        filter { element in !compare(element, elementToRemove) }
     }
     
     mutating func removeAll<Elements: Sequence>(
@@ -407,7 +407,7 @@ public extension RangeReplaceableCollection {
         of elementsToRemove: Elements,
         by compare: SimpleCompareFunction<Element>
     ) -> Self where Elements.Element == Element {
-        filter { element in elementsToRemove.contains(element, by: compare) }
+        filter { element in !elementsToRemove.contains(element, by: compare) }
     }
     
     private var removeDuplicateFilter: (Element, SimpleCompareFunction<Element>) -> Bool {

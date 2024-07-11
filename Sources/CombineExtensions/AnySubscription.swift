@@ -3,30 +3,22 @@ import Combine
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public struct AnySubscription: Subscription {
     public var combineIdentifier: CombineIdentifier {
-        combineIdentifier_get(erased)
+        unwrap.combineIdentifier
     }
     
     public func request(_ demand: Subscribers.Demand) {
-        request_imp(erased, demand)
+        unwrap.request(demand)
     }
     
     public func cancel() {
-        cancel_imp(erased)
+        unwrap.cancel()
     }
     
     init<Erasing: Subscription>(erasing: Erasing) {
-        erased = erasing
-        
-        combineIdentifier_get = { erased in (erased as! Erasing).combineIdentifier }
-        request_imp = { erased, demand in (erased as! Erasing).request(demand) }
-        cancel_imp = { erased in (erased as! Erasing).cancel() }
+        unwrap = erasing
     }
     
-    private var erased: Any
-    
-    private let combineIdentifier_get: (Any) -> CombineIdentifier
-    private let request_imp: (Any, Subscribers.Demand) -> Void
-    private let cancel_imp: (Any) -> Void
+    public let unwrap: any Subscription
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)

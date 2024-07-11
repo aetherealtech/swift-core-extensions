@@ -125,10 +125,12 @@ struct MergePublisher<Sources: Sequence>: Publisher where Sources.Element: Publi
 
             private var subscriptionId: CombineIdentifier?
             
-            @Synchronized private var state: State
+            @Synchronized 
+            private var state: State
         }
 
-        @Synchronized private var state: State
+        @Synchronized 
+        private var state: State
     }
 
     private let sources: Sources

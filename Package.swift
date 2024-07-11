@@ -1,4 +1,4 @@
-// swift-tools-version:5.10
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -65,6 +65,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/aetherealtech/swift-assertions", branch: "master"),
+        .package(url: "https://github.com/aetherealtech/swift-backports", branch: "master"),
         .package(url: "https://github.com/aetherealtech/swift-synchronization", branch: "master"),
     ],
     targets: [
@@ -138,6 +139,7 @@ let package = Package(
             name: "DateExtensions",
             dependencies: [
                 "CollectionExtensions",
+                .product(name: "Backports", package: "swift-backports"),
             ],
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
@@ -228,6 +230,7 @@ let package = Package(
         .testTarget(
             name: "URLExtensionsTests",
             dependencies: [
+                "CollectionExtensions",
                 "URLExtensions",
                 .product(name: "Assertions", package: "swift-assertions"),
             ],

@@ -1,4 +1,5 @@
 {
+  "originHash" : "37ce0e70073f0c8093932d2981f0416462fdbfa4b2a7aeeca5048e1173605b6d",
   "pins" : [
     {
       "identity" : "swift-assertions",
@@ -7,6 +8,15 @@
       "state" : {
         "branch" : "master",
         "revision" : "a0c00dd92e5e7d010101643b54d0720a05f8542f"
+      }
+    },
+    {
+      "identity" : "swift-backports",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/aetherealtech/swift-backports",
+      "state" : {
+        "branch" : "master",
+        "revision" : "6f286c24dfe550381caa4e3324f8746b4ccb5d5c"
       }
     },
     {
@@ -37,5 +47,5 @@
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }

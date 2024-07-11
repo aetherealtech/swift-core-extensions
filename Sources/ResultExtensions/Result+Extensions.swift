@@ -31,7 +31,7 @@ public extension Result where Failure == Error {
 public extension Result {
     /// Returns a `Result` with the `Failure` type erased up to `any Error`, that contains the same result as the receiver.
     @inlinable
-    func eraseErrorType() -> Result<Success, Error> {
+    func eraseErrorType() -> Result<Success, any Error> {
         mapError { error in error as Error }
     }
     

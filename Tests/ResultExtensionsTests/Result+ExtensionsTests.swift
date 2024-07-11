@@ -8,12 +8,34 @@ final class ResultExtensionsTests: XCTestCase {
         let details: String
     }
     
-    func testAsyncCatchingSuccess() async throws {
-        let result = await Result { () async throws -> Int in
-            5
-        }
+    func testValueSuccess() throws {
+        let value = 5
+        let result = Result<Int, any Error>.success(value)
         
-        try assertEqual(try result.get(), 5)
+        try assertEqual(result.value, value)
+    }
+    
+    func testValueFailure() throws {
+        let result = Result<Int, any Error>.failure(TestError(details: ""))
+        try assertNil(result.value)
+    }
+    
+    func testErrorSuccess() throws {
+        let result = Result<Int, any Error>.success(5)
+        
+        try assertNil(result.error)
+    }
+    
+    func testErrorFailure() throws {
+        let result = Result<Int, any Error>.failure(TestError(details: ""))
+        try assertNil(result.value)
+    }
+    
+    func testAsyncCatchingSuccess() async throws {
+        let errorDetails = "Something"
+        let result = Result<Int, any Error>.failure(TestError(details: errorDetails))
+        
+        try assertEqual((result.error as! TestError?)?.details, errorDetails)
     }
     
     func testAsyncCatchingFail() async throws {

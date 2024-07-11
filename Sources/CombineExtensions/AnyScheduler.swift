@@ -96,61 +96,53 @@ public struct AnyScheduler: Scheduler {
     init<S: Scheduler>(
         erasing: S
     ) {
-        erased = erasing
-        
-        scheduleImp = { erased, action in
-            (erased as! S).schedule(options: nil, action)
+        if let erased = erasing as? AnyScheduler {
+            unwrap = erased.unwrap
+            scheduleAfterImp = erased.scheduleAfterImp
+            scheduleRepeatingImp = erased.scheduleRepeatingImp
+        } else {
+            unwrap = erasing
+   
+            scheduleAfterImp = { erased, date, tolerance, action in
+                let scheduler = erased as! S
+                scheduler.schedule(
+                    after: date.schedulerTime(scheduler: scheduler),
+                    tolerance: tolerance.stride(),
+                    options: nil,
+                    action
+                )
+            }
+            
+            scheduleRepeatingImp = { erased, date, interval, tolerance, action in
+                let scheduler = erased as! S
+                return scheduler.schedule(
+                    after: date.schedulerTime(scheduler: scheduler),
+                    interval: interval.stride(),
+                    tolerance: tolerance.stride(),
+                    options: nil,
+                    action
+                )
+            }
         }
-
-        scheduleAfterImp = { erased, date, tolerance, action in
-            let scheduler = erased as! S
-            scheduler.schedule(
-                after: date.schedulerTime(scheduler: scheduler),
-                tolerance: tolerance.stride(),
-                options: nil,
-                action
-            )
-        }
-
-        scheduleRepeatingImp = { erased, date, interval, tolerance, action in
-            let scheduler = erased as! S
-            return scheduler.schedule(
-                after: date.schedulerTime(scheduler: scheduler),
-                interval: interval.stride(),
-                tolerance: tolerance.stride(),
-                options: nil,
-                action
-            )
-        }
-    }
-    
-    init(
-        erasing: AnyScheduler
-    ) {
-        erased = erasing.erased
-        scheduleImp = erasing.scheduleImp
-        scheduleAfterImp = erasing.scheduleAfterImp
-        scheduleRepeatingImp = erasing.scheduleRepeatingImp
     }
 
     public var now: SchedulerTimeType { .now }
     public var minimumTolerance: SchedulerTimeType.Stride { .init(nanoseconds: 1) }
 
     public func schedule(options _: SchedulerOptions?, _ action: @escaping () -> Void) {
-        scheduleImp(erased, action)
+        unwrap.schedule(action)
     }
 
     public func schedule(after date: SchedulerTimeType, tolerance: SchedulerTimeType.Stride, options _: SchedulerOptions?, _ action: @escaping () -> Void) {
-        scheduleAfterImp(erased, date, tolerance, action)
+        scheduleAfterImp(unwrap, date, tolerance, action)
     }
 
     public func schedule(after date: SchedulerTimeType, interval: SchedulerTimeType.Stride, tolerance: SchedulerTimeType.Stride, options _: SchedulerOptions?, _ action: @escaping () -> Void) -> Cancellable {
-        scheduleRepeatingImp(erased, date, interval, tolerance, action)
+        scheduleRepeatingImp(unwrap, date, interval, tolerance, action)
     }
 
-    private var erased: Any
+    public let unwrap: any Scheduler
     
-    private let scheduleImp: (Any, _ action: @escaping () -> Void) -> Void
     private let scheduleAfterImp: (Any, _ date: SchedulerTimeType, _ tolerance: SchedulerTimeType.Stride, _ action: @escaping () -> Void) -> Void
     private let scheduleRepeatingImp: (Any, _ date: SchedulerTimeType, _ interval: SchedulerTimeType.Stride, _ tolerance: SchedulerTimeType.Stride, _ action: @escaping () -> Void) -> Cancellable
 }
