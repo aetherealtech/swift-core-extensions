@@ -212,6 +212,14 @@ let package = Package(
 //            swiftSettings: [.concurrencyChecking(.complete)]
 //        ),
         .testTarget(
+            name: "NumericExtensionsTests",
+            dependencies: [
+                "NumericExtensions",
+                .product(name: "Assertions", package: "swift-assertions"),
+            ],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
+        .testTarget(
             name: "OptionalExtensionsTests",
             dependencies: [
                 "OptionalExtensions",
