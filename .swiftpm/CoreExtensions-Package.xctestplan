@@ -1,0 +1,73 @@
+{
+  "configurations" : [
+    {
+      "id" : "2AADA1D4-59CA-4C44-A2FB-966E570A14EE",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "CollectionExtensionsTests",
+        "name" : "CollectionExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AsyncCollectionExtensionsTests",
+        "name" : "AsyncCollectionExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AsyncExtensionsTests",
+        "name" : "AsyncExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "DateExtensionsTests",
+        "name" : "DateExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "OptionalExtensionsTests",
+        "name" : "OptionalExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "ResultExtensionsTests",
+        "name" : "ResultExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "URLExtensionsTests",
+        "name" : "URLExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "NumericExtensionsTests",
+        "name" : "NumericExtensionsTests"
+      }
+    }
+  ],
+  "version" : 1
+}

@@ -112,15 +112,15 @@ fileprivate func withTimeout<R: Sendable>(
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-extension Task where Success == Void, Failure == Error {
-    public func finish() async throws {
+extension Task where Failure == Error {
+    public func waitUntilDone() async throws {
         _ = try await value
     }
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-extension Task where Success == Void, Failure == Never {
-    public func finish() async {
+extension Task where Failure == Never {
+    public func waitUntilDone() async {
         _ = await value
     }
 }

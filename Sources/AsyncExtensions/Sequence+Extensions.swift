@@ -48,9 +48,9 @@ public extension Sequence where Self: Sendable {
                 await withThrowingTaskGroup(of: Void.self) { group in
                     var iterator = makeIterator()
                     
-                    let addTask: (inout ThrowingTaskGroup<Void, Error>) -> Bool = { group in
+                    let addTask: (inout ThrowingTaskGroup<Void, any Error>) -> Bool = { group in
                         if let work = iterator.next() {
-                            group.addTask { continuation.yield(with: await .init { try await work() }) }
+                            group.addTask { continuation.yield(try await work()) }
                             return true
                         } else {
                             return false
