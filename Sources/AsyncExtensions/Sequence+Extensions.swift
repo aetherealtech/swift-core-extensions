@@ -132,6 +132,7 @@ public extension Sequence where Self: Sendable {
                         
                         if capacity > 0 {
                             _ = addOuterTask(&group)
+                            capacity -= 1
                         }
                     }
                     
