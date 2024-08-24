@@ -164,7 +164,7 @@ public extension Sequence where Self: Sendable {
                     let addInnerTask: (inout ThrowingTaskGroup<FlattenResult<R, InnerR>, Error>, UUID) -> Bool = { group, id in
                         if let work =  innerIterators[id]!.next() {
                             group.addTask {
-                                continuation.yield(with: await .init { try await work() })
+                                continuation.yield(try await work())
                                 return .inner(id)
                             }
                             return true
@@ -199,6 +199,7 @@ public extension Sequence where Self: Sendable {
                             
                             if capacity > 0 {
                                 _ = addOuterTask(&group)
+                                capacity -= 1
                             }
                         }
                         
