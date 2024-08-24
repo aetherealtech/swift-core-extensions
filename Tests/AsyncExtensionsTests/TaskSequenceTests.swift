@@ -732,6 +732,62 @@ final class TaskSequenceTests: XCTestCase {
         withExtendedLifetime(subscription) { }
     }
     
+    @MainActor
+    func testWaitUntilDone() async throws {
+        var completed: Set<Int> = []
+        
+        struct TestSequence: AsyncSequence, Sendable {
+            typealias Element = Void
+            
+            struct AsyncIterator: AsyncIteratorProtocol {
+                mutating func next() async -> Void? {
+                    guard current < 50 else {
+                        return nil
+                    }
+                    
+                    await MainActor.run { [self, current] in _ = completed.insert(current) }
+                    current += 1
+                    
+                    return ()
+                }
+                
+                let getCompleted: @Sendable @MainActor () -> Set<Int>
+                let setCompleted: @Sendable @MainActor (Set<Int>) -> Void
+                
+                var current = 0
+                
+                @MainActor
+                var completed: Set<Int> {
+                    get { getCompleted() }
+                    nonmutating set { setCompleted(newValue) }
+                }
+            }
+            
+            func makeAsyncIterator() -> AsyncIterator {
+                .init(
+                    getCompleted: getCompleted,
+                    setCompleted: setCompleted
+                )
+            }
+            
+            let getCompleted: @Sendable @MainActor () -> Set<Int>
+            let setCompleted: @Sendable @MainActor (Set<Int>) -> Void
+        }
+        
+        await withoutActuallyEscaping({ @Sendable @MainActor in completed}) { getCompleted in
+            await withoutActuallyEscaping({ @Sendable @MainActor newValue in completed = newValue }) { setCompleted in
+                let sequence = TestSequence(
+                    getCompleted: { completed },
+                    setCompleted: { newValue in completed = newValue }
+                )
+                
+                await sequence.waitUntilDone()
+            }
+        }
+
+        try assertEqual(completed, .init(0..<50))
+    }
+    
     func testAwaitAll() async throws {
         print("Let's Go")
         
