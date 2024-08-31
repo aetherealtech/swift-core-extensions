@@ -1174,7 +1174,7 @@ final class TaskSequenceTests: XCTestCase {
         }
         
         do {
-            let result = try await jobs.awaitAny(maxConcurrency: 5)
+            let _ = try await jobs.awaitAny(maxConcurrency: 5)
             throw Fail("Stream should have thrown")
         } catch {
             try assertTrue(error is TestError)
@@ -1368,6 +1368,15 @@ final class TaskSequenceTests: XCTestCase {
     }
     
     @MainActor
+    func testFlattenAwaitAnyEmpty() async throws {
+        let jobs: [@Sendable () async -> [@Sendable () async -> Int]] = []
+        
+        let result = await jobs.flattenAwaitAny(maxConcurrency: 5)
+        
+        try assertNil(result)
+    }
+    
+    @MainActor
     func testFlattenAwaitAny() async throws {
         var concurrency = 0
         var maxConcurrency = 0
@@ -1499,6 +1508,431 @@ final class TaskSequenceTests: XCTestCase {
         }
         
         await jobs.flattenAwaitAny(maxConcurrency: 5)
+
+        try assertEqual(5, maxConcurrency)
+        
+        withExtendedLifetime(subscription) { }
+    }
+
+    @MainActor
+    func testFlattenAwaitAllThrowingNoThrow() async throws {
+        var concurrency = 0
+        var maxConcurrency = 0
+        
+        let inProgress = CurrentValueSubject<[TaskID: CheckedContinuation<Void, any Error>], Never>([:])
+        var completed: Set<TaskID> = []
+        
+        let jobs = (0..<10)
+            .map { outerIndex in
+                { @Sendable @MainActor in
+                    concurrency += 1
+                    defer { concurrency -= 1; completed.insert(.outer(outerIndex)) }
+                    
+                    maxConcurrency = max(concurrency, maxConcurrency)
+                    
+                    try await withCheckedThrowingContinuation { continuation in
+                        inProgress.value[.outer(outerIndex)] = continuation
+                    }
+
+                    return (0..<5)
+                        .map { innerIndex in
+                            { @Sendable @MainActor in
+                                concurrency += 1
+                                defer { concurrency -= 1; completed.insert(.inner(outerIndex, innerIndex)) }
+                                
+                                try await withCheckedThrowingContinuation { continuation in
+                                    inProgress.value[.inner(outerIndex, innerIndex)] = continuation
+                                }
+                            }
+                        }
+            }
+        }
+        
+        var concurrencyReached = false
+        
+        let subscription = inProgress.sink { currentInProgress in
+            if !concurrencyReached {
+                if currentInProgress.count == 5 {
+                    concurrencyReached = true
+                } else {
+                    return
+                }
+            }
+            
+            if let key = currentInProgress.keys.randomElement() {
+                inProgress.value.removeValue(forKey: key)?.resume()
+            }
+        }
+        
+        try await jobs.flattenAwaitAll(maxConcurrency: 5)
+        
+        let expectedCompleted = Set((0..<10)
+            .flatMap { outerIndex in
+                let outer = TaskID.outer(outerIndex)
+                
+                var result = (0..<5)
+                    .map { innerIndex in TaskID.inner(outerIndex, innerIndex) }
+                
+                result.append(outer)
+                return result
+            })
+        
+        try assertEqual(expectedCompleted, completed)
+        try assertEqual(5, maxConcurrency)
+        
+        withExtendedLifetime(subscription) { }
+    }
+    
+    @MainActor
+    func testFlattenAwaitAllThrowingThrows() async throws {
+        var concurrency = 0
+        var maxConcurrency = 0
+        
+        let inProgress = CurrentValueSubject<[TaskID: CheckedContinuation<Void, any Error>], Never>([:])
+        var completed: Set<TaskID> = []
+        
+        let jobs = (0..<10)
+            .map { outerIndex in
+                { @Sendable @MainActor in
+                    concurrency += 1
+                    defer { concurrency -= 1; completed.insert(.outer(outerIndex)) }
+                    
+                    maxConcurrency = max(concurrency, maxConcurrency)
+                    
+                    try await withCheckedThrowingContinuation { continuation in
+                        inProgress.value[.outer(outerIndex)] = continuation
+                    }
+
+                    return (0..<5)
+                        .map { innerIndex in
+                            { @Sendable @MainActor in
+                                concurrency += 1
+                                defer { concurrency -= 1; completed.insert(.inner(outerIndex, innerIndex)) }
+                                
+                                try await withCheckedThrowingContinuation { continuation in
+                                    inProgress.value[.inner(outerIndex, innerIndex)] = continuation
+                                }
+                            }
+                        }
+            }
+        }
+        
+        var concurrencyReached = false
+        
+        let subscription = inProgress.sink { currentInProgress in
+            if !concurrencyReached {
+                if currentInProgress.count == 5 {
+                    concurrencyReached = true
+                } else {
+                    return
+                }
+            }
+            
+            if let key = currentInProgress.keys.randomElement() {
+                let continuation = inProgress.value.removeValue(forKey: key)!
+                
+                if completed.count == 25 {
+                    continuation.resume(throwing: TestError())
+                } else {
+                    continuation.resume()
+                }
+            }
+        }
+        
+        do {
+            try await jobs.flattenAwaitAll(maxConcurrency: 5)
+            throw Fail("Stream should have thrown")
+        } catch {
+            try assertTrue(error is TestError)
+        }
+
+        try assertGreaterThanOrEqual(completed.count, 25)
+        try assertEqual(5, maxConcurrency)
+        
+        withExtendedLifetime(subscription) { }
+    }
+    
+    @MainActor
+    func testFlattenAwaitAnyThrowingEmpty() async throws {
+        let jobs: [@Sendable () async throws -> [@Sendable () async throws -> Int]] = []
+        
+        let result = try await jobs.flattenAwaitAny(maxConcurrency: 5)
+        
+        try assertNil(result)
+    }
+    
+    @MainActor
+    func testFlattenAwaitAnyThrowingNoThrow() async throws {
+        var concurrency = 0
+        var maxConcurrency = 0
+        
+        let inProgress = CurrentValueSubject<[TaskID: CheckedContinuation<Void, any Error>], Never>([:])
+        var completed: Set<TaskID> = []
+        
+        let jobs = (0..<10)
+            .map { outerIndex in
+                { @Sendable @MainActor in
+                    concurrency += 1
+                    defer { concurrency -= 1; completed.insert(.outer(outerIndex)) }
+                    
+                    maxConcurrency = max(concurrency, maxConcurrency)
+                    
+                    try await withCheckedThrowingContinuation { continuation in
+                        inProgress.value[.outer(outerIndex)] = continuation
+                    }
+
+                    return (0..<5)
+                        .map { innerIndex in
+                            { @Sendable @MainActor in
+                                let taskID = TaskID.inner(outerIndex, innerIndex)
+                                
+                                concurrency += 1
+                                defer { concurrency -= 1; completed.insert(taskID) }
+                                
+                                try await withCheckedThrowingContinuation { continuation in
+                                    inProgress.value[.inner(outerIndex, innerIndex)] = continuation
+                                }
+                                
+                                return (outerIndex, innerIndex)
+                            }
+                        }
+            }
+        }
+        
+        var concurrencyReached = false
+        var expectedResult: TaskID?
+        
+        let subscription = inProgress.sink { currentInProgress in
+            guard expectedResult == nil else {
+                return
+            }
+            
+            if !concurrencyReached {
+                if currentInProgress.count == 5 {
+                    concurrencyReached = true
+                } else {
+                    return
+                }
+            }
+            if let key = currentInProgress.keys.randomElement() {
+                if case .inner = key {
+                    expectedResult = key
+                }
+                
+                inProgress.value.removeValue(forKey: key)?.resume()
+            }
+        }
+        
+        let result = try await jobs.flattenAwaitAny(maxConcurrency: 5)
+            .map { TaskID.inner($0.0, $0.1) }
+
+        try assertEqual(expectedResult, result)
+        try assertEqual(5, maxConcurrency)
+        
+        withExtendedLifetime(subscription) { }
+    }
+    
+    @MainActor
+    func testFlattenAwaitAnyThrowingThrows() async throws {
+        var concurrency = 0
+        var maxConcurrency = 0
+        
+        let inProgress = CurrentValueSubject<[TaskID: CheckedContinuation<Void, any Error>], Never>([:])
+        var completed: Set<TaskID> = []
+        
+        let jobs = (0..<10)
+            .map { outerIndex in
+                { @Sendable @MainActor in
+                    concurrency += 1
+                    defer { concurrency -= 1; completed.insert(.outer(outerIndex)) }
+                    
+                    maxConcurrency = max(concurrency, maxConcurrency)
+                    
+                    try await withCheckedThrowingContinuation { continuation in
+                        inProgress.value[.outer(outerIndex)] = continuation
+                    }
+
+                    return (0..<5)
+                        .map { innerIndex in
+                            { @Sendable @MainActor in
+                                let taskID = TaskID.inner(outerIndex, innerIndex)
+                                
+                                concurrency += 1
+                                defer { concurrency -= 1; completed.insert(taskID) }
+                                
+                                try await withCheckedThrowingContinuation { continuation in
+                                    inProgress.value[.inner(outerIndex, innerIndex)] = continuation
+                                }
+                                
+                                return (outerIndex, innerIndex)
+                            }
+                        }
+            }
+        }
+        
+        var concurrencyReached = false
+        var thrown = false
+        
+        let subscription = inProgress.sink { currentInProgress in
+            guard !thrown else {
+                return
+            }
+            
+            if !concurrencyReached {
+                if currentInProgress.count == 5 {
+                    concurrencyReached = true
+                } else {
+                    return
+                }
+            }
+            if let key = currentInProgress.keys.randomElement() {
+                thrown = true
+                inProgress.value.removeValue(forKey: key)?.resume(throwing: TestError())
+            }
+        }
+        
+        do {
+            let _ = try await jobs.flattenAwaitAny(maxConcurrency: 5)
+            throw Fail("Stream should have thrown")
+        } catch {
+            try assertTrue(error is TestError)
+        }
+
+        try assertEqual(5, maxConcurrency)
+        
+        withExtendedLifetime(subscription) { }
+    }
+    
+    @MainActor
+    func testFlattenAwaitAnyVoidThrowingNoThrows() async throws {
+        var concurrency = 0
+        var maxConcurrency = 0
+        
+        let inProgress = CurrentValueSubject<[TaskID: CheckedContinuation<Void, any Error>], Never>([:])
+        var completed: Set<TaskID> = []
+        
+        let jobs = (0..<10)
+            .map { outerIndex in
+                { @Sendable @MainActor in
+                    concurrency += 1
+                    defer { concurrency -= 1; completed.insert(.outer(outerIndex)) }
+                    
+                    maxConcurrency = max(concurrency, maxConcurrency)
+                    
+                    try await withCheckedThrowingContinuation { continuation in
+                        inProgress.value[.outer(outerIndex)] = continuation
+                    }
+
+                    return (0..<5)
+                        .map { innerIndex in
+                            { @Sendable @MainActor in
+                                let taskID = TaskID.inner(outerIndex, innerIndex)
+                                
+                                concurrency += 1
+                                defer { concurrency -= 1; completed.insert(taskID) }
+                                
+                                try await withCheckedThrowingContinuation { continuation in
+                                    inProgress.value[.inner(outerIndex, innerIndex)] = continuation
+                                }
+                            }
+                        }
+            }
+        }
+        
+        var concurrencyReached = false
+        var finished = false
+        
+        let subscription = inProgress.sink { currentInProgress in
+            guard !finished else {
+                return
+            }
+            
+            if !concurrencyReached {
+                if currentInProgress.count == 5 {
+                    concurrencyReached = true
+                } else {
+                    return
+                }
+            }
+            if let key = currentInProgress.keys.randomElement() {
+                if case .inner = key {
+                    finished = true
+                }
+                
+                inProgress.value.removeValue(forKey: key)?.resume()
+            }
+        }
+        
+        try await jobs.flattenAwaitAny(maxConcurrency: 5)
+
+        try assertEqual(5, maxConcurrency)
+        
+        withExtendedLifetime(subscription) { }
+    }
+    
+    @MainActor
+    func testFlattenAwaitAnyVoidThrowingThrows() async throws {
+        var concurrency = 0
+        var maxConcurrency = 0
+        
+        let inProgress = CurrentValueSubject<[TaskID: CheckedContinuation<Void, any Error>], Never>([:])
+        var completed: Set<TaskID> = []
+        
+        let jobs = (0..<10)
+            .map { outerIndex in
+                { @Sendable @MainActor in
+                    concurrency += 1
+                    defer { concurrency -= 1; completed.insert(.outer(outerIndex)) }
+                    
+                    maxConcurrency = max(concurrency, maxConcurrency)
+                    
+                    try await withCheckedThrowingContinuation { continuation in
+                        inProgress.value[.outer(outerIndex)] = continuation
+                    }
+
+                    return (0..<5)
+                        .map { innerIndex in
+                            { @Sendable @MainActor in
+                                let taskID = TaskID.inner(outerIndex, innerIndex)
+                                
+                                concurrency += 1
+                                defer { concurrency -= 1; completed.insert(taskID) }
+                                
+                                try await withCheckedThrowingContinuation { continuation in
+                                    inProgress.value[.inner(outerIndex, innerIndex)] = continuation
+                                }
+                            }
+                        }
+            }
+        }
+        
+        var concurrencyReached = false
+        var thrown = false
+        
+        let subscription = inProgress.sink { currentInProgress in
+            guard !thrown else {
+                return
+            }
+            
+            if !concurrencyReached {
+                if currentInProgress.count == 5 {
+                    concurrencyReached = true
+                } else {
+                    return
+                }
+            }
+            if let key = currentInProgress.keys.randomElement() {
+                thrown = true
+                inProgress.value.removeValue(forKey: key)?.resume(throwing: TestError())
+            }
+        }
+        
+        do {
+            try await jobs.flattenAwaitAny(maxConcurrency: 5)
+            throw Fail("Stream should have thrown")
+        } catch {
+            try assertTrue(error is TestError)
+        }
 
         try assertEqual(5, maxConcurrency)
         
