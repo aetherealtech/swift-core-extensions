@@ -4,39 +4,6 @@ import Foundation
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 extension Task: Cancellable {}
 
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
-extension TimeInterval: DurationProtocol {
-    public static func * (lhs: TimeInterval, rhs: Int) -> TimeInterval {
-        lhs * Self(rhs)
-    }
-    
-    public static func / (lhs: TimeInterval, rhs: Int) -> TimeInterval {
-        lhs / Self(rhs)
-    }
-}
-
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
-extension Date: InstantProtocol {
-    public func duration(to other: Date) -> TimeInterval {
-        other.timeIntervalSince(self)
-    }
-}
-
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
-struct FoundationClock: Clock {
-    typealias Duration = TimeInterval
-    typealias Instant = Date
-    
-    var now: Date { .init() }
-    
-    var minimumResolution: TimeInterval { 1e-9 }
-    
-    func sleep(until deadline: Date, tolerance: TimeInterval?) async throws {
-        let nanoseconds = UInt64((now.duration(to: deadline)) * 1e9)
-        try await Task.sleep(nanoseconds: nanoseconds)
-    }
-}
-
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension Task where Success == Never, Failure == Never {
     /// Convenience sleep function in terms of *TimeInterval* (seconds)

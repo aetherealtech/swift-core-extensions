@@ -50,6 +50,25 @@ final class TaskTests: XCTestCase {
             return error as NSError
         }
     }
+    
+    func testSleepTimeInterval() async throws {
+        let expectedTimeInterval = 0.1
+        
+        let start = Date()
+        try await Task.sleep(timeInterval: expectedTimeInterval)
+        let timeInterval = Date().timeIntervalSince(start)
+        
+        try assertEqual(expectedTimeInterval, timeInterval, accuracy: 0.01)
+    }
+    
+    func testSleepUntilDate() async throws {
+        let expectedDate = Date(timeIntervalSinceNow: 0.1)
+        
+        try await Task.sleep(until: expectedDate)
+        let date = Date()
+        
+        try assertEqual(date.timeIntervalSince(expectedDate), 0, accuracy: 0.01)
+    }
 
     func testMap() async {
 
