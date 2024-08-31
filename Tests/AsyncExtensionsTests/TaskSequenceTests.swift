@@ -824,6 +824,127 @@ final class TaskSequenceTests: XCTestCase {
         await jobs.awaitAll(maxConcurrency: 5)
         
         try assertEqual(completed, .init(0..<50))
+        try assertEqual(5, maxConcurrency)
+        
+        withExtendedLifetime(subscription) { }
+    }
+    
+    @MainActor
+    func testAwaitAnyEmpty() async throws {
+        let jobs: [@Sendable () async -> Int] = []
+        
+        let result = await jobs.awaitAny(maxConcurrency: 5)
+        
+        try assertNil(result)
+    }
+    
+    @MainActor
+    func testAwaitAny() async throws {
+        var concurrency = 0
+        var maxConcurrency = 0
+        
+        let inProgress = CurrentValueSubject<[Int: CheckedContinuation<Void, Never>], Never>([:])
+        var completed: Set<Int> = []
+        
+        let jobs = (0..<50)
+            .map { index in
+                { @Sendable @MainActor in
+                    concurrency += 1
+                    maxConcurrency = max(concurrency, maxConcurrency)
+                    
+                    await withCheckedContinuation { continuation in
+                        inProgress.value[index] = continuation
+                    }
+                    
+                    inProgress.value.removeValue(forKey: index)
+                    
+                    concurrency -= 1
+                    completed.insert(index)
+                    
+                    return index
+                }
+            }
+        
+        var concurrencyReached = false
+        var expectedResult: Int?
+        
+        let subscription = inProgress.sink { currentInProgress in
+            guard expectedResult == nil else {
+                return
+            }
+            
+            if !concurrencyReached {
+                if currentInProgress.count == 5 {
+                    concurrencyReached = true
+                } else {
+                    return
+                }
+            }
+            
+            if let key = currentInProgress.keys.randomElement() {
+                expectedResult = key
+                inProgress.value.removeValue(forKey: key)?.resume()
+            }
+        }
+        
+        let result = await jobs.awaitAny(maxConcurrency: 5)
+        
+        try assertEqual(result, expectedResult)
+        try assertEqual(5, maxConcurrency)
+        
+        withExtendedLifetime(subscription) { }
+    }
+    
+    @MainActor
+    func testAwaitAnyVoid() async throws {
+        var concurrency = 0
+        var maxConcurrency = 0
+        
+        let inProgress = CurrentValueSubject<[Int: CheckedContinuation<Void, Never>], Never>([:])
+        var completed: Set<Int> = []
+        
+        let jobs = (0..<50)
+            .map { index in
+                { @Sendable @MainActor in
+                    concurrency += 1
+                    maxConcurrency = max(concurrency, maxConcurrency)
+                    
+                    await withCheckedContinuation { continuation in
+                        inProgress.value[index] = continuation
+                    }
+                    
+                    inProgress.value.removeValue(forKey: index)
+                    
+                    concurrency -= 1
+                    completed.insert(index)
+                }
+            }
+        
+        var concurrencyReached = false
+        var expectedResult: Int?
+        
+        let subscription = inProgress.sink { currentInProgress in
+            guard expectedResult == nil else {
+                return
+            }
+            
+            if !concurrencyReached {
+                if currentInProgress.count == 5 {
+                    concurrencyReached = true
+                } else {
+                    return
+                }
+            }
+            
+            if let key = currentInProgress.keys.randomElement() {
+                expectedResult = key
+                inProgress.value.removeValue(forKey: key)?.resume()
+            }
+        }
+        
+        await jobs.awaitAny(maxConcurrency: 5)
+        
+        try assertEqual(5, maxConcurrency)
         
         withExtendedLifetime(subscription) { }
     }
@@ -872,6 +993,7 @@ final class TaskSequenceTests: XCTestCase {
         try await jobs.awaitAll(maxConcurrency: 5)
         
         try assertEqual(completed, .init(0..<50))
+        try assertEqual(5, maxConcurrency)
         
         withExtendedLifetime(subscription) { }
     }
@@ -931,6 +1053,247 @@ final class TaskSequenceTests: XCTestCase {
         }
         
         try assertEqual(completed.count, 25)
+        try assertEqual(5, maxConcurrency)
+        
+        withExtendedLifetime(subscription) { }
+    }
+    
+    @MainActor
+    func testAwaitAnyThrowingEmpty() async throws {
+        let jobs: [@Sendable () async throws -> Int] = []
+        
+        let result = try await jobs.awaitAny(maxConcurrency: 5)
+        
+        try assertNil(result)
+    }
+    
+    @MainActor
+    func testAwaitAnyThrowingNoThrows() async throws {
+        var concurrency = 0
+        var maxConcurrency = 0
+        
+        let inProgress = CurrentValueSubject<[Int: CheckedContinuation<Void, any Error>], Never>([:])
+        var completed: Set<Int> = []
+        
+        let jobs = (0..<50)
+            .map { index in
+                { @Sendable @MainActor in
+                    concurrency += 1
+                    maxConcurrency = max(concurrency, maxConcurrency)
+                    
+                    try await withCheckedThrowingContinuation { continuation in
+                        inProgress.value[index] = continuation
+                    }
+                    
+                    inProgress.value.removeValue(forKey: index)
+                    
+                    concurrency -= 1
+                    completed.insert(index)
+                    
+                    return index
+                }
+            }
+        
+        var concurrencyReached = false
+        var expectedResult: Int?
+        
+        let subscription = inProgress.sink { currentInProgress in
+            guard expectedResult == nil else {
+                return
+            }
+            
+            if !concurrencyReached {
+                if currentInProgress.count == 5 {
+                    concurrencyReached = true
+                } else {
+                    return
+                }
+            }
+            
+            if let key = currentInProgress.keys.randomElement() {
+                expectedResult = key
+                inProgress.value.removeValue(forKey: key)?.resume()
+            }
+        }
+        
+        let result = try await jobs.awaitAny(maxConcurrency: 5)
+        
+        try assertEqual(result, expectedResult)
+        try assertEqual(5, maxConcurrency)
+        
+        withExtendedLifetime(subscription) { }
+    }
+    
+    @MainActor
+    func testAwaitAnyThrowingThrows() async throws {
+        var concurrency = 0
+        var maxConcurrency = 0
+        
+        let inProgress = CurrentValueSubject<[Int: CheckedContinuation<Void, any Error>], Never>([:])
+        var completed: Set<Int> = []
+        
+        let jobs = (0..<50)
+            .map { index in
+                { @Sendable @MainActor in
+                    concurrency += 1
+                    maxConcurrency = max(concurrency, maxConcurrency)
+                    
+                    try await withCheckedThrowingContinuation { continuation in
+                        inProgress.value[index] = continuation
+                    }
+                    
+                    inProgress.value.removeValue(forKey: index)
+                    
+                    concurrency -= 1
+                    completed.insert(index)
+                    
+                    return index
+                }
+            }
+        
+        var concurrencyReached = false
+        var thrown = false
+        
+        let subscription = inProgress.sink { currentInProgress in
+            guard !thrown else {
+                return
+            }
+            
+            if !concurrencyReached {
+                if currentInProgress.count == 5 {
+                    concurrencyReached = true
+                } else {
+                    return
+                }
+            }
+            
+            if let key = currentInProgress.keys.randomElement() {
+                thrown = true
+                inProgress.value.removeValue(forKey: key)?.resume(throwing: TestError())
+            }
+        }
+        
+        do {
+            let result = try await jobs.awaitAny(maxConcurrency: 5)
+            throw Fail("Stream should have thrown")
+        } catch {
+            try assertTrue(error is TestError)
+        }
+        
+        try assertEqual(5, maxConcurrency)
+        
+        withExtendedLifetime(subscription) { }
+    }
+    
+    @MainActor
+    func testAwaitAnyVoidThrowingNoThrows() async throws {
+        var concurrency = 0
+        var maxConcurrency = 0
+        
+        let inProgress = CurrentValueSubject<[Int: CheckedContinuation<Void, any Error>], Never>([:])
+        var completed: Set<Int> = []
+        
+        let jobs = (0..<50)
+            .map { index in
+                { @Sendable @MainActor in
+                    concurrency += 1
+                    maxConcurrency = max(concurrency, maxConcurrency)
+                    
+                    try await withCheckedThrowingContinuation { continuation in
+                        inProgress.value[index] = continuation
+                    }
+                    
+                    inProgress.value.removeValue(forKey: index)
+                    
+                    concurrency -= 1
+                    completed.insert(index)
+                }
+            }
+        
+        var concurrencyReached = false
+        var expectedResult: Int?
+        
+        let subscription = inProgress.sink { currentInProgress in
+            guard expectedResult == nil else {
+                return
+            }
+            
+            if !concurrencyReached {
+                if currentInProgress.count == 5 {
+                    concurrencyReached = true
+                } else {
+                    return
+                }
+            }
+            
+            if let key = currentInProgress.keys.randomElement() {
+                expectedResult = key
+                inProgress.value.removeValue(forKey: key)?.resume()
+            }
+        }
+        
+        try await jobs.awaitAny(maxConcurrency: 5)
+        
+        try assertEqual(5, maxConcurrency)
+        
+        withExtendedLifetime(subscription) { }
+    }
+    
+    @MainActor
+    func testAwaitAnyVoidThrowingThrows() async throws {
+        var concurrency = 0
+        var maxConcurrency = 0
+        
+        let inProgress = CurrentValueSubject<[Int: CheckedContinuation<Void, any Error>], Never>([:])
+        var completed: Set<Int> = []
+        
+        let jobs = (0..<50)
+            .map { index in
+                { @Sendable @MainActor in
+                    concurrency += 1
+                    maxConcurrency = max(concurrency, maxConcurrency)
+                    
+                    try await withCheckedThrowingContinuation { continuation in
+                        inProgress.value[index] = continuation
+                    }
+                    
+                    inProgress.value.removeValue(forKey: index)
+                    
+                    concurrency -= 1
+                    completed.insert(index)
+                }
+            }
+        
+        var concurrencyReached = false
+        var thrown = false
+        
+        let subscription = inProgress.sink { currentInProgress in
+            guard !thrown else {
+                return
+            }
+            
+            if !concurrencyReached {
+                if currentInProgress.count == 5 {
+                    concurrencyReached = true
+                } else {
+                    return
+                }
+            }
+            
+            if let key = currentInProgress.keys.randomElement() {
+                thrown = true
+                inProgress.value.removeValue(forKey: key)?.resume(throwing: TestError())
+            }
+        }
+        
+        do {
+            try await jobs.awaitAny(maxConcurrency: 5)
+            throw Fail("Stream should have thrown")
+        } catch {
+            try assertTrue(error is TestError)
+        }
+        
+        try assertEqual(5, maxConcurrency)
         
         withExtendedLifetime(subscription) { }
     }
