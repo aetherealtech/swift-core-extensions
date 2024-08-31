@@ -19,12 +19,55 @@ public extension Task where Success == Never, Failure == Never {
 public struct TimedOut: Error {}
 
 @available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
-public func withTimeout<R: Sendable>(
-    after duration: Duration,
+public func withTimeout<R: Sendable, C: Clock>(
+    after duration: C.Instant.Duration,
+    tolerance: C.Instant.Duration? = nil,
+    clock: C,
     @_inheritActorContext @_implicitSelfCapture _ work: __owned @Sendable @escaping () async throws -> R
 ) async throws -> R {
     try await withTimeout(
-        sleep: { try await Task.sleep(for: duration) },
+        sleep: { try await Task.sleep(for: duration, tolerance: tolerance, clock: clock) },
+        work
+    )
+}
+
+@available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
+public func withTimeout<R: Sendable>(
+    after duration: ContinuousClock.Instant.Duration,
+    tolerance: ContinuousClock.Instant.Duration? = nil,
+    @_inheritActorContext @_implicitSelfCapture _ work: __owned @Sendable @escaping () async throws -> R
+) async throws -> R {
+    try await withTimeout(
+        after: duration,
+        tolerance: tolerance,
+        clock: ContinuousClock(),
+        work
+    )
+}
+
+@available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
+public func withTimeout<R: Sendable, C: Clock>(
+    at instant: C.Instant,
+    tolerance: C.Duration? = nil,
+    clock: C,
+    @_inheritActorContext @_implicitSelfCapture _ work: __owned @Sendable @escaping () async throws -> R
+) async throws -> R {
+    try await withTimeout(
+        sleep: { try await Task.sleep(until: instant, tolerance: tolerance, clock: clock) },
+        work
+    )
+}
+
+@available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
+public func withTimeout<R: Sendable>(
+    at instant: ContinuousClock.Instant,
+    tolerance: ContinuousClock.Duration? = nil,
+    @_inheritActorContext @_implicitSelfCapture _ work: __owned @Sendable @escaping () async throws -> R
+) async throws -> R {
+    try await withTimeout(
+        at: instant,
+        tolerance: tolerance,
+        clock: ContinuousClock(),
         work
     )
 }
@@ -47,19 +90,6 @@ public func withTimeout<R: Sendable>(
 ) async throws -> R {
     try await withTimeout(
         sleep: { try await Task.sleep(until: date) },
-        work
-    )
-}
-
-@available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *)
-public func withTimeout<R: Sendable, C: Clock>(
-    at instant: C.Instant,
-    tolerance: C.Duration? = nil,
-    clock: C,
-    @_inheritActorContext @_implicitSelfCapture _ work: __owned @Sendable @escaping () async throws -> R
-) async throws -> R {
-    try await withTimeout(
-        sleep: { try await Task.sleep(until: instant, tolerance: tolerance, clock: clock) },
         work
     )
 }

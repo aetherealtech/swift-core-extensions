@@ -69,6 +69,94 @@ final class TaskTests: XCTestCase {
         
         try assertEqual(date.timeIntervalSince(expectedDate), 0, accuracy: 0.01)
     }
+    
+    func testWithTimeoutDurationNotTimedOut() async throws {
+        let result = try await withTimeout(after: Duration.seconds(2)) {
+            try await Task.sleep(for: Duration.milliseconds(100))
+            return 5
+        }
+        
+        try assertEqual(result, 5)
+    }
+    
+    func testWithTimeoutDurationTimedOut() async throws {
+        do {
+            let _ = try await withTimeout(after: Duration.milliseconds(50)) {
+                try await Task.sleep(for: Duration.milliseconds(100))
+                return 5
+            }
+            
+            throw Fail("Should have timed out")
+        } catch {
+            try assertTrue(error is TimedOut)
+        }
+    }
+    
+    func testWithTimeoutInstantNotTimedOut() async throws {
+        let result = try await withTimeout(at: ContinuousClock().now.advanced(by: .seconds(2))) {
+            try await Task.sleep(for: Duration.milliseconds(100))
+            return 5
+        }
+        
+        try assertEqual(result, 5)
+    }
+    
+    func testWithTimeoutInstantTimedOut() async throws {
+        do {
+            let _ = try await withTimeout(at: ContinuousClock().now.advanced(by: .milliseconds(50))) {
+                try await Task.sleep(for: Duration.milliseconds(100))
+                return 5
+            }
+            
+            throw Fail("Should have timed out")
+        } catch {
+            try assertTrue(error is TimedOut)
+        }
+    }
+    
+    func testWithTimeoutTimeIntervalNotTimedOut() async throws {
+        let result = try await withTimeout(timeInterval: 2.0) {
+            try await Task.sleep(timeInterval: 0.1)
+            return 5
+        }
+        
+        try assertEqual(result, 5)
+    }
+    
+    func testWithTimeoutTimeIntervalTimedOut() async throws {
+        do {
+            let _ = try await withTimeout(timeInterval: 0.05) {
+                try await Task.sleep(timeInterval: 0.1)
+                return 5
+            }
+            
+            throw Fail("Should have timed out")
+        } catch {
+            try assertTrue(error is TimedOut)
+        }
+    }
+    
+    func testWithTimeoutDateNotTimedOut() async throws {
+        let result = try await withTimeout(at: Date().addingTimeInterval(2.0)) {
+            try await Task.sleep(timeInterval: 0.1)
+            return 5
+        }
+        
+        try assertEqual(result, 5)
+    }
+    
+    func testWithTimeoutDateTimedOut() async throws {
+        do {
+            let _ = try await withTimeout(at: Date().addingTimeInterval(0.05)) {
+                try await Task.sleep(timeInterval: 0.1)
+                return 5
+            }
+            
+            throw Fail("Should have timed out")
+        } catch {
+            try assertTrue(error is TimedOut)
+        }
+    }
 
     func testMap() async {
 
