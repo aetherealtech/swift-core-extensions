@@ -286,8 +286,36 @@ public extension Sequence where Self: Sendable {
             .waitUntilDone()
     }
     
+    func flattenAwaitAny<R, S: Sequence & Sendable>(maxConcurrency: Int = .max) async -> R? where Element == AsyncElement<S>, S.Element == AsyncElement<R> {
+        let stream = flattenStream(maxConcurrency: maxConcurrency)
+        
+        for await value in stream {
+            return value
+        }
+        
+        return nil
+    }
+    
+    func flattenAwaitAny<S: Sequence & Sendable>(maxConcurrency: Int = .max) async where Element == AsyncElement<S>, S.Element == AsyncElement<Void> {
+        let _: Void? = await flattenAwaitAny(maxConcurrency: maxConcurrency)
+    }
+    
     func flattenAwaitAll<S: Sequence & Sendable>(maxConcurrency: Int = .max) async throws where Element == AsyncThrowingElement<S>, S.Element == AsyncThrowingElement<Void> {
         try await flattenStream(maxConcurrency: maxConcurrency)
             .waitUntilDone()
+    }
+    
+    func flattenAwaitAny<R, S: Sequence & Sendable>(maxConcurrency: Int = .max) async throws -> R? where Element == AsyncThrowingElement<S>, S.Element == AsyncThrowingElement<R> {
+        let stream = flattenStream(maxConcurrency: maxConcurrency)
+        
+        for try await value in stream {
+            return value
+        }
+        
+        return nil
+    }
+    
+    func flattenAwaitAny<S: Sequence & Sendable>(maxConcurrency: Int = .max) async throws where Element == AsyncThrowingElement<S>, S.Element == AsyncThrowingElement<Void> {
+        let _: Void? = try await flattenAwaitAny(maxConcurrency: maxConcurrency)
     }
 }
