@@ -667,14 +667,6 @@ final class TaskSequenceTests: XCTestCase {
                 }
                 
                 if expectedValues.count == 25 {
-//                    expectedCancelledTasks = .init(startedOuterTasks.map(TaskID.outer) + startedInnerTasks.flatMap { outerIndex, innerTasks in innerTasks.map { innerIndex in .inner(outerIndex, innerIndex)}})
-//                    startedTasksWhenCancelled = expectedCancelledTasks
-//                    for value in remainingInner.map(\.0) { expectedCancelledTasks.remove(.outer(value)) }
-//                    for (outerIndex, innerIndex) in receivedValues {
-//                        expectedCancelledTasks.remove(.outer(outerIndex))
-//                        expectedCancelledTasks.remove(.inner(outerIndex, innerIndex))
-//                    }
-//                    expectedCancelledTasks.remove(.inner(outerIndex, next.0))
                     failedTask = .inner(outerIndex, next.0)
                     next.1.resume(throwing: TestError())
                 } else {
@@ -788,35 +780,158 @@ final class TaskSequenceTests: XCTestCase {
         try assertEqual(completed, .init(0..<50))
     }
     
+    @MainActor
     func testAwaitAll() async throws {
-        print("Let's Go")
+        var concurrency = 0
+        var maxConcurrency = 0
         
-        await (0..<50)
+        let inProgress = CurrentValueSubject<[Int: CheckedContinuation<Void, Never>], Never>([:])
+        var completed: Set<Int> = []
+        
+        let jobs = (0..<50)
             .map { index in
-                { @Sendable in
-                    print("STARTING \(index)")
-                    try! await Task.sleep(timeInterval: 0.01)
-                    print("ENDING \(index)")
+                { @Sendable @MainActor in                    
+                    concurrency += 1
+                    maxConcurrency = max(concurrency, maxConcurrency)
+                    
+                    await withCheckedContinuation { continuation in
+                        inProgress.value[index] = continuation
+                    }
+                    
+                    inProgress.value.removeValue(forKey: index)
+                    
+                    concurrency -= 1
+                    completed.insert(index)
                 }
             }
-            .awaitAll(maxConcurrency: 5)
         
-        print("All Done")
+        var concurrencyReached = false
+        
+        let subscription = inProgress.sink { currentInProgress in
+            if !concurrencyReached {
+                if currentInProgress.count == 5 {
+                    concurrencyReached = true
+                } else {
+                    return
+                }
+            }
+            
+            if let key = currentInProgress.keys.randomElement() {
+                inProgress.value.removeValue(forKey: key)?.resume()
+            }
+        }
+        
+        await jobs.awaitAll(maxConcurrency: 5)
+        
+        try assertEqual(completed, .init(0..<50))
+        
+        withExtendedLifetime(subscription) { }
     }
     
-    func testAwaitAllThrowing() async throws {
-        print("Let's Go")
+    @MainActor
+    func testAwaitAllThrowingNoThrows() async throws {
+        var concurrency = 0
+        var maxConcurrency = 0
         
-        try await (0..<50)
+        let inProgress = CurrentValueSubject<[Int: CheckedContinuation<Void, any Error>], Never>([:])
+        var completed: Set<Int> = []
+        
+        let jobs = (0..<50)
             .map { index in
-                { @Sendable in
-                    print("STARTING \(index)")
-                    try await Task.sleep(timeInterval: 0.01)
-                    print("ENDING \(index)")
+                { @Sendable @MainActor in
+                    concurrency += 1
+                    maxConcurrency = max(concurrency, maxConcurrency)
+                    
+                    try await withCheckedThrowingContinuation { continuation in
+                        inProgress.value[index] = continuation
+                    }
+                    
+                    inProgress.value.removeValue(forKey: index)
+                    
+                    concurrency -= 1
+                    completed.insert(index)
                 }
             }
-            .awaitAll(maxConcurrency: 5)
         
-        print("All Done")
+        var concurrencyReached = false
+        
+        let subscription = inProgress.sink { currentInProgress in
+            if !concurrencyReached {
+                if currentInProgress.count == 5 {
+                    concurrencyReached = true
+                } else {
+                    return
+                }
+            }
+            
+            if let key = currentInProgress.keys.randomElement() {
+                inProgress.value.removeValue(forKey: key)?.resume()
+            }
+        }
+        
+        try await jobs.awaitAll(maxConcurrency: 5)
+        
+        try assertEqual(completed, .init(0..<50))
+        
+        withExtendedLifetime(subscription) { }
+    }
+    
+    @MainActor
+    func testAwaitAllThrowingThrows() async throws {
+        var concurrency = 0
+        var maxConcurrency = 0
+        
+        let inProgress = CurrentValueSubject<[Int: CheckedContinuation<Void, any Error>], Never>([:])
+        var completed: Set<Int> = []
+        
+        let jobs = (0..<50)
+            .map { index in
+                { @Sendable @MainActor in
+                    concurrency += 1
+                    maxConcurrency = max(concurrency, maxConcurrency)
+                    
+                    try await withCheckedThrowingContinuation { continuation in
+                        inProgress.value[index] = continuation
+                    }
+                    
+                    inProgress.value.removeValue(forKey: index)
+                    
+                    concurrency -= 1
+                    completed.insert(index)
+                }
+            }
+        
+        var concurrencyReached = false
+        
+        let subscription = inProgress.sink { currentInProgress in
+            if !concurrencyReached {
+                if currentInProgress.count == 5 {
+                    concurrencyReached = true
+                } else {
+                    return
+                }
+            }
+            
+            if let key = currentInProgress.keys.randomElement() {
+                let continuation = inProgress.value.removeValue(forKey: key)!
+                
+                if completed.count == 25 {
+                    continuation.resume(throwing: TestError())
+                } else {
+                    continuation.resume()
+                }
+            }
+        }
+        
+        do {
+            try await jobs.awaitAll(maxConcurrency: 5)
+            throw Fail("Stream should have thrown")
+        } catch {
+            try assertTrue(error is TestError)
+        }
+        
+        try assertEqual(completed.count, 25)
+        
+        withExtendedLifetime(subscription) { }
     }
 }

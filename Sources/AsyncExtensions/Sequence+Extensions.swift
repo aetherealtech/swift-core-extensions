@@ -245,6 +245,13 @@ public extension Sequence where Self: Sendable {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+public extension Sequence where Self: Sendable {
+    func awaitAny(maxConcurrency: Int = .max) async where Element == AsyncElement<Void> {
+        let _: Void? = await awaitAny(maxConcurrency: maxConcurrency)
+    }
+}
+
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension Sequence where Self: Sendable, Element == AsyncThrowingElement<Void> {
     func awaitAll(maxConcurrency: Int = .max) async throws {
         try await stream(maxConcurrency: maxConcurrency)
@@ -262,6 +269,13 @@ public extension Sequence where Self: Sendable {
         }
         
         return nil
+    }
+}
+
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+public extension Sequence where Self: Sendable {
+    func awaitAny(maxConcurrency: Int = .max) async throws where Element == AsyncThrowingElement<Void> {
+        let _: Void? = try await awaitAny(maxConcurrency: maxConcurrency)
     }
 }
 
