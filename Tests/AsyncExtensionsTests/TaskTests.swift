@@ -5,51 +5,7 @@ import XCTest
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 final class TaskTests: XCTestCase {
-
-    static let testError = NSError(
-        domain: "Test Error",
-        code: 0,
-        userInfo: nil
-    )
-
-    let alwaysSuccessMapFunction: @Sendable (Int) -> String = { value in "\(value)" }
-    let successMapFunction: @Sendable (Int) throws -> String = { value in "\(value)" }
-    let failureMapFunction: @Sendable (Int) throws -> String = { _ in throw TaskTests.testError }
-
-    let alwaysSuccessFlatMapFunction: @Sendable (Int) -> Task<String, Never> = { value in .init { "\(value)" } }
-    let successFlatMapFunction: @Sendable (Int) -> Task<String, Error> = { value in .init { "\(value)" } }
-    let failureFlatMapFunction: @Sendable (Int) -> Task<String, Error> = { _ in .init { throw TaskTests.testError } }
-
-    let testValue = 5
-    var testMappedValue: String { alwaysSuccessMapFunction(testValue) }
-
-    var alwaysSuccessTask: () -> Task<Int, Never> { { [testValue] in Task {
-
-        testValue
-    } } }
-
-    var successTask: () -> Task<Int, Error> { { [testValue] in Task {
-
-        testValue
-    } } }
-
-    var failureTask: () -> Task<Int, Error> { { Task {
-        
-        throw TaskTests.testError
-    } } }
-
-    private func captureError<Result>(_ task: Task<Result, Error>) async -> NSError? {
-
-        do {
-
-            _ = try await task.value
-            return nil
-        }
-        catch(let error) {
-
-            return error as NSError
-        }
-    }
+    struct TestError: Error {}
     
     func testSleepTimeInterval() async throws {
         let expectedTimeInterval = 0.1
@@ -157,289 +113,119 @@ final class TaskTests: XCTestCase {
             try assertTrue(error is TimedOut)
         }
     }
-
-    func testMap() async {
-
-        let task = alwaysSuccessTask()
-        let mappedTask = task.map(alwaysSuccessMapFunction)
-
-        let result = await mappedTask.value
-        XCTAssertEqual(testMappedValue, result)
-    }
-
-    func testMapWithSourceErrorSuccess() async throws {
-
-        let task = successTask()
-        let mappedTask = task.map(alwaysSuccessMapFunction)
-
-        let result = try await mappedTask.value
-        XCTAssertEqual(testMappedValue, result)
-    }
-
-    func testMapWithSourceErrorFailure() async throws {
-
-        let task = failureTask()
-        let mappedTask = task.map(alwaysSuccessMapFunction)
-
-        try await assertThrowsError(expectedError: Self.testError) { try await mappedTask.value }
-    }
-
-    func testMapWithMapErrorSuccess() async throws {
-
-        let task = alwaysSuccessTask()
-        let mappedTask = task.map(successMapFunction)
-
-        let result = try await mappedTask.value
-        try assertEqual(testMappedValue, result)
-    }
-
-    func testMapWithMapErrorMapFailure() async throws {
-
-        let task = alwaysSuccessTask()
-        let mappedTask = task.map(failureMapFunction)
-
-        try await assertThrowsError(expectedError: Self.testError) { try await mappedTask.value }
-    }
-
-    func testMapWithSourceAndMapErrorSuccess() async throws {
-
-        let task = successTask()
-        let mappedTask = task.map(successMapFunction)
-
-        let result = try await mappedTask.value
-        try assertEqual(testMappedValue, result)
-    }
-
-    func testMapWithSourceAndMapErrorSourceFailure() async throws {
-
-        let task = failureTask()
-        let mappedTask = task.map(successMapFunction)
-
-        try await assertThrowsError(expectedError: Self.testError) { try await mappedTask.value }
-    }
-
-    func testMapWithSourceAndMapErrorMapFailure() async throws {
-
-        let task = successTask()
-        let mappedTask = task.map(failureMapFunction)
-
-        try await assertThrowsError(expectedError: Self.testError) { try await mappedTask.value }
-    }
-
-    func testFlatMap() async throws {
-
-        let task = alwaysSuccessTask()
-        let mappedTask = task.flatMap(alwaysSuccessFlatMapFunction)
-
-        let result = await mappedTask.value
-        try assertEqual(testMappedValue, result)
-    }
-
-    func testFlatMapWithSourceErrorSuccess() async throws {
-
-        let task = successTask()
-        let mappedTask = task.flatMap(alwaysSuccessFlatMapFunction)
-
-        let result = try await mappedTask.value
-        try assertEqual(testMappedValue, result)
-    }
-
-    func testFlatMapWithSourceErrorFailure() async throws {
-
-        let task = failureTask()
-        let mappedTask = task.flatMap(alwaysSuccessFlatMapFunction)
-
-        try await assertThrowsError(expectedError: Self.testError) { try await mappedTask.value }
-    }
-
-    func testFlatMapWithFlatMapErrorSuccess() async throws {
-
-        let task = alwaysSuccessTask()
-        let mappedTask = task.flatMap(successFlatMapFunction)
-
-        let result = try await mappedTask.value
-        try assertEqual(testMappedValue, result)
-    }
-
-    func testFlatMapWithFlatMapErrorFlatMapFailure() async throws {
-
-        let task = alwaysSuccessTask()
-        let mappedTask = task.flatMap(failureFlatMapFunction)
-
-        try await assertThrowsError(expectedError: Self.testError) { try await mappedTask.value }
-    }
-
-    func testFlatMapWithSourceAndFlatMapErrorSuccess() async throws {
-
-        let task = successTask()
-        let mappedTask = task.flatMap(successFlatMapFunction)
-
-        let result = try await mappedTask.value
-        try assertEqual(testMappedValue, result)
-    }
-
-    func testFlatMapWithSourceAndFlatMapErrorSourceFailure() async throws {
-
-        let task = failureTask()
-        let mappedTask = task.flatMap(successFlatMapFunction)
-
-        try await assertThrowsError(expectedError: Self.testError) { try await mappedTask.value }
-    }
-
-    func testFlatMapWithSourceAndFlatMapErrorFlatMapFailure() async throws {
-
-        let task = successTask()
-        let mappedTask = task.flatMap(failureFlatMapFunction)
-
-        try await assertThrowsError(expectedError: Self.testError) { try await mappedTask.value }
-    }
-
-    func testCombine() async throws {
-        
-        let results = (0, "1", "2" as Character)
-        
-        let tasks = (
-            Task<Int, Never> { try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000)); return results.0 },
-            Task<String, Never> { try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000)); return results.1 },
-            Task<Character, Never> { try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000)); return results.2 }
-        )
-
-        let combinedTask = Task.combine(
-            tasks.0,
-            tasks.1,
-            tasks.2
-        )
-        
-        let result = await combinedTask.value
-        
-        try assertTrue(result.0 == results.0 &&
-                      result.1 == results.1 &&
-                      result.2 == results.2
-        )
-    }
     
-    func testCombineThrowingNoErrors() async throws {
+    final class TaskWrapper {
+        var task: Task<Void, Never>
         
-        let results = (0, "1", "2" as Character)
-        
-        let tasks = (
-            Task<Int, Error> { try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000)); return results.0 },
-            Task<String, Error> { try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000)); return results.1 },
-            Task<Character, Error> { try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000)); return results.2 }
-        )
-
-        let combinedTask = Task.combineThrowing(
-            tasks.0,
-            tasks.1,
-            tasks.2
-        )
-        
-        let result = try await combinedTask.value
-        
-        try assertTrue(result.0 == results.0 &&
-                      result.1 == results.1 &&
-                      result.2 == results.2
-        )
-    }
-    
-    func testCombineThrowingErrors() async throws {
-        
-        let results = (0, "1", "2" as Character)
-        
-        let tasks = (
-            Task<Int, Error> { try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000)); return results.0 },
-            Task<String, Error> { try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000)); throw Self.testError },
-            Task<Character, Error> { try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000)); return results.2 }
-        )
-
-        let combinedTask = Task.combineThrowing(
-            tasks.0,
-            tasks.1,
-            tasks.2
-        )
-        
-        try await assertThrowsError(expectedError: Self.testError) { try await combinedTask.value }
-    }
-    
-    func testCombineSequence() async throws {
-
-        let results = (0..<5).map { index in
-
-            "Task \(index)"
+        init(task: Task<Void, Never>) {
+            self.task = task
         }
- 
-        let tasks = results.map { result in
-
-            Task<String, Never> {
-
-                try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000))
-                return result
+    }
+    
+    // What we want to test here is that if an outer task calls `await innerTask.waitUntilDone()`, and the outer task starts before the inner task, that the outer task does not proceed past the `waitUntilDone` until after the inner task is finished.  To record that the inner task is done we use a "defer" to set a boolean flag.  We also need to control when the inner task completes.  We do that by having the inner task wait on a continuation.  The tricky part is we need this continuation to be returned back to the test function.  But the continuation isn't available until the inner task is running, which happens asynchronously.  So the test function needs to await another continuation that is resumed with the continuation for the inner task after the inner task starts.  We also need to return the inner task itself so that the test can create the outer task to call `await innerTask.waitUntilDone()`.  Since the continuation the test function is awaiting, and that returns the inner task, is continued inside the task, we need the task's block to capture the task itself.  We do this by first creating an optional `Task` and then assigning it, allowing the block to capture the `var` by reference.  The task is sure to be set by the time it is read to pass to the continuation because the only way it wouldn't be is if the spawned `Task` ran synchronously (this is all done on the `MainActor` to be thread safe).  We then need to do essentially the same thing to create the outer task that awaits the inner task.  At the end of all of this, we have two tasks and two continuations, where each continuation is what the test can use to allow a task to complete.  The test can then resume the outer continuation first, and then the inner continuation.  This allows us to test that even though the outer task proceeds before the inner task, the inner task still completes before the outer task proceeds past `waitUntilDone()`.  The assertions are done in the outer task after `waitUntilDone`().  We want to make sure the test doesn't complete before these assertions run, so the test needs to await the outer task (this is exactly what `waitUntilDone()` is for, but that's what we're testing so we use the provided `Task.value` instead).
+    
+    @MainActor
+    func testWaitUntilDone() async throws {
+        var completed = false
+        
+        let (innerTask, innerTaskContinuation) = await withCheckedContinuation { outerContinuation in
+            var task: Task<Void, Never>?
+            
+            task = Task { @MainActor in
+                defer { completed = true }
+                                
+                await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                    outerContinuation.resume(returning: (task!, continuation))
+                }
             }
         }
-
-        let combinedTask = tasks.combine()
-
-        let result = await combinedTask.value
-
-        try assertTrue(result == results)
+        
+        let (outerTask, outerTaskContinuation) = await withCheckedContinuation { outerContinuation in
+            var testTask: Task<Void, any Error>?
+            
+            testTask = Task { @MainActor in
+                await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                    outerContinuation.resume(returning: (testTask!, continuation))
+                }
+                
+                await innerTask.waitUntilDone()
+                try assertTrue(completed)
+            }
+        }
+        
+        outerTaskContinuation.resume()
+        innerTaskContinuation.resume()
+        
+        _ = try await outerTask.value
     }
-
-//    func testMapAwaitAllAlwaysSuccess() async throws {
-//
-//        let values = (0..<10).map { _ in Int.random(in: 0..<100) }
-//
-//        let tasks = values.map { value in
-//
-//            Task<Int, Never> {
-//
-//                try! await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000))
-//                return value
-//            }
-//        }
-//
-//        let result = await tasks.awaitAll()
-//
-//        XCTAssertEqual(values, result)
-//    }
-//
-//    func testMapAwaitAllSuccess() async throws {
-//
-//        let values = (0..<10).map { _ in Int.random(in: 0..<100) }
-//
-//        let tasks = values.map { value in
-//
-//            Task<Int, Error> {
-//
-//                try await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000))
-//                return value
-//            }
-//        }
-//
-//        let result = try await tasks.awaitAll()
-//
-//        XCTAssertEqual(values, result)
-//    }
-//
-//    func testMapAwaitAllFailure() async throws {
-//
-//        let values = (0..<10).map { _ in Int.random(in: 0..<100) }
-//
-//        let tasks = values.map { value in
-//
-//            Task<Int, Error> {
-//
-//                if value == values[5] {
-//                    throw TaskTests.testError
-//                }
-//
-//                try await Task.sleep(nanoseconds: UInt64.random(in: 1000..<1000000))
-//                return value
-//            }
-//        }
-//
-//        let result = Task { try await tasks.awaitAll() }
-//        let error = await self.captureError(result)
-//
-//        XCTAssertEqual(TaskTests.testError, error)
-//    }
+    
+    @MainActor
+    func testWaitUntilDoneThrowingNoThrows() async throws {
+        var completed = false
+        
+        let (innerTask, innerTaskContinuation) = await withCheckedContinuation { outerContinuation in
+            var task: Task<Void, any Error>?
+            
+            task = Task { @MainActor in
+                defer { completed = true }
+                                
+                try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
+                    outerContinuation.resume(returning: (task!, continuation))
+                }
+            }
+        }
+        
+        let (outerTask, outerTaskContinuation) = await withCheckedContinuation { outerContinuation in
+            var testTask: Task<Void, any Error>?
+            
+            testTask = Task { @MainActor in
+                await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                    outerContinuation.resume(returning: (testTask!, continuation))
+                }
+                
+                try await innerTask.waitUntilDone()
+                try assertTrue(completed)
+            }
+        }
+        
+        outerTaskContinuation.resume()
+        innerTaskContinuation.resume()
+        
+        _ = try await outerTask.value
+    }
+    
+    @MainActor
+    func testWaitUntilDoneThrowingThrows() async throws {
+        let (task, continuation) = await withCheckedContinuation { outerContinuation in
+            var task: Task<Void, any Error>?
+            
+            task = Task { @MainActor in
+                try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
+                    outerContinuation.resume(returning: (task!, continuation))
+                }
+            }
+        }
+        
+        let (testTask, waitingContinuation) = await withCheckedContinuation { outerContinuation in
+            var testTask: Task<Void, any Error>?
+            
+            testTask = Task { @MainActor in
+                await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                    outerContinuation.resume(returning: (testTask!, continuation))
+                }
+                
+                do {
+                    try await task.waitUntilDone()
+                    throw Fail("Task should have failed")
+                } catch {
+                    try assertTrue(error is TestError)
+                }
+            }
+        }
+        
+        waitingContinuation.resume()
+        continuation.resume(throwing: TestError())
+        
+        _ = try await testTask.value
+    }
 }

@@ -129,7 +129,7 @@ public extension Sequence where Self: Sendable {
                                 .lazy
                                 .map { innerOffset, innerWork in
                                     { @Sendable in
-                                        (results[innerOffset].baseAddress! + innerOffset).initialize(to: await innerWork())
+                                        (results[outerOffset].baseAddress! + innerOffset).initialize(to: await innerWork())
                                     }
                                 }
                                 .smuggleSendable()
@@ -292,7 +292,7 @@ public extension Sequence where Self: Sendable {
                                 .lazy
                                 .map { innerOffset, innerWork in
                                     { @Sendable in
-                                        (results[innerOffset].baseAddress! + innerOffset).initialize(to: try await innerWork())
+                                        (results[outerOffset].baseAddress! + innerOffset).initialize(to: try await innerWork())
                                     }
                                 }
                                 .smuggleSendable()
