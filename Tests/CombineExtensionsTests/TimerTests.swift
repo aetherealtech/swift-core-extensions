@@ -7,22 +7,27 @@ import XCTest
 final class TimerTests: XCTestCase {
     func testTimer() async throws {
         let timer = DispatchQueue.global().timer(
-            interval: .milliseconds(250)
+            interval: .milliseconds(2000)
         )
-        
-        let cancelHandle = timer.connect()
-        
+                
         let subscription1 = timer.sink { print("Received 1") }
+        
+        try await Task.sleep(timeInterval: 0.5)
+        
         let subscription2 = timer.sink { print("Received 2") }
+        
+        try await Task.sleep(timeInterval: 0.5)
+        
         let subscription3 = timer.sink { print("Received 3") }
         
-        try await Task.sleep(timeInterval: 5)
+        try await Task.sleep(timeInterval: 0.5)
+        
+        try await Task.sleep(timeInterval: 10)
         
         subscription2.cancel()
         
-        try await Task.sleep(timeInterval: 5)
+        try await Task.sleep(timeInterval: 10)
         
-        withExtendedLifetime(cancelHandle) { }
         withExtendedLifetime(subscription1) { }
         withExtendedLifetime(subscription2) { }
         withExtendedLifetime(subscription3) { }

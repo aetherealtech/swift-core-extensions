@@ -25,102 +25,7 @@ public extension Scheduler {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-private protocol TimerSubscriber {
-    func receive()
-    
-    func appending<Sub: Subscriber<Void, Never>>(subscriber: SingleTimerSubscriber<Sub>) -> any TimerSubscriber
-    func removing<Sub: Subscriber<Void, Never>>(subscriber: SingleTimerSubscriber<Sub>) -> (any TimerSubscriber)?
-}
-
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-private struct SingleTimerSubscriber<Sub: Subscriber<Void, Never>>: TimerSubscriber, Subscription {
-    var combineIdentifier: CombineIdentifier { subscriber.combineIdentifier }
-    
-    func receive() {
-        _demand.write { demand in
-            guard demand > 0 else {
-                return
-            }
-
-            demand -= 1
-            demand += subscriber.receive(())
-        }
-    }
-    
-    func request(_ demand: Subscribers.Demand) {
-        self.demand += demand
-    }
-    
-    func cancel() {
-        cancelImp(self)
-    }
-    
-    func appending<Other: Subscriber<Void, Never>>(subscriber: SingleTimerSubscriber<Other>) -> any TimerSubscriber {
-        PairTimerSubscriber(first: self, second: subscriber)
-    }
-    
-    func removing<Other: Subscriber<Void, Never>>(subscriber: SingleTimerSubscriber<Other>) -> (any TimerSubscriber)? {
-        if subscriber.subscriber.combineIdentifier == self.subscriber.combineIdentifier {
-            return nil
-        } else {
-            return self
-        }
-    }
-
-    let subscriber: Sub
-    let cancelImp: (Self) -> Void
-
-    @Synchronized
-    private var demand: Subscribers.Demand = .none
-}
-
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-private struct PairTimerSubscriber<Sub: Subscriber<Void, Never>, Next: TimerSubscriber>: TimerSubscriber {
-    func receive() {
-        first.receive()
-        second.receive()
-    }
-    
-    func appending<Other: Subscriber<Void, Never>>(subscriber: SingleTimerSubscriber<Other>) -> any TimerSubscriber {
-        return second.appending(subscriber: subscriber).append(to: first)
-    }
-    
-    func removing<Other: Subscriber<Void, Never>>(subscriber: SingleTimerSubscriber<Other>) -> (any TimerSubscriber)? {
-        if subscriber.subscriber.combineIdentifier == first.subscriber.combineIdentifier {
-            return second
-        } else {
-            if let next = second.removing(subscriber: subscriber) {
-                return next.append(to: first)
-            } else {
-                return first
-            }
-        }
-    }
-
-    let first: SingleTimerSubscriber<Sub>
-    let second: Next
-}
-
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-private extension TimerSubscriber {
-    func append<Sub: Subscriber<Void, Never>>(to first: SingleTimerSubscriber<Sub>) -> any TimerSubscriber {
-        PairTimerSubscriber(first: first, second: self)
-    }
-}
-
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-extension (any TimerSubscriber)? {
-    mutating fileprivate func append<Sub: Subscriber<Void, Never>>(_ subscriber: SingleTimerSubscriber<Sub>) {
-        self = self?.appending(subscriber: subscriber) ?? subscriber
-    }
-    
-    mutating fileprivate func remove<Sub: Subscriber<Void, Never>>(_ subscriber: SingleTimerSubscriber<Sub>) {
-        self = self?.removing(subscriber: subscriber)
-    }
-}
-
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public final class TimerPublisher<S: Scheduler>: ConnectablePublisher {
+public final class TimerPublisher<S: Scheduler>: Publisher {
     public typealias Output = Void
     public typealias Failure = Never
 
@@ -134,34 +39,71 @@ public final class TimerPublisher<S: Scheduler>: ConnectablePublisher {
         self.interval = interval
     }
 
-    public func connect() -> Cancellable {
-        scheduler.schedule(
-            after: start,
-            interval: interval,
-            fire
-        )
-    }
-
     public func receive<Sub: Subscriber<Output, Failure>>(subscriber: Sub) {
-        let subscription = SingleTimerSubscriber(
-            subscriber: subscriber
-        ) { [_subscriptions] subscription in
-            _subscriptions.write { subscriptions in subscriptions.remove(subscription) }
+        subscriber.receive(subscription: TimerSubscription(
+            subscriber: subscriber,
+            scheduler: scheduler,
+            start: start,
+            interval: interval
+        ))
+    }
+    
+    private struct TimerSubscription<Sub: Subscriber<Void, Never>>: Subscription {
+        var combineIdentifier: CombineIdentifier { subscriber.combineIdentifier }
+        
+        func receive() {
+            _state.write { state in
+                state.demand -= 1
+                state.demand += subscriber.receive(())
+                
+                if state.demand == .none {
+                    state.subscription?.cancel()
+                    state.subscription = nil
+                }
+            }
         }
         
-        _subscriptions.write { subscriptions in subscriptions.append(subscription) }
+        func request(_ demand: Subscribers.Demand) {
+            guard demand > .none else {
+                return
+            }
+            
+            _state.write { state in
+                state.demand += demand
+                
+                if state.subscription == nil {
+                    state.subscription = scheduler.schedule(
+                        after: start,
+                        interval: interval,
+                        receive
+                    )
+                }
+            }
+        }
+        
+        func cancel() {
+            _state.write { state in
+                state.demand = .none
+                state.subscription?.cancel()
+                state.subscription = nil
+            }
+        }
 
-        subscriber.receive(subscription: subscription)
+        let subscriber: Sub
+        let scheduler: S
+        let start: S.SchedulerTimeType
+        let interval: S.SchedulerTimeType.Stride
+
+        private struct State {
+            var subscription: (any Cancellable)?
+            var demand: Subscribers.Demand = .none
+        }
+        
+        @Synchronized
+        private var state: State = .init()
     }
 
     private let scheduler: S
     private let start: S.SchedulerTimeType
     private let interval: S.SchedulerTimeType.Stride
-
-    @Synchronized
-    private var subscriptions: (any TimerSubscriber)?
-
-    private func fire() {
-        subscriptions?.receive()
-    }
 }
