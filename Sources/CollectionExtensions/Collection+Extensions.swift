@@ -211,12 +211,11 @@ public extension MutableCollection {
         safe index: Index,
         _ body: (inout Element) throws -> R
     ) rethrows -> R? {
-        if var value = self[safe: index] {
-            defer { self[index] = value }
-            return try body(&value)
-        } else {
+        guard indices.contains(index) else {
             return nil
         }
+        
+        return try mutate(at: index, body)
     }
     
     @discardableResult
@@ -236,12 +235,20 @@ public extension MutableCollection {
         _ body: (inout Element) throws -> R,
         else elseBody: () throws -> R
     ) rethrows -> R {
-        if var value = self[safe: index] {
-            defer { self[index] = value }
-            return try body(&value)
-        } else {
-            return try elseBody()
+        try mutate(safe: index, body) ?? elseBody()
+    }
+    
+    mutating func mutate<Indices: Sequence, R>(
+        at indices: Indices,
+        _ body: (inout Element) throws -> R
+    ) rethrows -> [R] where Indices.Element == Index {
+        var result: [R] = []
+        
+        for index in indices {
+            result.append(try body(&self[index]))
         }
+        
+        return result
     }
     
     mutating func mutate<Indices: Sequence>(
@@ -294,6 +301,13 @@ public extension RangeReplaceableCollection {
         immutable { result in
             result.append(contentsOf: sequence)
         }
+    }
+    
+    func appending<S: Sequence>(
+        contentsOf sequence: S,
+        if condition: Bool
+    ) -> Self where S.Element == Element {
+        condition ? appending(contentsOf: sequence) : self
     }
     
     mutating func prepend(_ element: Element) {
@@ -355,7 +369,12 @@ public extension RangeReplaceableCollection {
     }
 
     mutating func safelyRemoveFirst() -> Element? {
-        isEmpty ? nil : removeFirst()
+        if let first = self.first {
+            removeFirst()
+            return first
+        }
+        
+        return nil
     }
 
     mutating func removeFirst(where condition: (Element) -> Bool) -> Element? {

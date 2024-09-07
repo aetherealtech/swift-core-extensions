@@ -198,6 +198,14 @@ let package = Package(
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
         .testTarget(
+            name: "CombineExtensionsTests",
+            dependencies: [
+                "CombineExtensions",
+                .product(name: "Assertions", package: "swift-assertions"),
+            ],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
+        .testTarget(
             name: "DateExtensionsTests",
             dependencies: [
                 "CollectionExtensions",

@@ -6,7 +6,7 @@ public struct AnyScheduler: Scheduler {
     public struct AnyTime: Strideable {
         public struct Stride: Comparable, SignedNumeric, SchedulerTimeIntervalConvertible {
             public static func seconds(_ s: Int) -> Self {
-                .init(nanoseconds: Int64(s) * Int64(1e9))
+                .init(nanoseconds: Int64(s) * 1_000_000_000)
             }
 
             public static func seconds(_ s: Double) -> Self {
@@ -14,11 +14,11 @@ public struct AnyScheduler: Scheduler {
             }
 
             public static func milliseconds(_ ms: Int) -> Self {
-                .init(nanoseconds: Int64(ms) * Int64(1e6))
+                .init(nanoseconds: Int64(ms) * 1_000_000)
             }
 
             public static func microseconds(_ us: Int) -> Self {
-                .init(nanoseconds: Int64(us) * Int64(1e3))
+                .init(nanoseconds: Int64(us) * 1_000)
             }
 
             public static func nanoseconds(_ ns: Int) -> Self {
@@ -34,12 +34,12 @@ public struct AnyScheduler: Scheduler {
             }
             
             public init?(exactly source: some BinaryInteger) {
-                guard let nanoseconds = Int64(exactly: source) else {
+                guard let seconds = Int(exactly: source) else {
                     return nil
                     
                 }
                 
-                self.nanoseconds = nanoseconds
+                self = .seconds(seconds)
             }
             
             public static func + (lhs: Self, rhs: Self) -> Self {
