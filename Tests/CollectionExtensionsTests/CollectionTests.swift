@@ -789,6 +789,425 @@ final class CollectionTests: XCTestCase {
         try assertEqual(expectedResult, result)
     }
     
+    func testAppending() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            9
+        ]
+        
+        let result = testArray
+            .appending(9)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testAppendingIfTrue() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            9
+        ]
+        
+        let result = testArray
+            .appending(9, if: true)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testAppendingIfFalse() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let result = testArray
+            .appending(9, if: false)
+        
+        try assertEqual(testArray, result)
+    }
+    
+    func testAppendingSequence() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            9,
+            4,
+            11,
+            7
+        ]
+        
+        let result = testArray
+            .appending(contentsOf: [9, 4, 11, 7])
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testAppendingSequenceIfTrue() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            9,
+            1,
+            11,
+            7
+        ]
+        
+        let result = testArray
+            .appending(contentsOf: [9, 1, 11, 7], if: true)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testAppendingSequenceIfFalse() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let result = testArray
+            .appending(contentsOf: [9, 1, 11, 7], if: false)
+        
+        try assertEqual(testArray, result)
+    }
+    
+    func testPrepend() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            9,
+            1,
+            3,
+            2,
+            8,
+            5,
+        ]
+        
+        testArray.prepend(9)
+        
+        try assertEqual(expectedResult, testArray)
+    }
+    
+    func testPrepending() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            9,
+            1,
+            3,
+            2,
+            8,
+            5,
+        ]
+        
+        let result = testArray
+            .prepending(9)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testPrependingIfTrue() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            9,
+            1,
+            3,
+            2,
+            8,
+            5,
+        ]
+        
+        let result = testArray
+            .prepending(9, if: true)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testPrependingIfFalse() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let result = testArray
+            .prepending(9, if: false)
+        
+        try assertEqual(testArray, result)
+    }
+    
+    func testPrependingSequence() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            9,
+            4,
+            11,
+            7,
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let result = testArray
+            .prepending(contentsOf: [9, 4, 11, 7])
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testPrependingSequenceIfTrue() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            9,
+            1,
+            11,
+            7,
+            1,
+            3,
+            2,
+            8,
+            5,
+        ]
+        
+        let result = testArray
+            .prepending(contentsOf: [9, 1, 11, 7], if: true)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testPrependingSequenceIfFalse() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let result = testArray
+            .prepending(contentsOf: [9, 1, 11, 7], if: false)
+        
+        try assertEqual(testArray, result)
+    }
+    
+    func testInserting() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            9,
+            8,
+            5,
+        ]
+        
+        let result = testArray
+            .inserting(9, at: 3)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testInsertingIfTrue() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            9,
+            8,
+            5,
+        ]
+        
+        let result = testArray
+            .inserting(9, at: 3, if: true)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testInsertingIfFalse() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let result = testArray
+            .inserting(9, at: 3, if: false)
+        
+        try assertEqual(testArray, result)
+    }
+    
+    func testInsertingSequence() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            9,
+            4,
+            11,
+            7,
+            8,
+            5,
+        ]
+        
+        let result = testArray
+            .inserting(contentsOf: [9, 4, 11, 7], at: 3)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testInsertingSequenceIfTrue() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            9,
+            1,
+            11,
+            7,
+            8,
+            5,
+        ]
+        
+        let result = testArray
+            .inserting(contentsOf: [9, 1, 11, 7], at: 3, if: true)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testInsertingSequenceIfFalse() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let result = testArray
+            .inserting(contentsOf: [9, 1, 11, 7], at: 3, if: false)
+        
+        try assertEqual(testArray, result)
+    }
+    
     func testCompact() throws {
         let testArray: [Int?] = [
             1,

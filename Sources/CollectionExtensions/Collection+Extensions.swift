@@ -71,28 +71,12 @@ public extension Collection {
     }
 }
 
-private enum PackNormalizer<T, R> {
-    typealias Result = R
-    
-    static func normalize(_ value: T, result: R) -> R {
-        result
-    }
-}
-
 private extension Int {
     mutating func postIncrement() -> Int {
         let result = self
         self += 1
         return result
     }
-}
-
-private func tupleToArray<each Ts>(_ values: repeat each Ts) -> [Any] {
-    var result = [Any]()
-    
-    repeat (result.append(each values))
-    
-    return result
 }
 
 private func arrayToTuple<each Ts>(_ values: [Any]) -> (repeat each Ts) {
@@ -437,6 +421,17 @@ public extension RangeReplaceableCollection {
         condition ? prepending(element) : self
     }
     
+    func prepending<S: Sequence<Element>>(contentsOf sequence: S) -> Self {
+        Self(sequence).appending(contentsOf: self)
+    }
+    
+    func prepending<S: Sequence<Element>>(
+        contentsOf sequence: S,
+        if condition: Bool
+    ) -> Self {
+        condition ? prepending(contentsOf: sequence) : self
+    }
+    
     func inserting(
         _ element: Element,
         at indexToInsert: Index
@@ -451,6 +446,7 @@ public extension RangeReplaceableCollection {
             
             result.append(self[index])
         }
+        
         return result
     }
     
@@ -460,6 +456,32 @@ public extension RangeReplaceableCollection {
         if condition: Bool
     ) -> Self {
         condition ? inserting(element, at: index) : self
+    }
+    
+    func inserting<S: Sequence<Element>>(
+        contentsOf sequence: S,
+        at indexToInsert: Index
+    ) -> Self {
+        var result = Self()
+        result.reserveCapacity(count + 1)
+        
+        for index in indices {
+            if index == indexToInsert {
+                result.append(contentsOf: sequence)
+            }
+            
+            result.append(self[index])
+        }
+        
+        return result
+    }
+    
+    func inserting<S: Sequence<Element>>(
+        contentsOf sequence: S,
+        at index: Index,
+        if condition: Bool
+    ) -> Self {
+        condition ? inserting(contentsOf: sequence, at: index) : self
     }
     
     func removingAll(
