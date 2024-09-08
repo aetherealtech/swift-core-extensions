@@ -30,7 +30,7 @@ public extension Optional {
         return nil
     }
     
-    /// Identical to `Optional.map(:_)`, except the `transform` can be `async`.
+    /// Identical to ``Optional.map(_:)``, except the `transform` can be `async`.
     @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
     func mapAsync<T>(_ transform: (Wrapped) async throws -> T) async rethrows -> T? {
         if let value = self {
@@ -45,7 +45,7 @@ public extension Optional {
         flatMap { $0 }
     }
     
-    /// Identical to `Optional.flatMap(:_)`, except the `transform` can be `async`.
+    /// Identical to ``Optional.flatMap(_:)``, except the `transform` can be `async`.
     @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
     func flatMapAsync<T>(_ transform: (Wrapped) async throws -> T?) async rethrows -> T? {
         try await mapAsync(transform)

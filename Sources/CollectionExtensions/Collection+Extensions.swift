@@ -20,14 +20,32 @@ public extension Collection {
         return result
     }
     
-    func contains(_ element: Element, by compare: SimpleCompareFunction<Element>) -> Bool {
-        contains { otherElement in compare(element, otherElement) }
+    subscript<Indices: Sequence>(safe indices: Indices) -> [Element] where Indices.Element == Index {
+        var result = [Element]()
+        
+        for index in indices {
+            if let value = self[safe: index] {
+                result.append(value)
+            }
+        }
+        
+        return result
+    }
+    
+    func contains(_ element: Element, by equality: (Element, Element) -> Bool) -> Bool {
+        contains { otherElement in equality(element, otherElement) }
     }
 
     func cartesianProduct<each Others: Collection>(
         with others: repeat each Others
     ) -> [(Element, repeat (each Others).Element)] {
         Collections.cartesianProduct(self, repeat each others)
+    }
+    
+    func zip<each Others: Collection>(
+        with others: repeat each Others
+    ) -> [(Element, repeat (each Others).Element)] {
+        Collections.zip(self, repeat each others)
     }
     
     func indices(where condition: (Element) -> Bool) -> [Index] {
@@ -42,18 +60,18 @@ public extension Collection {
     
     func indices(
         of elementToFind: Element,
-        by compare: SimpleCompareFunction<Element>
+        by equality: (Element, Element) -> Bool
     ) -> [Index] {
-        indices { element in compare(element, elementToFind) }
+        indices { element in equality(element, elementToFind) }
     }
     
     func indices<Elements: Sequence>(
         of elementsToFind: Elements,
-        by compare: SimpleCompareFunction<Element>
+        by equality: (Element, Element) -> Bool
     ) -> [Index] where Elements.Element == Element {
         let elementsToFind = elementsToFind.store(in: Array.self)
         
-        return indices { element in elementsToFind.contains(element, by: compare) }
+        return indices { element in elementsToFind.contains(element, by: equality) }
     }
 }
 
@@ -101,6 +119,19 @@ public enum Collections {
             .map { erasedValue in arrayToTuple(erasedValue) }
     }
     
+    static func zip<each C: Collection>(
+        _ collections: repeat each C
+    ) -> [(repeat (each C).Element)] {
+        var erasedCollections = [[Any]]()
+        
+        repeat (erasedCollections.append(.init(each collections)))
+        
+        let erasedResult = zip(erasedCollections)
+        
+        return erasedResult
+            .map { erasedValue in arrayToTuple(erasedValue) }
+    }
+    
     private static func cartesianProduct<Element>(
         _ collections: [[Element]]
     ) -> [[Element]] {
@@ -123,6 +154,32 @@ public enum Collections {
             let element = indices
                 .enumerated()
                 .map { collectionIndex, index in
+                    collections[collectionIndex][index]
+                }
+            
+            result.append(element)
+        }
+        
+        return result
+    }
+    
+    private static func zip<Element>(
+        _ collections: [[Element]]
+    ) -> [[Element]] {
+        guard !collections.isEmpty else {
+            return []
+        }
+        
+        var result = [[Element]]()
+        
+        let count = collections
+            .map(\.count)
+            .min()!
+        
+        for index in 0..<count {
+            let element = collections
+                .enumerated()
+                .map { collectionIndex, collectionElement in
                     collections[collectionIndex][index]
                 }
             

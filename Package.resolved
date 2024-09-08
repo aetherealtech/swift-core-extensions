@@ -1,5 +1,5 @@
 {
-  "originHash" : "37ce0e70073f0c8093932d2981f0416462fdbfa4b2a7aeeca5048e1173605b6d",
+  "originHash" : "db2a39a1f446e5eabb46c088530977bc3c403032d50ec7abbfa622b1fc98733b",
   "pins" : [
     {
       "identity" : "swift-assertions",
@@ -29,12 +29,30 @@
       }
     },
     {
+      "identity" : "swift-stubbing",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/aetherealtech/swift-stubbing",
+      "state" : {
+        "branch" : "master",
+        "revision" : "7945d06a880b44bd2720bf8f703284c78c66c95e"
+      }
+    },
+    {
       "identity" : "swift-synchronization",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/aetherealtech/swift-synchronization",
       "state" : {
         "branch" : "master",
         "revision" : "3b0873158485426e5c8e2daaeb19d5cc9802296a"
+      }
+    },
+    {
+      "identity" : "swift-syntax",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-syntax",
+      "state" : {
+        "revision" : "2bc86522d115234d1f588efe2bcb4ce4be8f8b82",
+        "version" : "510.0.3"
       }
     },
     {

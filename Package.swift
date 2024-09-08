@@ -5,6 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "CoreExtensions",
+    platforms: [.macOS(.v10_15)],
     products: [
         .library(
             name: "AsyncCollectionExtensions",
@@ -66,6 +67,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/aetherealtech/swift-assertions", branch: "master"),
         .package(url: "https://github.com/aetherealtech/swift-backports", branch: "master"),
+        .package(url: "https://github.com/aetherealtech/swift-stubbing", branch: "master"),
         .package(url: "https://github.com/aetherealtech/swift-synchronization", branch: "master"),
     ],
     targets: [
@@ -194,6 +196,7 @@ let package = Package(
             dependencies: [
                 "CollectionExtensions",
                 .product(name: "Assertions", package: "swift-assertions"),
+                .product(name: "Stubbing", package: "swift-stubbing"),
             ],
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
