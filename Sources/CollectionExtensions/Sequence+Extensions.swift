@@ -131,3 +131,177 @@ public extension Sequence {
         .init(self)
     }
 }
+
+public extension Sequence {
+    func appending(
+        _ element: Element
+    ) -> [Element] {
+        Array(self)
+            .appending(element)
+    }
+    
+    func appending(
+        _ element: Element,
+        if condition: Bool
+    ) -> [Element] {
+        Array(self)
+            .appending(element, if: condition)
+    }
+    
+    func appending<S: Sequence<Element>>(contentsOf sequence: S) -> [Element] {
+        Array(self)
+            .appending(contentsOf: sequence)
+    }
+    
+    func appending<S: Sequence<Element>>(
+        contentsOf sequence: S,
+        if condition: Bool
+    ) -> [Element] {
+        Array(self)
+            .appending(contentsOf: sequence, if: condition)
+    }
+
+    func prepending(_ element: Element) -> [Element] {
+        var result: [Element] = []
+        result.append(element)
+        result.append(contentsOf: self)
+        
+        return result
+    }
+    
+    func prepending(
+        _ element: Element,
+        if condition: Bool
+    ) -> [Element] {
+        condition ? prepending(element) : Array(self)
+    }
+    
+    func inserting(
+        _ element: Element,
+        at indexToInsert: Int
+    ) -> [Element] {
+        var result: [Element] = []
+        
+        for (index, element) in enumerated() {
+            if index == indexToInsert {
+                result.append(element)
+            }
+            
+            result.append(element)
+        }
+        
+        return result
+    }
+    
+    func inserting(
+        _ element: Element,
+        at index: Int,
+        if condition: Bool
+    ) -> [Element] {
+        condition ? inserting(element, at: index) : Array(self)
+    }
+    
+    func removingAll(
+        where condition: (Element) throws -> Bool
+    ) rethrows -> [Element] {
+        try filter { element in try !condition(element) }
+    }
+    
+    func removing(at indexToRemove: Int) -> [Element] {
+        var result: [Element] = []
+        
+        for (index, element) in enumerated() {
+            if index == indexToRemove {
+                continue
+            }
+            
+            result.append(element)
+        }
+        
+        return result
+    }
+    
+    func removing<Indices: Sequence<Int>>(at indices: Indices) -> [Element] {
+        var result: [Element] = []
+        
+        for (index, element) in enumerated() {
+            if indices.contains(index) {
+                continue
+            }
+            
+            result.append(element)
+        }
+        
+        return result
+    }
+
+    func removingFirst() -> [Element] {
+        var result: [Element] = []
+        
+        for (index, element) in enumerated() {
+            if index == 0 {
+                continue
+            }
+            
+            result.append(element)
+        }
+        
+        return result
+    }
+
+    func removingFirst(where condition: (Element) throws -> Bool) rethrows -> [Element] {
+        var result: [Element] = []
+        
+        var removed = false
+        
+        for element in self {
+            if !removed, try condition(element) {
+                removed = true
+                continue
+            }
+            
+            result.append(element)
+        }
+        
+        return result
+    }
+
+    func removingAll(
+        of elementToRemove: Element,
+        by equality: (Element, Element) throws -> Bool
+    ) rethrows -> [Element] {
+        try filter { element in try !equality(element, elementToRemove) }
+    }
+
+    func removingAll<Elements: Sequence<Element>>(
+        of elementsToRemove: Elements,
+        by equality: (Element, Element) throws -> Bool
+    ) rethrows -> [Element] {
+        var result = Array(self)
+        try result.removeAll(of: elementsToRemove, by: equality)
+        return result
+    }
+    
+    func removingAll<Elements: Collection<Element>>(
+        of elementsToRemove: Elements,
+        by equality: (Element, Element) throws -> Bool
+    ) rethrows -> [Element] {
+        try filter { element in try !elementsToRemove.contains(element, by: equality) }
+    }
+
+    func removingDuplicates(
+        by equality: (Element, Element) throws -> Bool
+    ) rethrows -> [Element] {
+        var result: [Element] = []
+        
+        for element in self {
+            if try result.contains(element, by: equality) {
+                continue
+            }
+            
+            result.append(element)
+        }
+        
+        return result
+    }
+}

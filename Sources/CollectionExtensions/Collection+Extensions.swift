@@ -520,13 +520,9 @@ public extension RangeReplaceableCollection {
         
         return nil
     }
-    
-    func safelyRemovingFirst() -> [Element] {
-        isEmpty ? [] : removingFirst()
-    }
-    
-    func removingFirst() -> [Element] {
-        var result: [Element] = []
+
+    func removingFirst() -> Self {
+        var result = Self()
         
         for index in indices {
             if index == indices.startIndex {
@@ -547,8 +543,8 @@ public extension RangeReplaceableCollection {
         return nil
     }
     
-    func removingFirst(where condition: (Element) throws -> Bool) rethrows -> [Element] {
-        var result: [Element] = []
+    func removingFirst(where condition: (Element) throws -> Bool) rethrows -> Self {
+        var result = Self()
         
         var removed = false
         
