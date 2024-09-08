@@ -135,6 +135,10 @@ public enum Collections {
     private static func cartesianProduct<Element>(
         _ collections: [[Element]]
     ) -> [[Element]] {
+        guard !collections.isEmpty else {
+            return []
+        }
+        
         var result = [[Element]]()
         
         let count = collections

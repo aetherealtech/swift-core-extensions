@@ -164,6 +164,12 @@ final class CollectionTests: XCTestCase {
         }
     }
     
+    func testCartesianProductEmpty() throws {
+        let result: [()] = Collections.cartesianProduct()
+        
+        try assertTrue(result.isEmpty)
+    }
+    
     func testZip() throws {
         enum SomeEnum {
             case thisCase
@@ -206,6 +212,12 @@ final class CollectionTests: XCTestCase {
             try assertEqual(resultMember.2, third[index])
             try assertEqual(resultMember.3, fourth[index])
         }
+    }
+    
+    func testZipEmpty() throws {
+        let result: [()] = Collections.zip()
+        
+        try assertTrue(result.isEmpty)
     }
     
     func testIndicesWhere() throws {
@@ -292,6 +304,370 @@ final class CollectionTests: XCTestCase {
         ]
                 
         try assertEqual(expectedResult, testArray.indices(of: [values[0], values[1]], by: { $0.intMember == $1.intMember }))
+    }
+    
+    func testMutableForEach() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            2,
+            4,
+            3,
+            9,
+            6
+        ]
+        
+        testArray.mutableForEach { value in
+            value += 1
+        }
+        
+        try assertEqual(expectedResult, testArray)
+    }
+    
+    func testMutableMap() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedMutation = [
+            2,
+            4,
+            3,
+            9,
+            6
+        ]
+        
+        let expectedResult = [
+            "2",
+            "4",
+            "3",
+            "9",
+            "6"
+        ]
+        
+        let result = testArray.mutableMap { value in
+            value += 1
+            return value.description
+        }
+        
+        try assertEqual(expectedMutation, testArray)
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testMutableCompactMap() throws {
+        var testArray: [Int?] = [
+            1,
+            2,
+            nil,
+            4,
+            5,
+            6,
+            nil,
+            nil,
+            9,
+            nil
+        ]
+        
+        let expectedMutation: [Int?] = [
+            2,
+            3,
+            -1,
+            5,
+            6,
+            7,
+            -1,
+            -1,
+            10,
+            -1
+        ]
+        
+        let expectedResult = [
+            "2",
+            "3",
+            "5",
+            "6",
+            "7",
+            "10"
+        ]
+        
+        let result = testArray.mutableCompactMap { value -> String? in
+            value? += 1
+            
+            guard let value else {
+                value = -1
+                return nil
+            }
+            
+            return value.description
+        }
+        
+        try assertEqual(expectedMutation, testArray)
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testMutableFlatMap() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedMutation: [Int?] = [
+            2,
+            4,
+            3,
+            9,
+            6
+        ]
+        
+        let expectedResult = [
+            "2-1", "2-2",
+            "4-1", "4-2", "4-3", "4-4",
+            "3-1", "3-2", "3-3",
+            "9-1", "9-2", "9-3", "9-4", "9-5", "9-6", "9-7", "9-8", "9-9",
+            "6-1", "6-2", "6-3", "6-4", "6-5", "6-6",
+        ]
+        
+        let result = testArray.mutableFlatMap { value in
+            value += 1
+            
+            return (0..<value)
+                .map { index in "\(value)-\(index + 1)" }
+        }
+        
+        try assertEqual(expectedMutation, testArray)
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testMapInPlace() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            2,
+            4,
+            3,
+            9,
+            6
+        ]
+    
+        testArray.mapInPlace { value in
+            return value + 1
+        }
+        
+        try assertEqual(expectedResult, testArray)
+    }
+    
+    func testMutateAtIndex() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedMutation = [
+            1,
+            3,
+            3,
+            8,
+            5
+        ]
+        
+        let expectedResult = "3"
+        
+        let result = testArray
+            .mutate(at: 2) { value in
+                value += 1
+                return value.description
+            }
+    
+        try assertEqual(expectedMutation, testArray)
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testMutateAtSafeIndexValid() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedMutation = [
+            1,
+            3,
+            3,
+            8,
+            5
+        ]
+        
+        let expectedResult = "3"
+        
+        let result = testArray
+            .mutate(safe: 2) { value in
+                value += 1
+                return value.description
+            }
+    
+        try assertEqual(expectedMutation, testArray)
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testMutateAtSafeIndexInvalid() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedMutation = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+                
+        let result = try testArray
+            .mutate(safe: 10) { value -> String in
+                throw Fail("Should not have been called")
+            }
+    
+        try assertEqual(expectedMutation, testArray)
+        try assertNil(result)
+    }
+    
+    func testMutateAtSafeIndexVoidValid() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedMutation = [
+            1,
+            3,
+            3,
+            8,
+            5
+        ]
+                
+        let result = testArray
+            .mutate(safe: 2) { value in
+                value += 1
+            }
+    
+        try assertEqual(expectedMutation, testArray)
+        try assertTrue(result)
+    }
+    
+    func testMutateAtSafeIndexVoidInvalid() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedMutation = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+                
+        let result = try testArray
+            .mutate(safe: 10) { value in
+                throw Fail("Should not have been called")
+            }
+    
+        try assertEqual(expectedMutation, testArray)
+        try assertFalse(result)
+    }
+    
+    func testMutateAtSafeIndexElseValid() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedMutation = [
+            1,
+            3,
+            3,
+            8,
+            5
+        ]
+        
+        let expectedResult = "3"
+        
+        let result = try testArray
+            .mutate(safe: 2) { value in
+                value += 1
+                return value.description
+            } else: { () -> String in
+                throw Fail("Should not have been executed")
+            }
+    
+        try assertEqual(expectedMutation, testArray)
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testMutateAtSafeIndexElseInvalid() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedMutation = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = "Newp"
+                
+        let result = try testArray
+            .mutate(safe: 10) { value -> String in
+                throw Fail("Should not have been called")
+            } else: { "Newp" }
+    
+        try assertEqual(expectedMutation, testArray)
+        try assertEqual(expectedResult, result)
     }
     
     func testCompact() throws {
