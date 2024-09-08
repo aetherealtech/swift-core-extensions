@@ -108,7 +108,7 @@ struct HexByteFormat: ParseableFormatStyle {
     }
 }
 
-struct HexDataFormat<FormatInput: Sequence>: FormatStyle where FormatInput.Element == UInt8 {
+struct HexDataFormat<FormatInput: Sequence<UInt8>>: FormatStyle {
     func format(_ value: FormatInput) -> String {
         .init(value.flatMap(Self.byteFormat.format))
     }
@@ -119,8 +119,6 @@ struct HexDataFormat<FormatInput: Sequence>: FormatStyle where FormatInput.Eleme
 extension HexDataFormat: ParseableFormatStyle where FormatInput: RangeReplaceableCollection {
     struct ParseStrategy: Foundation.ParseStrategy {
         func parse(_ value: String) throws -> FormatInput {
-            let byteStrategy = Self.byteStrategy
-            
             var result = FormatInput()
             
             var index = value.startIndex
@@ -164,7 +162,7 @@ extension UInt8 {
     }
 }
 
-public extension Sequence where Element == UInt8 {
+public extension Sequence<UInt8> {
     func string(encoding: String.Encoding) -> String? {
         .init(data: .init(self), encoding: encoding)
     }

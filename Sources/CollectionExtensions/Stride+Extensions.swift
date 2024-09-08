@@ -51,7 +51,6 @@ public struct StrideCount<Element> : Sequence where Element : Strideable {
             stride: Element.Stride,
             count: Int
         ) {
-
             self.current = start
             self.stride = stride
             self.count = count

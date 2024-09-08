@@ -16,9 +16,9 @@ public extension Sequence {
     
     func store<Key, Value>(
         in type: [Key: Value].Type = [Key: Value].self,
-        uniquingKeysWith: (Value, Value) -> Value
-    ) -> [Key: Value] where Element == (Key, Value) {
-        .init(
+        uniquingKeysWith: (Value, Value) throws -> Value
+    ) rethrows -> [Key: Value] where Element == (Key, Value) {
+        try .init(
             self,
             uniquingKeysWith: uniquingKeysWith
         )

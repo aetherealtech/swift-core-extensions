@@ -190,14 +190,6 @@ public enum Collections {
     }
 }
 
-public extension Collection {
-    func immutable(_ mutator: (inout Self) throws -> Void) rethrows -> Self {
-        var result = self
-        try mutator(&result)
-        return result
-    }
-}
-
 public extension MutableCollection {
     mutating func mutableForEach(
         _ body: (inout Element) throws -> Void

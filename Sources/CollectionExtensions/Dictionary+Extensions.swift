@@ -2,7 +2,10 @@ import CompareFunctions
 import Foundation
 
 public extension Dictionary {
-    mutating func value(at key: Key, orInsert newValue: @autoclosure () -> Value) -> Value {
+    mutating func value(
+        at key: Key,
+        orInsert newValue: @autoclosure () -> Value
+    ) -> Value {
         guard let existing = self[key] else {
             let newValue = newValue()
             self[key] = newValue
@@ -12,15 +15,18 @@ public extension Dictionary {
         return existing
     }
     
-    func inserting(key: Key, value: Value) -> Self {
-        immutable { result in
-            result[key] = value
-        }
+    func inserting(
+        key: Key,
+        value: Value
+    ) -> Self {
+        var result = self
+        result[key] = value
+        return result
     }
 
     func mapKeys<ResultKey: Hashable>(
         _ transform: (Key) throws -> ResultKey,
-        uniquingKeysWith: (Value, Value) -> Value
+        uniquingKeysWith: (Value, Value) throws -> Value
     ) rethrows -> [ResultKey: Value] {
         try map { element in
             try (transform(element.key), element.value)
