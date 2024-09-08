@@ -10,7 +10,7 @@ public extension Collection {
         return self[index]
     }
     
-    subscript<Indices: Sequence>(indices: Indices) -> [Element] where Indices.Element == Index {
+    subscript<Indices: Sequence<Index>>(indices: Indices) -> [Element] {
         var result = [Element]()
         
         for index in indices {
@@ -20,7 +20,7 @@ public extension Collection {
         return result
     }
     
-    subscript<Indices: Sequence>(safe indices: Indices) -> [Element] where Indices.Element == Index {
+    subscript<Indices: Sequence<Index>>(safe indices: Indices) -> [Element] {
         var result = [Element]()
         
         for index in indices {
@@ -30,10 +30,6 @@ public extension Collection {
         }
         
         return result
-    }
-    
-    func contains(_ element: Element, by equality: (Element, Element) -> Bool) -> Bool {
-        contains { otherElement in equality(element, otherElement) }
     }
 
     func cartesianProduct<each Others: Collection>(
@@ -48,10 +44,10 @@ public extension Collection {
         Collections.zip(self, repeat each others)
     }
     
-    func indices(where condition: (Element) -> Bool) -> [Index] {
+    func indices(where condition: (Element) throws -> Bool) rethrows -> [Index] {
         var result = [Index]()
         
-        for index in indices where condition(self[index]) {
+        for index in indices where try condition(self[index]) {
             result.append(index)
         }
         
@@ -60,18 +56,18 @@ public extension Collection {
     
     func indices(
         of elementToFind: Element,
-        by equality: (Element, Element) -> Bool
-    ) -> [Index] {
-        indices { element in equality(element, elementToFind) }
+        by equality: (Element, Element) throws -> Bool
+    ) rethrows -> [Index] {
+        try indices { element in try equality(element, elementToFind) }
     }
     
-    func indices<Elements: Sequence>(
+    func indices<Elements: Sequence<Element>>(
         of elementsToFind: Elements,
-        by equality: (Element, Element) -> Bool
-    ) -> [Index] where Elements.Element == Element {
+        by equality: (Element, Element) throws -> Bool
+    ) rethrows -> [Index] {
         let elementsToFind = elementsToFind.store(in: Array.self)
         
-        return indices { element in elementsToFind.contains(element, by: equality) }
+        return try indices { element in try elementsToFind.contains(element, by: equality) }
     }
 }
 
@@ -195,9 +191,9 @@ public enum Collections {
 }
 
 public extension Collection {
-    func immutable(_ mutator: (inout Self) -> Void) -> Self {
+    func immutable(_ mutator: (inout Self) throws -> Void) rethrows -> Self {
         var result = self
-        mutator(&result)
+        try mutator(&result)
         return result
     }
 }
@@ -299,10 +295,10 @@ public extension MutableCollection {
         try mutate(safe: index, body) ?? elseBody()
     }
     
-    mutating func mutate<Indices: Sequence, R>(
+    mutating func mutate<Indices: Sequence<Index>, R>(
         at indices: Indices,
         _ body: (inout Element) throws -> R
-    ) rethrows -> [R] where Indices.Element == Index {
+    ) rethrows -> [R] {
         var result: [R] = []
         
         for index in indices {
@@ -312,33 +308,91 @@ public extension MutableCollection {
         return result
     }
     
-    mutating func mutate<Indices: Sequence>(
+    mutating func mutate<Indices: Sequence<Index>>(
         at indices: Indices,
         _ body: (inout Element) throws -> Void
-    ) rethrows where Indices.Element == Index {
+    ) rethrows {
         for index in indices {
             try body(&self[index])
         }
     }
-}
-
-extension Sequence {
-    func removeAll<Target: RangeReplaceableCollection>(
-        from target: inout Target,
-        by compare: SimpleCompareFunction<Element>
-    ) where Target.Element == Element {
-        for elementToRemove in self {
-            target.removeAll(of: elementToRemove, by: compare)
+    
+    mutating func mutate<Indices: Sequence<Index>, R>(
+        safe indices: Indices,
+        _ body: (inout Element) throws -> R
+    ) rethrows -> [R] {
+        var result: [R] = []
+        
+        for index in indices {
+            if var value = self[safe: index] {
+                result.append(try body(&value))
+                self[index] = value
+            }
         }
+        
+        return result
+    }
+    
+    @discardableResult
+    mutating func mutate<Indices: Sequence<Index>>(
+        safe indices: Indices,
+        _ body: (inout Element) throws -> Void
+    ) rethrows -> Int {
+        var result = 0
+        
+        for index in indices {
+            if var value = self[safe: index] {
+                try body(&value)
+                self[index] = value
+                
+                result += 1
+            }
+        }
+        
+        return result
     }
 }
 
 extension Collection {
-    func removeAll<Target: RangeReplaceableCollection>(
+    func removeAll<Target: RangeReplaceableCollection<Element>>(
         from target: inout Target,
-        by compare: SimpleCompareFunction<Element>
-    ) where Target.Element == Element {
-        target.removeAll { element in self.contains(element, by: compare) }
+        by equality: (Element, Element) throws -> Bool
+    ) rethrows {
+        try target.removeAll { element in try self.contains(element, by: equality) }
+    }
+    
+    func removingAll<Target: Sequence<Element>>(
+        from target: Target,
+        by equality: (Element, Element) throws -> Bool
+    ) rethrows -> [Element] {
+        var result: [Element] = []
+        
+        for element in target {
+            if try contains(element, by: equality) {
+                continue
+            }
+            
+            result.append(element)
+        }
+        
+        return result
+    }
+    
+    func removingAll<Target: RangeReplaceableCollection<Element>>(
+        from target: Target,
+        by equality: (Element, Element) throws -> Bool
+    ) rethrows -> Target {
+        var result = Target()
+        
+        for element in target {
+            if try contains(element, by: equality) {
+                continue
+            }
+            
+            result.append(element)
+        }
+        
+        return result
     }
 }
 
@@ -346,9 +400,9 @@ public extension RangeReplaceableCollection {
     func appending(
         _ element: Element
     ) -> Self {
-        immutable { result in
-            result.append(element)
-        }
+        var result = self
+        result.append(element)
+        return result
     }
     
     func appending(
@@ -358,16 +412,16 @@ public extension RangeReplaceableCollection {
         condition ? appending(element) : self
     }
     
-    func appending<S: Sequence>(contentsOf sequence: S) -> Self where S.Element == Element {
-        immutable { result in
-            result.append(contentsOf: sequence)
-        }
+    func appending<S: Sequence<Element>>(contentsOf sequence: S) -> Self {
+        var result = self
+        result.append(contentsOf: sequence)
+        return result
     }
     
-    func appending<S: Sequence>(
+    func appending<S: Sequence<Element>>(
         contentsOf sequence: S,
         if condition: Bool
-    ) -> Self where S.Element == Element {
+    ) -> Self {
         condition ? appending(contentsOf: sequence) : self
     }
     
@@ -376,9 +430,12 @@ public extension RangeReplaceableCollection {
     }
     
     func prepending(_ element: Element) -> Self {
-        immutable { result in
-            result.prepend(element)
-        }
+        var result = Self()
+        result.reserveCapacity(count + 1)
+        result.append(element)
+        result.append(contentsOf: self)
+        
+        return result
     }
     
     func prepending(
@@ -390,11 +447,19 @@ public extension RangeReplaceableCollection {
     
     func inserting(
         _ element: Element,
-        at index: Index
+        at indexToInsert: Index
     ) -> Self {
-        immutable { result in
-            result.insert(element, at: index)
+        var result = Self()
+        result.reserveCapacity(count + 1)
+        
+        for index in indices {
+            if index == indexToInsert {
+                result.append(element)
+            }
+            
+            result.append(self[index])
         }
+        return result
     }
     
     func inserting(
@@ -406,27 +471,45 @@ public extension RangeReplaceableCollection {
     }
     
     func removingAll(
-        where condition: (Element) -> Bool
-    ) -> Self {
-        filter { element in !condition(element) }
+        where condition: (Element) throws -> Bool
+    ) rethrows -> Self {
+        try filter { element in try !condition(element) }
     }
     
-    func removing(at index: Index) -> Self {
-        immutable { result in
-            result.remove(at: index)
+    func removing(at indexToRemove: Index) -> Self {
+        var result = Self()
+        result.reserveCapacity(count - 1)
+        
+        for index in indices {
+            if index == indexToRemove {
+                continue
+            }
+            
+            result.append(self[index])
         }
+        
+        return result
     }
     
-    mutating func remove<Indices: Sequence>(at indices: Indices) where Indices.Element == Index {
-        for index in indices.reversed() {
+    mutating func remove<Indices: Sequence<Index>>(at indices: Indices) {
+        for index in indices.lazy.reversed() {
             remove(at: index)
         }
     }
     
-    func removing<Indices: Sequence>(at indices: Indices) -> Self where Indices.Element == Index {
-        immutable { result in
-            result.remove(at: indices)
+    func removing<Indices: Sequence<Index>>(at indices: Indices) -> Self {
+        var result = Self()
+        result.reserveCapacity(count)
+        
+        for index in indices {
+            if indices.contains(index) {
+                continue
+            }
+            
+            result.append(self[index])
         }
+        
+        return result
     }
 
     mutating func safelyRemoveFirst() -> Element? {
@@ -437,13 +520,48 @@ public extension RangeReplaceableCollection {
         
         return nil
     }
+    
+    func safelyRemovingFirst() -> [Element] {
+        isEmpty ? [] : removingFirst()
+    }
+    
+    func removingFirst() -> [Element] {
+        var result: [Element] = []
+        
+        for index in indices {
+            if index == indices.startIndex {
+                continue
+            }
+            
+            result.append(self[index])
+        }
+        
+        return result
+    }
 
-    mutating func removeFirst(where condition: (Element) -> Bool) -> Element? {
-        if let index = firstIndex(where: condition) {
+    mutating func removeFirst(where condition: (Element) throws -> Bool) rethrows -> Element? {
+        if let index = try firstIndex(where: condition) {
             return remove(at: index)
         }
         
         return nil
+    }
+    
+    func removingFirst(where condition: (Element) throws -> Bool) rethrows -> [Element] {
+        var result: [Element] = []
+        
+        var removed = false
+        
+        for element in self {
+            if !removed, try condition(element) {
+                removed = true
+                continue
+            }
+            
+            result.append(element)
+        }
+        
+        return result
     }
     
     mutating func filterInPlace(_ condition: (Element) throws -> Bool) rethrows {
@@ -452,69 +570,80 @@ public extension RangeReplaceableCollection {
     
     mutating func removeAll(
         of elementToRemove: Element,
-        by compare: SimpleCompareFunction<Element>
-    ) {
-        removeAll { element in compare(element, elementToRemove) }
+        by equality: (Element, Element) throws -> Bool
+    ) rethrows {
+        try removeAll { element in try equality(element, elementToRemove) }
     }
     
     func removingAll(
         of elementToRemove: Element,
-        by compare: SimpleCompareFunction<Element>
-    ) -> Self {
-        filter { element in !compare(element, elementToRemove) }
+        by equality: (Element, Element) throws -> Bool
+    ) rethrows -> Self {
+        try filter { element in try !equality(element, elementToRemove) }
     }
     
-    mutating func removeAll<Elements: Sequence>(
+    mutating func removeAll<Elements: Sequence<Element>>(
         of elementsToRemove: Elements,
-        by compare: SimpleCompareFunction<Element>
-    ) where Elements.Element == Element {
-        elementsToRemove.removeAll(
+        by equality: (Element, Element) throws -> Bool
+    ) rethrows {
+        try elementsToRemove.removeAll(
             from: &self,
-            by: compare
+            by: equality
         )
     }
     
-    func removingAll<Elements: Sequence>(
+    func removingAll<Elements: Sequence<Element>>(
         of elementsToRemove: Elements,
-        by compare: SimpleCompareFunction<Element>
-    ) -> Self where Elements.Element == Element {
-        immutable { result in
-            result.removeAll(of: elementsToRemove, by: compare)
-        }
+        by equality: (Element, Element) throws -> Bool
+    ) rethrows -> Self {
+        try elementsToRemove.removingAll(
+            from: self,
+            by: equality
+        )
     }
     
-    func removingAll<Elements: Collection>(
+    func removingAll<Elements: Collection<Element>>(
         of elementsToRemove: Elements,
-        by compare: SimpleCompareFunction<Element>
-    ) -> Self where Elements.Element == Element {
-        filter { element in !elementsToRemove.contains(element, by: compare) }
+        by equality: (Element, Element) throws -> Bool
+    ) rethrows -> Self {
+        try filter { element in try !elementsToRemove.contains(element, by: equality) }
     }
-    
-    private var removeDuplicateFilter: (Element, SimpleCompareFunction<Element>) -> Bool {
-        var checked = [Element]()
-        
-        return { element, compare in
-            if checked.contains(element, by: compare) {
-                return false
-            } else {
-                checked.append(element)
-                return true
-            }
-        }
-    }
-    
+
     mutating func removeDuplicates(
-        by compare: SimpleCompareFunction<Element>
-    ) {
-        let removeFilter = removeDuplicateFilter
-        return filterInPlace { element in removeFilter(element, compare) }
+        by equality: (Element, Element) throws -> Bool
+    ) rethrows {
+        var index = startIndex
+        
+        while index != endIndex {
+            var otherIndex = self.index(after: index)
+            
+            while otherIndex != endIndex {
+                let indexToCheck = otherIndex
+                formIndex(after: &otherIndex)
+                
+                if try equality(self[index], self[indexToCheck]) {
+                    remove(at: otherIndex)
+                }
+            }
+            
+            formIndex(after: &index)
+        }
     }
     
     func removingDuplicates(
-        by compare: SimpleCompareFunction<Element>
-    ) -> Self {
-        let removeFilter = removeDuplicateFilter
-        return filter { element in removeFilter(element, compare) }
+        by equality: (Element, Element) throws -> Bool
+    ) rethrows -> Self {
+        var result = Self()
+        
+        for element in self {
+            if try result.contains(element, by: equality) {
+                continue
+            }
+            
+            result.append(element)
+        }
+        
+        return result
     }
 }
 
@@ -555,16 +684,16 @@ public extension RangeReplaceableCollection where Element: Equatable {
 }
 
 public extension RandomAccessCollection where Self: MutableCollection {
-    mutating func sort(using compare: CompareFunction<Element>) {
-        sort(by: { lhs, rhs in compare(lhs, rhs) == .orderedAscending })
+    mutating func sort(using compare: (Element, Element) throws -> ComparisonResult) rethrows {
+        try sort(by: { lhs, rhs in try compare(lhs, rhs) == .orderedAscending })
     }
 
-    mutating func sort<R>(by transform: (Element) -> R, using compare: SimpleCompareFunction<R>) {
-        sort(by: { lhs, rhs in compare(transform(lhs), transform(rhs)) })
+    mutating func sort<R>(by transform: (Element) -> R, using compare: (R, R) throws -> Bool) rethrows {
+        try sort(by: { lhs, rhs in try compare(transform(lhs), transform(rhs)) })
     }
     
-    mutating func sort<R: Comparable>(by transform: (Element) -> R) {
-        sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: transform) }
+    mutating func sort<R: Comparable>(by transform: (Element) throws -> R) rethrows {
+        try sort { lhs, rhs in try transform(lhs) < transform(rhs) }
     }
     
     mutating func sort<each Rs: Comparable>(
@@ -573,24 +702,57 @@ public extension RandomAccessCollection where Self: MutableCollection {
         sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: repeat each transforms) }
     }
     
-    mutating func sort<R>(by transform: (Element) -> R, using compare: CompareFunction<R>) {
-        sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: transform, using: compare) }
+    mutating func trySort<each Rs: Comparable>(
+        by transforms: repeat (Element) throws -> each Rs
+    ) throws {
+        try sort { lhs, rhs in try CompareFunctions.tryCompare(lhs, rhs, by: repeat each transforms) }
     }
     
-    mutating func sort(using compares: CompareFunction<Element>...) {
+    mutating func sort<R>(
+        by transform: (Element) throws -> R,
+        using compare: (R, R) throws -> ComparisonResult
+    ) rethrows {
+        try sort { lhs, rhs in try CompareFunctions.compare(lhs, rhs, by: transform, using: compare) }
+    }
+    
+    mutating func sort(using compares: (Element, Element) -> ComparisonResult...) {
         sort(using: compares)
     }
     
-    mutating func sort<Compares: Sequence>(using compares: Compares) where Compares.Element == CompareFunction<Element> {
+    mutating func sort(using compares: (Element, Element) throws -> ComparisonResult...) throws {
+        try sort(using: compares)
+    }
+    
+    mutating func sort<Compares: Sequence<(Element, Element) -> ComparisonResult>>(using compares: Compares) {
         sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, using: compares) }
+    }
+    
+    mutating func sort<Compares: Sequence<(Element, Element) throws -> ComparisonResult>>(using compares: Compares) throws {
+        try sort { lhs, rhs in try CompareFunctions.compare(lhs, rhs, using: compares) }
     }
     
     mutating func sort<R: Comparable & Equatable>(by transforms: (Element) -> R...) {
         sort(by: transforms)
     }
     
-    mutating func sort<R: Comparable & Equatable, Transforms: Sequence>(by transforms: Transforms) where Transforms.Element == (Element) -> R {
+    mutating func sort<R: Comparable & Equatable>(by transforms: (Element) throws -> R...) throws {
+        try sort(by: transforms)
+    }
+    
+    mutating func sort<R: Comparable & Equatable>(by keyPaths: KeyPath<Element, R>...) {
+        sort(by: keyPaths)
+    }
+    
+    mutating func sort<R: Comparable & Equatable, Transforms: Sequence<(Element) -> R>>(by transforms: Transforms) {
         sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: transforms) }
+    }
+    
+    mutating func sort<R: Comparable & Equatable, Transforms: Sequence<(Element) throws -> R>>(by transforms: Transforms) throws {
+        try sort { lhs, rhs in try CompareFunctions.compare(lhs, rhs, by: transforms) }
+    }
+    
+    mutating func sort<R: Comparable & Equatable, KeyPaths: Sequence<KeyPath<Element, R>>>(by keyPaths: KeyPaths) {
+        sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: keyPaths) }
     }
 }
 

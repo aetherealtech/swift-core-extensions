@@ -670,6 +670,125 @@ final class CollectionTests: XCTestCase {
         try assertEqual(expectedResult, result)
     }
     
+    func testMutateAtIndices() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedMutation = [
+            2,
+            3,
+            3,
+            8,
+            6
+        ]
+        
+        let expectedResults = [
+            "2",
+            "3",
+            "6"
+        ]
+        
+        let result = testArray
+            .mutate(at: [0, 2, 4]) { value in
+                value += 1
+                return value.description
+            }
+    
+        try assertEqual(expectedMutation, testArray)
+        try assertEqual(expectedResults, result)
+    }
+    
+    func testMutateAtIndicesVoid() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedMutation = [
+            2,
+            3,
+            3,
+            8,
+            6
+        ]
+
+        testArray
+            .mutate(at: [0, 2, 4]) { value in
+                value += 1
+            }
+    
+        try assertEqual(expectedMutation, testArray)
+    }
+    
+    func testMutateAtSafeIndices() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedMutation = [
+            2,
+            3,
+            3,
+            8,
+            6
+        ]
+        
+        let expectedResults = [
+            "2",
+            "3",
+            "6"
+        ]
+        
+        let result = testArray
+            .mutate(safe: [0, 9, 2, 4, 30]) { value in
+                value += 1
+                return value.description
+            }
+    
+        try assertEqual(expectedMutation, testArray)
+        try assertEqual(expectedResults, result)
+    }
+    
+    func testMutateAtSafeIndicesVoid() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedMutation = [
+            2,
+            3,
+            3,
+            8,
+            6
+        ]
+        
+        let expectedResult = 3
+        
+        let result = testArray
+            .mutate(safe: [0, 9, 2, 4, 30]) { value in
+                value += 1
+            }
+    
+        try assertEqual(expectedMutation, testArray)
+        try assertEqual(expectedResult, result)
+    }
+    
     func testCompact() throws {
         let testArray: [Int?] = [
             1,

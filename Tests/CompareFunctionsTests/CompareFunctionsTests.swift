@@ -64,14 +64,7 @@ final class CompareFunctionsTests: XCTestCase {
                 by: { $0.innerMember },
                 using: { $0.intMember.compare(to: $1.intMember) }
             )
-            
-            let resultPartial = Compare.by(
-                { $0.innerMember },
-                using: { $0.intMember.compare(to: $1.intMember) }
-            )(first, second)
-            
-            try assertEqual(resultPartial, result)
-            
+                        
             try assertEqual(first.innerMember.intMember.compare(to: second.innerMember.intMember), result)
             
             let sameResult = compare(
@@ -99,13 +92,6 @@ final class CompareFunctionsTests: XCTestCase {
                 using: { $0.intMember.compare(to: $1.intMember) }
             )
             
-            let resultPartial = Compare.by(
-                keyPath,
-                using: { $0.intMember.compare(to: $1.intMember) }
-            )(first, second)
-            
-            try assertEqual(resultPartial, result)
-            
             try assertEqual(first.innerMember.intMember.compare(to: second.innerMember.intMember), result)
             
             let sameResult = compare(
@@ -129,12 +115,6 @@ final class CompareFunctionsTests: XCTestCase {
                 second,
                 by: { $0.intMember }
             )
-            
-            let resultPartial = Compare.by(
-                { $0.intMember }
-            )(first, second)
-            
-            try assertEqual(resultPartial, result)
             
             try assertEqual(first.intMember.compare(to: second.intMember), result)
             
@@ -161,12 +141,6 @@ final class CompareFunctionsTests: XCTestCase {
                 by: keyPath
             )
             
-            let resultPartial = Compare.by(
-                keyPath
-            )(first, second)
-            
-            try assertEqual(resultPartial, result)
-            
             try assertEqual(first.intMember.compare(to: second.intMember), result)
             
             let sameResult = compare(
@@ -190,13 +164,6 @@ final class CompareFunctionsTests: XCTestCase {
                 using: { $0.intMember.compare(to: $1.intMember) }, { $0.innerMember.intMember.compare(to: $1.innerMember.intMember) }
             )
             
-            let resultPartial = Compare.using(
-                { $0.intMember.compare(to: $1.intMember) },
-                { $0.innerMember.intMember.compare(to: $1.innerMember.intMember) }
-            )(first, second)
-            
-            try assertEqual(resultPartial, result)
-            
             let expectedResult = first.intMember == second.intMember ?
                 first.innerMember.intMember.compare(to: second.innerMember.intMember) :
                 first.intMember.compare(to: second.intMember)
@@ -213,12 +180,47 @@ final class CompareFunctionsTests: XCTestCase {
         }
     }
     
+    func testCompareUsingComparesVariadicThrows() async throws {
+        for _ in 0..<100 {
+            let first = TestStruct.random
+            let second = TestStruct.random
+                        
+            let firstCompare: (TestStruct, TestStruct) throws -> ComparisonResult = {
+                $0.intMember.compare(to: $1.intMember)
+            }
+            
+            let secondCompare: (TestStruct, TestStruct) throws -> ComparisonResult = {
+                $0.innerMember.intMember.compare(to: $1.innerMember.intMember)
+            }
+            
+            let result = try compare(
+                first,
+                second,
+                using: firstCompare, secondCompare
+            )
+            
+            let expectedResult = first.intMember == second.intMember ?
+                first.innerMember.intMember.compare(to: second.innerMember.intMember) :
+                first.intMember.compare(to: second.intMember)
+            
+            try assertEqual(expectedResult, result)
+            
+            let sameResult = try compare(
+                first,
+                first,
+                using: firstCompare, secondCompare
+            )
+            
+            try assertEqual(.orderedSame, sameResult)
+        }
+    }
+    
     func testCompareUsingComparesArray() async throws {
         for _ in 0..<100 {
             let first = TestStruct.random
             let second = TestStruct.random
                         
-            let compares: [CompareFunction<TestStruct>] = [
+            let compares: [(TestStruct, TestStruct) -> ComparisonResult] = [
                 { $0.intMember.compare(to: $1.intMember) },
                 { $0.innerMember.intMember.compare(to: $1.innerMember.intMember) }
             ]
@@ -229,12 +231,6 @@ final class CompareFunctionsTests: XCTestCase {
                 using: compares
             )
             
-            let resultPartial = Compare.using(
-                compares
-            )(first, second)
-            
-            try assertEqual(resultPartial, result)
-            
             let expectedResult = first.intMember == second.intMember ?
                 first.innerMember.intMember.compare(to: second.innerMember.intMember) :
                 first.intMember.compare(to: second.intMember)
@@ -242,6 +238,38 @@ final class CompareFunctionsTests: XCTestCase {
             try assertEqual(expectedResult, result)
             
             let sameResult = compare(
+                first,
+                first,
+                using: compares
+            )
+            
+            try assertEqual(.orderedSame, sameResult)
+        }
+    }
+    
+    func testCompareUsingComparesArrayThrows() async throws {
+        for _ in 0..<100 {
+            let first = TestStruct.random
+            let second = TestStruct.random
+                        
+            let compares: [(TestStruct, TestStruct) throws -> ComparisonResult] = [
+                { $0.intMember.compare(to: $1.intMember) },
+                { $0.innerMember.intMember.compare(to: $1.innerMember.intMember) }
+            ]
+            
+            let result = try compare(
+                first,
+                second,
+                using: compares
+            )
+            
+            let expectedResult = first.intMember == second.intMember ?
+                first.innerMember.intMember.compare(to: second.innerMember.intMember) :
+                first.intMember.compare(to: second.intMember)
+            
+            try assertEqual(expectedResult, result)
+            
+            let sameResult = try compare(
                 first,
                 first,
                 using: compares
@@ -262,13 +290,6 @@ final class CompareFunctionsTests: XCTestCase {
                 by: { $0.intMember}, { $0.innerMember.intMember }
             )
             
-            let resultPartial = Compare.by(
-                { $0.intMember },
-                { $0.innerMember.intMember }
-            )(first, second)
-            
-            try assertEqual(resultPartial, result)
-            
             let expectedResult = first.intMember == second.intMember ?
                 first.innerMember.intMember.compare(to: second.innerMember.intMember) :
                 first.intMember.compare(to: second.intMember)
@@ -279,6 +300,36 @@ final class CompareFunctionsTests: XCTestCase {
                 first,
                 first,
                 by: { $0.intMember }, { $0.innerMember.intMember }
+            )
+            
+            try assertEqual(.orderedSame, sameResult)
+        }
+    }
+    
+    func testCompareByTransformsVariadicThrows() async throws {
+        for _ in 0..<100 {
+            let first = TestStruct.random
+            let second = TestStruct.random
+                        
+            let firstTransform: (TestStruct) throws -> Int = \.intMember
+            let secondTransform: (TestStruct) throws -> Int = \.innerMember.intMember
+            
+            let result = try tryCompare(
+                first,
+                second,
+                by: firstTransform, secondTransform
+            )
+            
+            let expectedResult = first.intMember == second.intMember ?
+                first.innerMember.intMember.compare(to: second.innerMember.intMember) :
+                first.intMember.compare(to: second.intMember)
+            
+            try assertEqual(expectedResult, result)
+            
+            let sameResult = try tryCompare(
+                first,
+                first,
+                by: firstTransform, secondTransform
             )
             
             try assertEqual(.orderedSame, sameResult)
@@ -301,12 +352,6 @@ final class CompareFunctionsTests: XCTestCase {
                 by: transforms
             )
             
-            let resultPartial = Compare.by(
-                transforms
-            )(first, second)
-            
-            try assertEqual(resultPartial, result)
-            
             let expectedResult = first.intMember == second.intMember ?
                 first.innerMember.intMember.compare(to: second.innerMember.intMember) :
                 first.intMember.compare(to: second.intMember)
@@ -314,6 +359,38 @@ final class CompareFunctionsTests: XCTestCase {
             try assertEqual(expectedResult, result)
             
             let sameResult = compare(
+                first,
+                first,
+                by: transforms
+            )
+            
+            try assertEqual(.orderedSame, sameResult)
+        }
+    }
+    
+    func testCompareByTransformsArrayThrows() async throws {
+        for _ in 0..<100 {
+            let first = TestStruct.random
+            let second = TestStruct.random
+                        
+            let transforms: [(TestStruct) throws -> Int] = [
+                { $0.intMember },
+                { $0.innerMember.intMember }
+            ]
+            
+            let result = try compare(
+                first,
+                second,
+                by: transforms
+            )
+            
+            let expectedResult = first.intMember == second.intMember ?
+                first.innerMember.intMember.compare(to: second.innerMember.intMember) :
+                first.intMember.compare(to: second.intMember)
+            
+            try assertEqual(expectedResult, result)
+            
+            let sameResult = try compare(
                 first,
                 first,
                 by: transforms
@@ -336,13 +413,6 @@ final class CompareFunctionsTests: XCTestCase {
                 second,
                 by: keyPath1, keyPath2
             )
-            
-            let resultPartial = Compare.by(
-                keyPath1,
-                keyPath2
-            )(first, second)
-            
-            try assertEqual(resultPartial, result)
             
             let expectedResult = first.intMember == second.intMember ?
                 first.innerMember.intMember.compare(to: second.innerMember.intMember) :
@@ -375,13 +445,7 @@ final class CompareFunctionsTests: XCTestCase {
                 second,
                 by: keyPaths
             )
-            
-            let resultPartial = Compare.by(
-                keyPaths
-            )(first, second)
-            
-            try assertEqual(resultPartial, result)
-            
+        
             let expectedResult = first.intMember == second.intMember ?
                 first.innerMember.intMember.compare(to: second.innerMember.intMember) :
                 first.intMember.compare(to: second.intMember)

@@ -67,6 +67,20 @@
         "identifier" : "NumericExtensionsTests",
         "name" : "NumericExtensionsTests"
       }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "CombineExtensionsTests",
+        "name" : "CombineExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "CompareFunctionsTests",
+        "name" : "CompareFunctionsTests"
+      }
     }
   ],
   "version" : 1
