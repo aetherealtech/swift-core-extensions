@@ -206,6 +206,14 @@ let package = Package(
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
         .testTarget(
+            name: "CompareFunctionsTests",
+            dependencies: [
+                "CompareFunctions",
+                .product(name: "Assertions", package: "swift-assertions"),
+            ],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
+        .testTarget(
             name: "DateExtensionsTests",
             dependencies: [
                 "CollectionExtensions",

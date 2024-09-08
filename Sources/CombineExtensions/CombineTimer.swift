@@ -25,7 +25,7 @@ public extension Scheduler {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public final class TimerPublisher<S: Scheduler>: Publisher {
+public struct TimerPublisher<S: Scheduler>: Publisher {
     public typealias Output = Void
     public typealias Failure = Never
 
@@ -103,7 +103,7 @@ public final class TimerPublisher<S: Scheduler>: Publisher {
         private var state: State = .init()
     }
 
-    private let scheduler: S
-    private let start: S.SchedulerTimeType
-    private let interval: S.SchedulerTimeType.Stride
+    public let scheduler: S
+    public let start: S.SchedulerTimeType
+    public let interval: S.SchedulerTimeType.Stride
 }

@@ -6,7 +6,7 @@ public protocol AsyncFutureReceiver<Output, Failure>: Sendable {
     associatedtype Output
     associatedtype Failure: Error
     
-    func callAsFunction<S: Subscriber<Output, Failure>>(getSubscriber: () -> S?) async
+    func callAsFunction<S: Subscriber<Output, Failure>>() async -> (S) -> Void
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
@@ -15,10 +15,10 @@ public struct NonThrowingAsyncFutureReceiver<Output>: AsyncFutureReceiver {
     
     let work: @Sendable () async -> Output
     
-    public func callAsFunction<S: Subscriber<Output, Failure>>(getSubscriber: () -> S?) async {
+    public func callAsFunction<S: Subscriber<Output, Failure>>() async -> (S) -> Void {
         let result = await work()
         
-        if let subscriber = getSubscriber() {
+        return { subscriber in
             _ = subscriber.receive(result)
             subscriber.receive(completion: .finished)
         }
@@ -31,16 +31,16 @@ public struct ThrowingAsyncFutureReceiver<Output>: AsyncFutureReceiver {
     
     let work: @Sendable () async throws -> Output
     
-    public func callAsFunction<S: Subscriber<Output, Failure>>(getSubscriber: () -> S?) async {
+    public func callAsFunction<S: Subscriber<Output, Failure>>() async -> (S) -> Void {
         do {
             let result = try await work()
             
-            if let subscriber = getSubscriber() {
+            return { subscriber in
                 _ = subscriber.receive(result)
                 subscriber.receive(completion: .finished)
             }
         } catch {
-            if let subscriber = getSubscriber() {
+            return { subscriber in
                 subscriber.receive(completion: .failure(error))
             }
         }
@@ -48,47 +48,53 @@ public struct ThrowingAsyncFutureReceiver<Output>: AsyncFutureReceiver {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-private final class AsyncFutureSubscription<S: Subscriber, R: AsyncFutureReceiver<S.Input, S.Failure>>: Combine.Subscription {
+private struct SendableSubscriber<S: Subscriber>: @unchecked Sendable {
+    let value: S
+}
+
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+private struct AsyncFutureSubscription<S: Subscriber, R: AsyncFutureReceiver<S.Input, S.Failure>>: Combine.Subscription {
     init(
         subscriber: S,
         receiver: R
     ) {
-        _state = .init(wrappedValue: .init(
-            subscriber: subscriber,
-            receiver: receiver
-        ))
+        self.subscriber = subscriber
+        self.receiver = receiver
     }
     
+    var combineIdentifier: CombineIdentifier { subscriber.combineIdentifier }
+
     func request(_ demand: Subscribers.Demand) {
         guard demand > .none else {
             return
         }
         
-        _state.write { state in
-            guard state.task == nil else {
+        _task.write { task in
+            guard task == nil else {
                 return
             }
-            
-            state.task = .init { [_state, receiver = state.receiver] in
-                await receiver { _state.subscriber }
+                        
+            task = .init { [subscriber = SendableSubscriber(value: subscriber), receiver] in
+                let receiveValue: (S) -> Void = await receiver()
+                
+                try? Task.checkCancellation()
+                
+                receiveValue(subscriber.value)
             }
         }
     }
     
     func cancel() {
-        _state.write { state in
-            state.subscriber = nil
-            state.task?.cancel()
+        _task.write { task in
+            task?.cancel()
+            task = nil
         }
     }
+
+    private let subscriber: S
+    private let receiver: R
     
-    private struct State {
-        var subscriber: S?
-        let receiver: R
-        var task: Task<Void, Never>?
-    }
-    
-    private let _state: Synchronized<State>
+    private let _task: Synchronized<Task<Void, Never>?> = .init(wrappedValue: nil)
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
