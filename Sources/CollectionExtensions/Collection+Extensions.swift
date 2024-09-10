@@ -772,18 +772,3 @@ public extension RandomAccessCollection where Self: MutableCollection {
         sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: keyPaths) }
     }
 }
-
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension Collection where Element: Identifiable {
-    subscript(id id: Element.ID) -> Element? {
-        first { $0.id == id }
-    }
-}
-
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension RangeReplaceableCollection where Element: Identifiable {
-    @discardableResult
-    mutating func remove(id: Element.ID) -> Element? {
-        removeFirst { $0.id == id }
-    }
-}

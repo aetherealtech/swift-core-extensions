@@ -19,14 +19,6 @@ final class CollectionTests: XCTestCase {
         var innerMember: InnerStruct
     }
     
-    @Stubbable
-    struct TestIdentifiableStruct: Equatable, Identifiable {
-        let id: Int
-        var intMember: Int
-        var floatMember: Double
-        var stringMember: String
-    }
-    
     struct DestructiveSequence<Element>: Sequence {
         struct Iterator: IteratorProtocol {
             mutating func next() -> Element? {
