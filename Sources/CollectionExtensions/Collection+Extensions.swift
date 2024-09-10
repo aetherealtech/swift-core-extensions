@@ -65,6 +65,16 @@ public extension Collection {
         of elementsToFind: Elements,
         by equality: (Element, Element) throws -> Bool
     ) rethrows -> [Index] {
+        try indices(
+            of: Array(elementsToFind),
+            by: equality
+        )
+    }
+    
+    func indices<Elements: Collection<Element>>(
+        of elementsToFind: Elements,
+        by equality: (Element, Element) throws -> Bool
+    ) rethrows -> [Index] {
         let elementsToFind = elementsToFind.store(in: Array.self)
         
         return try indices { element in try elementsToFind.contains(element, by: equality) }
@@ -330,13 +340,6 @@ public extension MutableCollection {
 }
 
 extension Collection {
-    func removeAll<Target: RangeReplaceableCollection<Element>>(
-        from target: inout Target,
-        by equality: (Element, Element) throws -> Bool
-    ) rethrows {
-        try target.removeAll { element in try self.contains(element, by: equality) }
-    }
-    
     func removingAll<Target: Sequence<Element>>(
         from target: Target,
         by equality: (Element, Element) throws -> Bool
@@ -511,12 +514,12 @@ public extension RangeReplaceableCollection {
         }
     }
     
-    func removing<Indices: Sequence<Index>>(at indices: Indices) -> Self {
+    func removing<Indices: Sequence<Index>>(at indicesToRemove: Indices) -> Self {
         var result = Self()
         result.reserveCapacity(count)
         
         for index in indices {
-            if indices.contains(index) {
+            if indicesToRemove.contains(index) {
                 continue
             }
             
@@ -624,15 +627,15 @@ public extension RangeReplaceableCollection {
     ) rethrows {
         var index = startIndex
         
-        while index != endIndex {
+        while index < endIndex {
             var otherIndex = self.index(after: index)
             
-            while otherIndex != endIndex {
+            while otherIndex < endIndex {
                 let indexToCheck = otherIndex
                 formIndex(after: &otherIndex)
                 
                 if try equality(self[index], self[indexToCheck]) {
-                    remove(at: otherIndex)
+                    remove(at: indexToCheck)
                 }
             }
             
@@ -662,9 +665,15 @@ public extension RangeReplaceableCollection where Element: Equatable {
         indices(of: element, by: ==)
     }
     
-    func indices<Elements: Sequence>(
+    func indices<Elements: Sequence<Element>>(
         of elementsToFind: Elements
-    ) -> [Index] where Elements.Element == Element {
+    ) -> [Index] {
+        indices(of: elementsToFind, by: ==)
+    }
+    
+    func indices<Elements: Collection<Element>>(
+        of elementsToFind: Elements
+    ) -> [Index] {
         indices(of: elementsToFind, by: ==)
     }
     
@@ -676,11 +685,15 @@ public extension RangeReplaceableCollection where Element: Equatable {
         removingAll(of: elementToRemove, by: ==)
     }
     
-    mutating func removeAll<Elements: Sequence>(of elementsToRemove: Elements) where Elements.Element == Element {
+    mutating func removeAll<Elements: Sequence<Element>>(of elementsToRemove: Elements) {
         removeAll(of: elementsToRemove, by: ==)
     }
 
-    func removingAll<Elements: Sequence>(of elementsToRemove: Elements) -> Self where Elements.Element == Element {
+    func removingAll<Elements: Sequence<Element>>(of elementsToRemove: Elements) -> Self {
+        removingAll(of: elementsToRemove, by: ==)
+    }
+
+    func removingAll<Elements: Collection<Element>>(of elementsToRemove: Elements) -> Self {
         removingAll(of: elementsToRemove, by: ==)
     }
 
@@ -698,24 +711,11 @@ public extension RandomAccessCollection where Self: MutableCollection {
         try sort(by: { lhs, rhs in try compare(lhs, rhs) == .orderedAscending })
     }
 
-    mutating func sort<R>(by transform: (Element) -> R, using compare: (R, R) throws -> Bool) rethrows {
+    mutating func sort<R>(
+        by transform: (Element) throws -> R,
+        using compare: (R, R) throws -> Bool
+    ) rethrows {
         try sort(by: { lhs, rhs in try compare(transform(lhs), transform(rhs)) })
-    }
-    
-    mutating func sort<R: Comparable>(by transform: (Element) throws -> R) rethrows {
-        try sort { lhs, rhs in try transform(lhs) < transform(rhs) }
-    }
-    
-    mutating func sort<each Rs: Comparable>(
-        by transforms: repeat (Element) -> each Rs
-    ) {
-        sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: repeat each transforms) }
-    }
-    
-    mutating func trySort<each Rs: Comparable>(
-        by transforms: repeat (Element) throws -> each Rs
-    ) throws {
-        try sort { lhs, rhs in try CompareFunctions.tryCompare(lhs, rhs, by: repeat each transforms) }
     }
     
     mutating func sort<R>(
@@ -723,6 +723,25 @@ public extension RandomAccessCollection where Self: MutableCollection {
         using compare: (R, R) throws -> ComparisonResult
     ) rethrows {
         try sort { lhs, rhs in try CompareFunctions.compare(lhs, rhs, by: transform, using: compare) }
+    }
+
+    mutating func sort<each Rs: Comparable>(
+        by transforms: repeat (Element) -> each Rs
+    ) {
+        sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: repeat each transforms) }
+    }
+    
+    // This crashes on access of the last transform, even if everything is inlined into this package.  Will open a bug report.
+//    mutating func trySort<each Rs: Comparable>(
+//        by transforms: repeat (Element) throws -> each Rs
+//    ) throws {
+//        try sort { lhs, rhs in try tryCompare(lhs, rhs, by: repeat each transforms) }
+//    }
+    
+    mutating func sort<each Rs: Comparable>(
+        by keyPaths: repeat KeyPath<Element, each Rs>
+    ) {
+        sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: repeat each keyPaths) }
     }
     
     mutating func sort(using compares: (Element, Element) -> ComparisonResult...) {
@@ -740,19 +759,7 @@ public extension RandomAccessCollection where Self: MutableCollection {
     mutating func sort<Compares: Sequence<(Element, Element) throws -> ComparisonResult>>(using compares: Compares) throws {
         try sort { lhs, rhs in try CompareFunctions.compare(lhs, rhs, using: compares) }
     }
-    
-    mutating func sort<R: Comparable & Equatable>(by transforms: (Element) -> R...) {
-        sort(by: transforms)
-    }
-    
-    mutating func sort<R: Comparable & Equatable>(by transforms: (Element) throws -> R...) throws {
-        try sort(by: transforms)
-    }
-    
-    mutating func sort<R: Comparable & Equatable>(by keyPaths: KeyPath<Element, R>...) {
-        sort(by: keyPaths)
-    }
-    
+
     mutating func sort<R: Comparable & Equatable, Transforms: Sequence<(Element) -> R>>(by transforms: Transforms) {
         sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: transforms) }
     }

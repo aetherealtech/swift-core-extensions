@@ -120,54 +120,30 @@ public func compare<T, R: Comparable & Equatable, KeyPaths: Sequence<KeyPath<T, 
     )
 }
 
-private struct CompareShortCircuit: Error {
-    let result: ComparisonResult
-    
-    static func tryCompare<T, R: Comparable & Equatable>(
-        _ lhs: T,
-        _ rhs: T,
-        by transform: (T) -> R
-    ) throws -> ComparisonResult {
-        let result = compare(
-            lhs,
-            rhs,
-            by: transform,
-            using: R.compare
-        )
-        
-        if result != .orderedSame {
-            throw CompareShortCircuit(result: result)
-        }
-        
-        return .orderedSame
+private func nextCompare<T, R: Comparable & Equatable>(
+    result: inout ComparisonResult,
+    lhs: T,
+    rhs: T,
+    transform: (T) throws -> R
+) rethrows {
+    guard result == .orderedSame else {
+        return
     }
     
-    static func tryCompare<T, R: Comparable & Equatable>(
-        _ lhs: T,
-        _ rhs: T,
-        by transform: (T) throws -> R
-    ) throws -> ComparisonResult {
-        let result = try compare(
-            lhs,
-            rhs,
-            by: transform,
-            using: R.compare
-        )
-        
-        if result != .orderedSame {
-            throw CompareShortCircuit(result: result)
-        }
-        
-        return .orderedSame
+    result = try compare(lhs, rhs, by: transform, using: R.compare)
+}
+
+private func nextCompare<T, R: Comparable & Equatable>(
+    result: inout ComparisonResult,
+    lhs: T,
+    rhs: T,
+    keyPath: KeyPath<T, R>
+) {
+    guard result == .orderedSame else {
+        return
     }
     
-    static func tryCompare<T, R: Comparable & Equatable>(
-        _ lhs: T,
-        _ rhs: T,
-        by keyPath: KeyPath<T, R>
-    ) throws -> ComparisonResult {
-        try tryCompare(lhs, rhs) { value in value[keyPath: keyPath] }
-    }
+    result = compare(lhs, rhs, by: keyPath, using: R.compare)
 }
 
 public func compare<
@@ -178,13 +154,10 @@ public func compare<
     _ rhs: T,
     by transforms: repeat (T) -> each Rs
 ) -> ComparisonResult {
-    do {
-        let _ = (repeat try CompareShortCircuit.tryCompare(lhs, rhs, by: each transforms))
-    } catch {
-        return (error as! CompareShortCircuit).result
-    }
-
-    return .orderedSame
+    var result = ComparisonResult.orderedSame
+    repeat nextCompare(result: &result, lhs: lhs, rhs: rhs, transform: each transforms)
+    
+    return result
 }
 
 public func tryCompare<
@@ -195,13 +168,10 @@ public func tryCompare<
     _ rhs: T,
     by transforms: repeat (T) throws -> each Rs
 ) throws -> ComparisonResult {
-    do {
-        let _ = (repeat try CompareShortCircuit.tryCompare(lhs, rhs, by: each transforms))
-    } catch let error as CompareShortCircuit {
-        return error.result
-    }
-
-    return .orderedSame
+    var result = ComparisonResult.orderedSame
+    repeat try nextCompare(result: &result, lhs: lhs, rhs: rhs, transform: each transforms)
+    
+    return result
 }
 
 public func compare<
@@ -212,11 +182,8 @@ public func compare<
     _ rhs: T,
     by keyPaths: repeat KeyPath<T, each Rs>
 ) -> ComparisonResult {
-    do {
-        let _ = (repeat try CompareShortCircuit.tryCompare(lhs, rhs, by: each keyPaths))
-    } catch {
-        return (error as! CompareShortCircuit).result
-    }
-
-    return .orderedSame
+    var result = ComparisonResult.orderedSame
+    repeat nextCompare(result: &result, lhs: lhs, rhs: rhs, keyPath: each keyPaths)
+    
+    return result
 }

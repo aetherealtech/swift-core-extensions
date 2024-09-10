@@ -23,6 +23,33 @@ final class CollectionTests: XCTestCase {
             result.intMember = intMember
             return result
         }
+        
+        func with(intMember: Int, innerIntMember: Int) -> Self {
+            var result = self
+            result.intMember = intMember
+            result.innerMember.intMember = innerIntMember
+            return result
+        }
+    }
+    
+    struct DestructiveSequence<Element>: Sequence {
+        struct Iterator: IteratorProtocol {
+            mutating func next() -> Element? {
+                guard !array.isEmpty else {
+                    return nil
+                }
+                
+                return array.removeFirst()
+            }
+            
+            var array: [Element]
+        }
+        
+        func makeIterator() -> Iterator {
+            .init(array: array)
+        }
+        
+        let array: [Element]
     }
     
     func testIndexSafe() throws {
@@ -42,7 +69,7 @@ final class CollectionTests: XCTestCase {
         try assertNil(testArray[safe: testArray.count * 3])
     }
     
-    func testIndices() throws {
+    func testAtIndices() throws {
         let testArray = [
             1,
             3,
@@ -276,7 +303,7 @@ final class CollectionTests: XCTestCase {
         try assertEqual(expectedResult, testArray.indices(of: values[1], by: { $0.intMember == $1.intMember }))
     }
     
-    func testIndicesOfValuesBy() throws {
+    func testIndicesOfSequenceBy() throws {
         let values = (0..<3)
             .map { _ in TestStruct.stub }
         
@@ -303,6 +330,39 @@ final class CollectionTests: XCTestCase {
             8
         ]
                 
+        let result = testArray
+            .indices(of: DestructiveSequence(array: [values[0], values[1]]), by: { $0.intMember == $1.intMember })
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testIndicesOfCollectionBy() throws {
+        let values = (0..<3)
+            .map { _ in TestStruct.stub }
+        
+        let testArray = [
+            values[0],
+            values[2],
+            values[1],
+            values[1],
+            values[0],
+            values[1],
+            values[2],
+            values[1],
+            values[0],
+            values[2],
+        ]
+        
+        let expectedResult = [
+            0,
+            2,
+            3,
+            4,
+            5,
+            7,
+            8
+        ]
+        
         try assertEqual(expectedResult, testArray.indices(of: [values[0], values[1]], by: { $0.intMember == $1.intMember }))
     }
     
@@ -1206,6 +1266,1075 @@ final class CollectionTests: XCTestCase {
             .inserting(contentsOf: [9, 1, 11, 7], at: 3, if: false)
         
         try assertEqual(testArray, result)
+    }
+    
+    func testRemovingAllWhere() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            1,
+            3,
+            5
+        ]
+        
+        let result = testArray
+            .removingAll { $0.isMultiple(of: 2) }
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemovingAtIndex() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            5
+        ]
+        
+        let result = testArray
+            .removing(at: 3)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemoveAtIndices() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            1,
+            8,
+        ]
+        
+        testArray
+            .remove(at: [1, 2, 4])
+        
+        try assertEqual(expectedResult, testArray)
+    }
+    
+    func testRemovingAtIndices() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            1,
+            8,
+        ]
+        
+        let result = testArray
+            .removing(at: [1, 2, 4])
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testSafelyRemoveFirstNonEmpty() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedMutation = [
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let result = testArray.safelyRemoveFirst()
+        
+        try assertEqual(1, result)
+        try assertEqual(expectedMutation, testArray)
+    }
+    
+    func testSafelyRemoveFirstEmpty() throws {
+        var testArray: [Int] = []
+        
+        let result = testArray.safelyRemoveFirst()
+        
+        try assertNil(result)
+    }
+    
+    func testRemovingFirst() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let result = testArray.removingFirst()
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemoveFirstWhere() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedMutation = [
+            1,
+            2,
+            8,
+            5
+        ]
+        
+        let result = testArray
+            .removeFirst { $0 > 2 }
+        
+        try assertEqual(3, result)
+        try assertEqual(expectedMutation, testArray)
+    }
+    
+    func testRemoveFirstWhereNoMatch() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedMutation = testArray
+        
+        let result = testArray
+            .removeFirst { $0 > 10 }
+        
+        try assertNil(result)
+        try assertEqual(expectedMutation, testArray)
+    }
+    
+    func testRemovingFirstWhere() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedResult = [
+            1,
+            2,
+            8,
+            5
+        ]
+        
+        let result = testArray
+            .removingFirst { $0 > 2 }
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testFilterInPlace() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let expectedMutation = [
+            2,
+            8
+        ]
+        
+        testArray
+            .filterInPlace { $0.isMultiple(of: 2) }
+        
+        try assertEqual(expectedMutation, testArray)
+    }
+    
+    func testRemoveAllOfBy() throws {
+        var testArray = [
+            TestStruct.stub.with(intMember: 1),
+            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub.with(intMember: 2),
+            TestStruct.stub.with(intMember: 8),
+            TestStruct.stub.with(intMember: 5),
+            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub.with(intMember: 9),
+            TestStruct.stub.with(intMember: 3),
+        ]
+        
+        let expectedMutation = [
+            testArray[0],
+            testArray[2],
+            testArray[3],
+            testArray[4],
+            testArray[6]
+        ]
+        
+        testArray
+            .removeAll(of: TestStruct.stub.with(intMember: 3), by: { $0.intMember == $1.intMember })
+        
+        try assertEqual(expectedMutation, testArray)
+    }
+    
+    func testRemovingAllOfBy() throws {
+        let testArray = [
+            TestStruct.stub.with(intMember: 1),
+            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub.with(intMember: 2),
+            TestStruct.stub.with(intMember: 8),
+            TestStruct.stub.with(intMember: 5),
+            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub.with(intMember: 9),
+            TestStruct.stub.with(intMember: 3),
+        ]
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[3],
+            testArray[4],
+            testArray[6]
+        ]
+        
+        let result = testArray
+            .removingAll(of: TestStruct.stub.with(intMember: 3), by: { $0.intMember == $1.intMember })
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemoveAllOfSequenceBy() throws {
+        var testArray = [
+            TestStruct.stub.with(intMember: 1),
+            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub.with(intMember: 2),
+            TestStruct.stub.with(intMember: 8),
+            TestStruct.stub.with(intMember: 5),
+            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub.with(intMember: 9),
+            TestStruct.stub.with(intMember: 3),
+        ]
+        
+        let expectedMutation = [
+            testArray[0],
+            testArray[2],
+            testArray[3],
+            testArray[4]
+        ]
+        
+        let values = [
+            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub.with(intMember: 9)
+        ]
+        
+        testArray
+            .removeAll(of: values, by: { $0.intMember == $1.intMember })
+        
+        try assertEqual(expectedMutation, testArray)
+    }
+    
+    func testRemovingAllOfSequenceBy() throws {
+        let testArray = [
+            TestStruct.stub.with(intMember: 1),
+            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub.with(intMember: 2),
+            TestStruct.stub.with(intMember: 8),
+            TestStruct.stub.with(intMember: 5),
+            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub.with(intMember: 9),
+            TestStruct.stub.with(intMember: 3),
+        ]
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[3],
+            testArray[4]
+        ]
+        
+        let values = [
+            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub.with(intMember: 9)
+        ]
+
+        let result = testArray
+            .removingAll(of: DestructiveSequence(array: values), by: { $0.intMember == $1.intMember })
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemovingAllOfCollectionBy() throws {
+        let testArray = [
+            TestStruct.stub.with(intMember: 1),
+            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub.with(intMember: 2),
+            TestStruct.stub.with(intMember: 8),
+            TestStruct.stub.with(intMember: 5),
+            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub.with(intMember: 9),
+            TestStruct.stub.with(intMember: 3),
+        ]
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[3],
+            testArray[4]
+        ]
+        
+        let values = [
+            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub.with(intMember: 9)
+        ]
+        
+        let result = testArray
+            .removingAll(of: values, by: { $0.intMember == $1.intMember })
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemoveDuplicatesBy() throws {
+        var testArray = [
+            TestStruct.stub.with(intMember: 1),
+            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub.with(intMember: 2),
+            TestStruct.stub.with(intMember: 8),
+            TestStruct.stub.with(intMember: 5),
+            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub.with(intMember: 9),
+            TestStruct.stub.with(intMember: 3),
+        ]
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[1],
+            testArray[2],
+            testArray[3],
+            testArray[4],
+            testArray[6]
+        ]
+        
+        testArray
+            .removeDuplicates(by: { $0.intMember == $1.intMember })
+        
+        try assertEqual(expectedResult, testArray)
+    }
+    
+    func testRemovingDuplicatesBy() throws {
+        let testArray = [
+            TestStruct.stub.with(intMember: 1),
+            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub.with(intMember: 2),
+            TestStruct.stub.with(intMember: 8),
+            TestStruct.stub.with(intMember: 5),
+            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub.with(intMember: 9),
+            TestStruct.stub.with(intMember: 3),
+        ]
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[1],
+            testArray[2],
+            testArray[3],
+            testArray[4],
+            testArray[6]
+        ]
+        
+        let result = testArray
+            .removingDuplicates(by: { $0.intMember == $1.intMember })
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testIndicesOf() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            3,
+            9,
+            3
+        ]
+ 
+        let expectedResult = [
+            1,
+            5,
+            7
+        ]
+        
+        let result = testArray
+            .indices(of: 3)
+        
+        try assertEqual(expectedResult, result)
+    }
+        
+    func testIndicesOfSequence() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            3,
+            9,
+            3
+        ]
+ 
+        let expectedResult = [
+            1,
+            5,
+            6,
+            7
+        ]
+        
+        let result = testArray
+            .indices(of: DestructiveSequence(array: [3, 9]))
+        
+        try assertEqual(expectedResult, result)
+    }
+        
+    func testIndicesOfCollection() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            3,
+            9,
+            3
+        ]
+ 
+        let expectedResult = [
+            1,
+            5,
+            6,
+            7
+        ]
+        
+        let result = testArray
+            .indices(of: [3, 9])
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemoveAllOf() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            3,
+            9,
+            3
+        ]
+ 
+        let expectedResult = [
+            1,
+            2,
+            8,
+            5,
+            9
+        ]
+        
+        testArray.removeAll(of: 3)
+        
+        try assertEqual(expectedResult, testArray)
+    }
+    
+    func testRemovingAllOf() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            3,
+            9,
+            3
+        ]
+ 
+        let expectedResult = [
+            1,
+            2,
+            8,
+            5,
+            9
+        ]
+        
+        let result = testArray.removingAll(of: 3)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemoveAllOfSequence() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            3,
+            9,
+            3
+        ]
+ 
+        let expectedResult = [
+            1,
+            2,
+            8,
+            5
+        ]
+        
+        testArray.removeAll(of: DestructiveSequence(array: [3, 9]))
+        
+        try assertEqual(expectedResult, testArray)
+    }
+    
+    func testRemovingAllOfSequence() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            3,
+            9,
+            3
+        ]
+ 
+        let expectedResult = [
+            1,
+            2,
+            8,
+            5
+        ]
+        
+        let result = testArray
+            .removingAll(of: DestructiveSequence(array: [3, 9]))
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemovingAllOfCollection() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            3,
+            9,
+            3
+        ]
+ 
+        let expectedResult = [
+            1,
+            2,
+            8,
+            5
+        ]
+        
+        let result = testArray
+            .removingAll(of: [3, 9])
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemoveDuplicates() throws {
+        var testArray = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            3,
+            9,
+            3
+        ]
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            9
+        ]
+        
+        testArray
+            .removeDuplicates()
+        
+        try assertEqual(expectedResult, testArray)
+    }
+    
+    func testRemovingDuplicates() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            3,
+            9,
+            3
+        ]
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            9
+        ]
+        
+        let result = testArray
+            .removingDuplicates()
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testSortUsingCompare() throws {
+        var testArray = [
+            TestStruct.stub.with(intMember: 1),
+            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub.with(intMember: 2),
+            TestStruct.stub.with(intMember: 8),
+            TestStruct.stub.with(intMember: 5),
+            TestStruct.stub.with(intMember: 9),
+        ]
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[1],
+            testArray[4],
+            testArray[3],
+            testArray[5]
+        ]
+        
+        testArray
+            .sort(using: { $0.intMember.compare(to: $1.intMember) })
+        
+        try assertEqual(expectedResult, testArray)
+    }
+    
+    func testSortByUsingSimpleCompare() throws {
+        var testArray = [
+            TestStruct.stub.with(intMember: 1),
+            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub.with(intMember: 2),
+            TestStruct.stub.with(intMember: 8),
+            TestStruct.stub.with(intMember: 5),
+            TestStruct.stub.with(intMember: 9),
+        ]
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[1],
+            testArray[4],
+            testArray[3],
+            testArray[5]
+        ]
+        
+        testArray
+            .sort(by: \.intMember, using: <)
+        
+        try assertEqual(expectedResult, testArray)
+    }
+    
+    func testSortByUsingCompare() throws {
+        var testArray = [
+            TestStruct.stub.with(intMember: 1),
+            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub.with(intMember: 2),
+            TestStruct.stub.with(intMember: 8),
+            TestStruct.stub.with(intMember: 5),
+            TestStruct.stub.with(intMember: 9),
+        ]
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[1],
+            testArray[4],
+            testArray[3],
+            testArray[5]
+        ]
+        
+        testArray
+            .sort(by: \.intMember, using: Int.compare)
+        
+        try assertEqual(expectedResult, testArray)
+    }
+    
+    func testSortByTransforms() throws {
+        var testArray = [
+            TestStruct.stub.with(intMember: 1, innerIntMember: 6),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 2, innerIntMember: 7),
+            TestStruct.stub.with(intMember: 8, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 5, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 2),
+            TestStruct.stub.with(intMember: 9, innerIntMember: 5),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 9),
+        ]
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[5],
+            testArray[1],
+            testArray[7],
+            testArray[4],
+            testArray[3],
+            testArray[6]
+        ]
+        
+        testArray
+            .sort(by: { $0.intMember }, { $0.innerMember.intMember })
+        
+        try assertEqual(expectedResult, testArray)
+    }
+    
+    struct TestError: Error {}
+    
+//    func testTrySortByTransforms() throws {
+//        var testArray = [
+//            TestStruct.stub.with(intMember: 1, innerIntMember: 6),
+//            TestStruct.stub.with(intMember: 3, innerIntMember: 3),
+//            TestStruct.stub.with(intMember: 2, innerIntMember: 7),
+//            TestStruct.stub.with(intMember: 8, innerIntMember: 3),
+//            TestStruct.stub.with(intMember: 5, innerIntMember: 3),
+//            TestStruct.stub.with(intMember: 3, innerIntMember: 2),
+//            TestStruct.stub.with(intMember: 9, innerIntMember: 5),
+//            TestStruct.stub.with(intMember: 3, innerIntMember: 9),
+//        ]
+//        
+//        let expectedResult = [
+//            testArray[0],
+//            testArray[2],
+//            testArray[5],
+//            testArray[1],
+//            testArray[7],
+//            testArray[4],
+//            testArray[3],
+//            testArray[6]
+//        ]
+//        
+//        let firstTransform: (TestStruct) throws -> Int = { $0.intMember }
+//        let secondTransform: (TestStruct) throws -> Int = { _ in throw TestError() }
+//        
+//        try testArray
+//            .trySort(by: firstTransform, secondTransform)
+//        
+//        try assertEqual(expectedResult, testArray)
+//    }
+    
+    func testSortByKeyPaths() throws {
+        var testArray = [
+            TestStruct.stub.with(intMember: 1, innerIntMember: 6),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 2, innerIntMember: 7),
+            TestStruct.stub.with(intMember: 8, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 5, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 2),
+            TestStruct.stub.with(intMember: 9, innerIntMember: 5),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 9),
+        ]
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[5],
+            testArray[1],
+            testArray[7],
+            testArray[4],
+            testArray[3],
+            testArray[6]
+        ]
+        
+        let keyPath1: KeyPath<TestStruct, Int> = \.intMember
+        let keyPath2: KeyPath<TestStruct, Int> = \.innerMember.intMember
+        
+        testArray
+            .sort(by: keyPath1, keyPath2)
+        
+        try assertEqual(expectedResult, testArray)
+    }
+    
+    func testSortUsingComparesVariadic() throws {
+        var testArray = [
+            TestStruct.stub.with(intMember: 1, innerIntMember: 6),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 2, innerIntMember: 7),
+            TestStruct.stub.with(intMember: 8, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 5, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 2),
+            TestStruct.stub.with(intMember: 9, innerIntMember: 5),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 9),
+        ]
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[5],
+            testArray[1],
+            testArray[7],
+            testArray[4],
+            testArray[3],
+            testArray[6]
+        ]
+        
+        let compare1: (TestStruct, TestStruct) -> ComparisonResult = { $0.intMember.compare(to: $1.intMember) }
+        let compare2: (TestStruct, TestStruct) -> ComparisonResult = { $0.innerMember.intMember.compare(to: $1.innerMember.intMember) }
+        
+        testArray
+            .sort(using: compare1, compare2)
+        
+        try assertEqual(expectedResult, testArray)
+    }
+    
+    func testSortUsingComparesThrowingVariadic() throws {
+        var testArray = [
+            TestStruct.stub.with(intMember: 1, innerIntMember: 6),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 2, innerIntMember: 7),
+            TestStruct.stub.with(intMember: 8, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 5, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 2),
+            TestStruct.stub.with(intMember: 9, innerIntMember: 5),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 9),
+        ]
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[5],
+            testArray[1],
+            testArray[7],
+            testArray[4],
+            testArray[3],
+            testArray[6]
+        ]
+        
+        let compare1: (TestStruct, TestStruct) throws -> ComparisonResult = { $0.intMember.compare(to: $1.intMember) }
+        let compare2: (TestStruct, TestStruct) throws -> ComparisonResult = { $0.innerMember.intMember.compare(to: $1.innerMember.intMember) }
+        
+        try testArray
+            .sort(using: compare1, compare2)
+        
+        try assertEqual(expectedResult, testArray)
+    }
+    
+    func testSortUsingComparesSequence() throws {
+        var testArray = [
+            TestStruct.stub.with(intMember: 1, innerIntMember: 6),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 2, innerIntMember: 7),
+            TestStruct.stub.with(intMember: 8, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 5, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 2),
+            TestStruct.stub.with(intMember: 9, innerIntMember: 5),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 9),
+        ]
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[5],
+            testArray[1],
+            testArray[7],
+            testArray[4],
+            testArray[3],
+            testArray[6]
+        ]
+        
+        let compares: DestructiveSequence<(TestStruct, TestStruct) -> ComparisonResult> = .init(array: [
+            { $0.intMember.compare(to: $1.intMember) },
+            { $0.innerMember.intMember.compare(to: $1.innerMember.intMember) }
+        ])
+        
+        testArray
+            .sort(using: compares)
+        
+        try assertEqual(expectedResult, testArray)
+    }
+    
+    func testSortUsingComparesThrowingArray() throws {
+        var testArray = [
+            TestStruct.stub.with(intMember: 1, innerIntMember: 6),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 2, innerIntMember: 7),
+            TestStruct.stub.with(intMember: 8, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 5, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 2),
+            TestStruct.stub.with(intMember: 9, innerIntMember: 5),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 9),
+        ]
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[5],
+            testArray[1],
+            testArray[7],
+            testArray[4],
+            testArray[3],
+            testArray[6]
+        ]
+        
+        let compares: DestructiveSequence<(TestStruct, TestStruct) throws -> ComparisonResult> = .init(array: [
+            { $0.intMember.compare(to: $1.intMember) },
+            { $0.innerMember.intMember.compare(to: $1.innerMember.intMember) }
+        ])
+        
+        try testArray
+            .sort(using: compares)
+        
+        try assertEqual(expectedResult, testArray)
+    }
+    
+    func testSortByTransformSequence() throws {
+        var testArray = [
+            TestStruct.stub.with(intMember: 1, innerIntMember: 6),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 2, innerIntMember: 7),
+            TestStruct.stub.with(intMember: 8, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 5, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 2),
+            TestStruct.stub.with(intMember: 9, innerIntMember: 5),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 9),
+        ]
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[5],
+            testArray[1],
+            testArray[7],
+            testArray[4],
+            testArray[3],
+            testArray[6]
+        ]
+        
+        let transforms: DestructiveSequence<(TestStruct) -> Int> = .init(array: [
+            { $0.intMember },
+            { $0.innerMember.intMember }
+        ])
+        
+        testArray
+            .sort(by: transforms)
+        
+        try assertEqual(expectedResult, testArray)
+    }
+    
+    func testSortByTransformsThrowingSequence() throws {
+        var testArray = [
+            TestStruct.stub.with(intMember: 1, innerIntMember: 6),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 2, innerIntMember: 7),
+            TestStruct.stub.with(intMember: 8, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 5, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 2),
+            TestStruct.stub.with(intMember: 9, innerIntMember: 5),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 9),
+        ]
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[5],
+            testArray[1],
+            testArray[7],
+            testArray[4],
+            testArray[3],
+            testArray[6]
+        ]
+        
+        let transforms: DestructiveSequence<(TestStruct) throws -> Int> = .init(array: [
+            \.intMember,
+            \.innerMember.intMember
+        ])
+        
+        try testArray
+            .sort(by: transforms)
+        
+        try assertEqual(expectedResult, testArray)
+    }
+    
+    func testSortByKeyPathSequence() throws {
+        var testArray = [
+            TestStruct.stub.with(intMember: 1, innerIntMember: 6),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 2, innerIntMember: 7),
+            TestStruct.stub.with(intMember: 8, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 5, innerIntMember: 3),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 2),
+            TestStruct.stub.with(intMember: 9, innerIntMember: 5),
+            TestStruct.stub.with(intMember: 3, innerIntMember: 9),
+        ]
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[5],
+            testArray[1],
+            testArray[7],
+            testArray[4],
+            testArray[3],
+            testArray[6]
+        ]
+        
+        let keyPaths: DestructiveSequence<KeyPath<TestStruct, Int>> = .init(array: [
+            \.intMember,
+            \.innerMember.intMember
+        ])
+
+        testArray
+            .sort(by: keyPaths)
+        
+        try assertEqual(expectedResult, testArray)
     }
     
     func testCompact() throws {
