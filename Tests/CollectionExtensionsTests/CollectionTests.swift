@@ -17,19 +17,14 @@ final class CollectionTests: XCTestCase {
         var floatMember: Double
         var stringMember: String
         var innerMember: InnerStruct
-        
-        func with(intMember: Int) -> Self {
-            var result = self
-            result.intMember = intMember
-            return result
-        }
-        
-        func with(intMember: Int, innerIntMember: Int) -> Self {
-            var result = self
-            result.intMember = intMember
-            result.innerMember.intMember = innerIntMember
-            return result
-        }
+    }
+    
+    @Stubbable
+    struct TestIdentifiableStruct: Equatable, Identifiable {
+        let id: Int
+        var intMember: Int
+        var floatMember: Double
+        var stringMember: String
     }
     
     struct DestructiveSequence<Element>: Sequence {
@@ -120,13 +115,13 @@ final class CollectionTests: XCTestCase {
     
     func testContainsBy() throws {
         let testArray = [
-            TestStruct.stub.with(intMember: 0),
-            TestStruct.stub.with(intMember: 1),
-            TestStruct.stub.with(intMember: 2),
+            TestStruct.stub(intMember: 0),
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 2),
         ]
         
-        try assertTrue(testArray.contains(TestStruct.stub.with(intMember: 0), by: { $0.intMember == $1.intMember }))
-        try assertFalse(testArray.contains(TestStruct.stub.with(intMember: 3), by: { $0.intMember == $1.intMember }))
+        try assertTrue(testArray.contains(TestStruct.stub(intMember: 0), by: { $0.intMember == $1.intMember }))
+        try assertFalse(testArray.contains(TestStruct.stub(intMember: 3), by: { $0.intMember == $1.intMember }))
     }
     
     func testCartesianProduct() throws {
@@ -1487,14 +1482,14 @@ final class CollectionTests: XCTestCase {
     
     func testRemoveAllOfBy() throws {
         var testArray = [
-            TestStruct.stub.with(intMember: 1),
-            TestStruct.stub.with(intMember: 3),
-            TestStruct.stub.with(intMember: 2),
-            TestStruct.stub.with(intMember: 8),
-            TestStruct.stub.with(intMember: 5),
-            TestStruct.stub.with(intMember: 3),
-            TestStruct.stub.with(intMember: 9),
-            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9),
+            TestStruct.stub(intMember: 3),
         ]
         
         let expectedMutation = [
@@ -1506,21 +1501,21 @@ final class CollectionTests: XCTestCase {
         ]
         
         testArray
-            .removeAll(of: TestStruct.stub.with(intMember: 3), by: { $0.intMember == $1.intMember })
+            .removeAll(of: TestStruct.stub(intMember: 3), by: { $0.intMember == $1.intMember })
         
         try assertEqual(expectedMutation, testArray)
     }
     
     func testRemovingAllOfBy() throws {
         let testArray = [
-            TestStruct.stub.with(intMember: 1),
-            TestStruct.stub.with(intMember: 3),
-            TestStruct.stub.with(intMember: 2),
-            TestStruct.stub.with(intMember: 8),
-            TestStruct.stub.with(intMember: 5),
-            TestStruct.stub.with(intMember: 3),
-            TestStruct.stub.with(intMember: 9),
-            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9),
+            TestStruct.stub(intMember: 3),
         ]
         
         let expectedResult = [
@@ -1532,21 +1527,21 @@ final class CollectionTests: XCTestCase {
         ]
         
         let result = testArray
-            .removingAll(of: TestStruct.stub.with(intMember: 3), by: { $0.intMember == $1.intMember })
+            .removingAll(of: TestStruct.stub(intMember: 3), by: { $0.intMember == $1.intMember })
         
         try assertEqual(expectedResult, result)
     }
     
     func testRemoveAllOfSequenceBy() throws {
         var testArray = [
-            TestStruct.stub.with(intMember: 1),
-            TestStruct.stub.with(intMember: 3),
-            TestStruct.stub.with(intMember: 2),
-            TestStruct.stub.with(intMember: 8),
-            TestStruct.stub.with(intMember: 5),
-            TestStruct.stub.with(intMember: 3),
-            TestStruct.stub.with(intMember: 9),
-            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9),
+            TestStruct.stub(intMember: 3),
         ]
         
         let expectedMutation = [
@@ -1557,8 +1552,8 @@ final class CollectionTests: XCTestCase {
         ]
         
         let values = [
-            TestStruct.stub.with(intMember: 3),
-            TestStruct.stub.with(intMember: 9)
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9)
         ]
         
         testArray
@@ -1569,14 +1564,14 @@ final class CollectionTests: XCTestCase {
     
     func testRemovingAllOfSequenceBy() throws {
         let testArray = [
-            TestStruct.stub.with(intMember: 1),
-            TestStruct.stub.with(intMember: 3),
-            TestStruct.stub.with(intMember: 2),
-            TestStruct.stub.with(intMember: 8),
-            TestStruct.stub.with(intMember: 5),
-            TestStruct.stub.with(intMember: 3),
-            TestStruct.stub.with(intMember: 9),
-            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9),
+            TestStruct.stub(intMember: 3),
         ]
         
         let expectedResult = [
@@ -1587,8 +1582,8 @@ final class CollectionTests: XCTestCase {
         ]
         
         let values = [
-            TestStruct.stub.with(intMember: 3),
-            TestStruct.stub.with(intMember: 9)
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9)
         ]
 
         let result = testArray
@@ -1599,14 +1594,14 @@ final class CollectionTests: XCTestCase {
     
     func testRemovingAllOfCollectionBy() throws {
         let testArray = [
-            TestStruct.stub.with(intMember: 1),
-            TestStruct.stub.with(intMember: 3),
-            TestStruct.stub.with(intMember: 2),
-            TestStruct.stub.with(intMember: 8),
-            TestStruct.stub.with(intMember: 5),
-            TestStruct.stub.with(intMember: 3),
-            TestStruct.stub.with(intMember: 9),
-            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9),
+            TestStruct.stub(intMember: 3),
         ]
         
         let expectedResult = [
@@ -1617,8 +1612,8 @@ final class CollectionTests: XCTestCase {
         ]
         
         let values = [
-            TestStruct.stub.with(intMember: 3),
-            TestStruct.stub.with(intMember: 9)
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9)
         ]
         
         let result = testArray
@@ -1629,14 +1624,14 @@ final class CollectionTests: XCTestCase {
     
     func testRemoveDuplicatesBy() throws {
         var testArray = [
-            TestStruct.stub.with(intMember: 1),
-            TestStruct.stub.with(intMember: 3),
-            TestStruct.stub.with(intMember: 2),
-            TestStruct.stub.with(intMember: 8),
-            TestStruct.stub.with(intMember: 5),
-            TestStruct.stub.with(intMember: 3),
-            TestStruct.stub.with(intMember: 9),
-            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9),
+            TestStruct.stub(intMember: 3),
         ]
         
         let expectedResult = [
@@ -1656,14 +1651,14 @@ final class CollectionTests: XCTestCase {
     
     func testRemovingDuplicatesBy() throws {
         let testArray = [
-            TestStruct.stub.with(intMember: 1),
-            TestStruct.stub.with(intMember: 3),
-            TestStruct.stub.with(intMember: 2),
-            TestStruct.stub.with(intMember: 8),
-            TestStruct.stub.with(intMember: 5),
-            TestStruct.stub.with(intMember: 3),
-            TestStruct.stub.with(intMember: 9),
-            TestStruct.stub.with(intMember: 3),
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9),
+            TestStruct.stub(intMember: 3),
         ]
         
         let expectedResult = [
@@ -1935,12 +1930,12 @@ final class CollectionTests: XCTestCase {
     
     func testSortUsingCompare() throws {
         var testArray = [
-            TestStruct.stub.with(intMember: 1),
-            TestStruct.stub.with(intMember: 3),
-            TestStruct.stub.with(intMember: 2),
-            TestStruct.stub.with(intMember: 8),
-            TestStruct.stub.with(intMember: 5),
-            TestStruct.stub.with(intMember: 9),
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 9),
         ]
         
         let expectedResult = [
@@ -1960,12 +1955,12 @@ final class CollectionTests: XCTestCase {
     
     func testSortByUsingSimpleCompare() throws {
         var testArray = [
-            TestStruct.stub.with(intMember: 1),
-            TestStruct.stub.with(intMember: 3),
-            TestStruct.stub.with(intMember: 2),
-            TestStruct.stub.with(intMember: 8),
-            TestStruct.stub.with(intMember: 5),
-            TestStruct.stub.with(intMember: 9),
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 9),
         ]
         
         let expectedResult = [
@@ -1985,12 +1980,12 @@ final class CollectionTests: XCTestCase {
     
     func testSortByUsingCompare() throws {
         var testArray = [
-            TestStruct.stub.with(intMember: 1),
-            TestStruct.stub.with(intMember: 3),
-            TestStruct.stub.with(intMember: 2),
-            TestStruct.stub.with(intMember: 8),
-            TestStruct.stub.with(intMember: 5),
-            TestStruct.stub.with(intMember: 9),
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 9),
         ]
         
         let expectedResult = [
@@ -2010,14 +2005,14 @@ final class CollectionTests: XCTestCase {
     
     func testSortByTransforms() throws {
         var testArray = [
-            TestStruct.stub.with(intMember: 1, innerIntMember: 6),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 2, innerIntMember: 7),
-            TestStruct.stub.with(intMember: 8, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 5, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 2),
-            TestStruct.stub.with(intMember: 9, innerIntMember: 5),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 9),
+            TestStruct.stub(intMember: 1, innerMember: .stub(intMember: 6)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 2, innerMember: .stub(intMember: 7)),
+            TestStruct.stub(intMember: 8, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 5, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 2)),
+            TestStruct.stub(intMember: 9, innerMember: .stub(intMember: 5)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 9)),
         ]
         
         let expectedResult = [
@@ -2041,14 +2036,14 @@ final class CollectionTests: XCTestCase {
     
 //    func testTrySortByTransforms() throws {
 //        var testArray = [
-//            TestStruct.stub.with(intMember: 1, innerIntMember: 6),
-//            TestStruct.stub.with(intMember: 3, innerIntMember: 3),
-//            TestStruct.stub.with(intMember: 2, innerIntMember: 7),
-//            TestStruct.stub.with(intMember: 8, innerIntMember: 3),
-//            TestStruct.stub.with(intMember: 5, innerIntMember: 3),
-//            TestStruct.stub.with(intMember: 3, innerIntMember: 2),
-//            TestStruct.stub.with(intMember: 9, innerIntMember: 5),
-//            TestStruct.stub.with(intMember: 3, innerIntMember: 9),
+//            TestStruct.stub(intMember: 1, innerMember: .stub(intMember: 6),
+//            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 3),
+//            TestStruct.stub(intMember: 2, innerMember: .stub(intMember: 7),
+//            TestStruct.stub(intMember: 8, innerMember: .stub(intMember: 3),
+//            TestStruct.stub(intMember: 5, innerMember: .stub(intMember: 3),
+//            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 2),
+//            TestStruct.stub(intMember: 9, innerMember: .stub(intMember: 5),
+//            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 9),
 //        ]
 //        
 //        let expectedResult = [
@@ -2073,14 +2068,14 @@ final class CollectionTests: XCTestCase {
     
     func testSortByKeyPaths() throws {
         var testArray = [
-            TestStruct.stub.with(intMember: 1, innerIntMember: 6),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 2, innerIntMember: 7),
-            TestStruct.stub.with(intMember: 8, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 5, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 2),
-            TestStruct.stub.with(intMember: 9, innerIntMember: 5),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 9),
+            TestStruct.stub(intMember: 1, innerMember: .stub(intMember: 6)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 2, innerMember: .stub(intMember: 7)),
+            TestStruct.stub(intMember: 8, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 5, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 2)),
+            TestStruct.stub(intMember: 9, innerMember: .stub(intMember: 5)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 9)),
         ]
         
         let expectedResult = [
@@ -2105,14 +2100,14 @@ final class CollectionTests: XCTestCase {
     
     func testSortUsingComparesVariadic() throws {
         var testArray = [
-            TestStruct.stub.with(intMember: 1, innerIntMember: 6),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 2, innerIntMember: 7),
-            TestStruct.stub.with(intMember: 8, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 5, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 2),
-            TestStruct.stub.with(intMember: 9, innerIntMember: 5),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 9),
+            TestStruct.stub(intMember: 1, innerMember: .stub(intMember: 6)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 2, innerMember: .stub(intMember: 7)),
+            TestStruct.stub(intMember: 8, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 5, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 2)),
+            TestStruct.stub(intMember: 9, innerMember: .stub(intMember: 5)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 9)),
         ]
         
         let expectedResult = [
@@ -2137,14 +2132,14 @@ final class CollectionTests: XCTestCase {
     
     func testSortUsingComparesThrowingVariadic() throws {
         var testArray = [
-            TestStruct.stub.with(intMember: 1, innerIntMember: 6),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 2, innerIntMember: 7),
-            TestStruct.stub.with(intMember: 8, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 5, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 2),
-            TestStruct.stub.with(intMember: 9, innerIntMember: 5),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 9),
+            TestStruct.stub(intMember: 1, innerMember: .stub(intMember: 6)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 2, innerMember: .stub(intMember: 7)),
+            TestStruct.stub(intMember: 8, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 5, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 2)),
+            TestStruct.stub(intMember: 9, innerMember: .stub(intMember: 5)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 9)),
         ]
         
         let expectedResult = [
@@ -2169,14 +2164,14 @@ final class CollectionTests: XCTestCase {
     
     func testSortUsingComparesSequence() throws {
         var testArray = [
-            TestStruct.stub.with(intMember: 1, innerIntMember: 6),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 2, innerIntMember: 7),
-            TestStruct.stub.with(intMember: 8, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 5, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 2),
-            TestStruct.stub.with(intMember: 9, innerIntMember: 5),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 9),
+            TestStruct.stub(intMember: 1, innerMember: .stub(intMember: 6)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 2, innerMember: .stub(intMember: 7)),
+            TestStruct.stub(intMember: 8, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 5, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 2)),
+            TestStruct.stub(intMember: 9, innerMember: .stub(intMember: 5)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 9)),
         ]
         
         let expectedResult = [
@@ -2203,14 +2198,14 @@ final class CollectionTests: XCTestCase {
     
     func testSortUsingComparesThrowingArray() throws {
         var testArray = [
-            TestStruct.stub.with(intMember: 1, innerIntMember: 6),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 2, innerIntMember: 7),
-            TestStruct.stub.with(intMember: 8, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 5, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 2),
-            TestStruct.stub.with(intMember: 9, innerIntMember: 5),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 9),
+            TestStruct.stub(intMember: 1, innerMember: .stub(intMember: 6)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 2, innerMember: .stub(intMember: 7)),
+            TestStruct.stub(intMember: 8, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 5, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 2)),
+            TestStruct.stub(intMember: 9, innerMember: .stub(intMember: 5)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 9)),
         ]
         
         let expectedResult = [
@@ -2237,14 +2232,14 @@ final class CollectionTests: XCTestCase {
     
     func testSortByTransformSequence() throws {
         var testArray = [
-            TestStruct.stub.with(intMember: 1, innerIntMember: 6),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 2, innerIntMember: 7),
-            TestStruct.stub.with(intMember: 8, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 5, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 2),
-            TestStruct.stub.with(intMember: 9, innerIntMember: 5),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 9),
+            TestStruct.stub(intMember: 1, innerMember: .stub(intMember: 6)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 2, innerMember: .stub(intMember: 7)),
+            TestStruct.stub(intMember: 8, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 5, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 2)),
+            TestStruct.stub(intMember: 9, innerMember: .stub(intMember: 5)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 9)),
         ]
         
         let expectedResult = [
@@ -2271,14 +2266,14 @@ final class CollectionTests: XCTestCase {
     
     func testSortByTransformsThrowingSequence() throws {
         var testArray = [
-            TestStruct.stub.with(intMember: 1, innerIntMember: 6),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 2, innerIntMember: 7),
-            TestStruct.stub.with(intMember: 8, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 5, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 2),
-            TestStruct.stub.with(intMember: 9, innerIntMember: 5),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 9),
+            TestStruct.stub(intMember: 1, innerMember: .stub(intMember: 6)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 2, innerMember: .stub(intMember: 7)),
+            TestStruct.stub(intMember: 8, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 5, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 2)),
+            TestStruct.stub(intMember: 9, innerMember: .stub(intMember: 5)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 9)),
         ]
         
         let expectedResult = [
@@ -2305,14 +2300,14 @@ final class CollectionTests: XCTestCase {
     
     func testSortByKeyPathSequence() throws {
         var testArray = [
-            TestStruct.stub.with(intMember: 1, innerIntMember: 6),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 2, innerIntMember: 7),
-            TestStruct.stub.with(intMember: 8, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 5, innerIntMember: 3),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 2),
-            TestStruct.stub.with(intMember: 9, innerIntMember: 5),
-            TestStruct.stub.with(intMember: 3, innerIntMember: 9),
+            TestStruct.stub(intMember: 1, innerMember: .stub(intMember: 6)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 2, innerMember: .stub(intMember: 7)),
+            TestStruct.stub(intMember: 8, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 5, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 2)),
+            TestStruct.stub(intMember: 9, innerMember: .stub(intMember: 5)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 9)),
         ]
         
         let expectedResult = [
