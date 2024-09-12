@@ -719,6 +719,13 @@ public extension RandomAccessCollection where Self: MutableCollection {
     }
     
     mutating func sort<R>(
+        by keyPath: KeyPath<Element, R>,
+        using compare: (R, R) throws -> Bool
+    ) rethrows {
+        try sort(by: { lhs, rhs in try compare(lhs[keyPath: keyPath], rhs[keyPath: keyPath]) })
+    }
+    
+    mutating func sort<R>(
         by transform: (Element) throws -> R,
         using compare: (R, R) throws -> ComparisonResult
     ) rethrows {

@@ -35,7 +35,7 @@ public extension Sequence {
     func grouped<Key: Hashable>(by grouper: (Element) throws -> Key) rethrows -> [Key: [Element]] {
         try .init(grouping: self, by: grouper)
     }
-
+    
     func sorted(using compare: (Element, Element) throws -> ComparisonResult) rethrows -> [Element] {
         try sorted(by: { lhs, rhs in try compare(lhs, rhs) == .orderedAscending })
     }
@@ -58,9 +58,10 @@ public extension Sequence {
         sorted { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: repeat each transforms) }
     }
     
-    func trySorted<each Rs: Comparable>(by transforms: repeat (Element) throws -> each Rs) throws -> [Element] {
-        try sorted { lhs, rhs in try CompareFunctions.tryCompare(lhs, rhs, by: repeat each transforms) }
-    }
+    // This crashes on access of the last transform, even if everything is inlined into this package.  Will open a bug report.
+//    func trySorted<each Rs: Comparable>(by transforms: repeat (Element) throws -> each Rs) throws -> [Element] {
+//        try sorted { lhs, rhs in try CompareFunctions.tryCompare(lhs, rhs, by: repeat each transforms) }
+//    }
     
     func sorted<each Rs: Comparable>(by keyPaths: repeat KeyPath<Element, each Rs>) -> [Element] {
         sorted { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: repeat each keyPaths) }
@@ -92,6 +93,10 @@ public extension Sequence {
     
     func sorted<R: Comparable & Equatable, Transforms: Sequence<(Element) throws -> R>>(by transforms: Transforms) throws -> [Element] {
         try sorted { lhs, rhs in try CompareFunctions.compare(lhs, rhs, by: transforms) }
+    }
+    
+    func sorted<R: Comparable & Equatable, KeyPaths: Sequence<KeyPath<Element, R>>>(by keyPaths: KeyPaths) -> [Element] {
+        sorted { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: keyPaths) }
     }
     
     func contains(_ element: Element, by equality: (Element, Element) throws -> Bool) rethrows -> Bool {

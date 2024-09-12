@@ -1,44 +1,9 @@
 import Assertions
-import Stubbing
 import XCTest
 
 @testable import CollectionExtensions
 
 final class CollectionTests: XCTestCase {
-    @Stubbable
-    struct TestStruct: Equatable {
-        @Stubbable
-        struct InnerStruct: Equatable {
-            var intMember: Int
-            var floatMember: Double
-        }
-        
-        var intMember: Int
-        var floatMember: Double
-        var stringMember: String
-        var innerMember: InnerStruct
-    }
-    
-    struct DestructiveSequence<Element>: Sequence {
-        struct Iterator: IteratorProtocol {
-            mutating func next() -> Element? {
-                guard !array.isEmpty else {
-                    return nil
-                }
-                
-                return array.removeFirst()
-            }
-            
-            var array: [Element]
-        }
-        
-        func makeIterator() -> Iterator {
-            .init(array: array)
-        }
-        
-        let array: [Element]
-    }
-    
     func testIndexSafe() throws {
         let testArray = [
             1,
@@ -1945,7 +1910,32 @@ final class CollectionTests: XCTestCase {
         try assertEqual(expectedResult, testArray)
     }
     
-    func testSortByUsingSimpleCompare() throws {
+    func testSortByTransformUsingSimpleCompare() throws {
+        var testArray = [
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 9),
+        ]
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[1],
+            testArray[4],
+            testArray[3],
+            testArray[5]
+        ]
+        
+        testArray
+            .sort(by: { $0.intMember }, using: <)
+        
+        try assertEqual(expectedResult, testArray)
+    }
+    
+    func testSortByKeyPathUsingSimpleCompare() throws {
         var testArray = [
             TestStruct.stub(intMember: 1),
             TestStruct.stub(intMember: 3),
@@ -2023,8 +2013,6 @@ final class CollectionTests: XCTestCase {
         
         try assertEqual(expectedResult, testArray)
     }
-    
-    struct TestError: Error {}
     
 //    func testTrySortByTransforms() throws {
 //        var testArray = [
@@ -2322,48 +2310,5 @@ final class CollectionTests: XCTestCase {
             .sort(by: keyPaths)
         
         try assertEqual(expectedResult, testArray)
-    }
-    
-    func testCompact() throws {
-        let testArray: [Int?] = [
-            1,
-            2,
-            nil,
-            4,
-            5,
-            6,
-            nil,
-            nil,
-            9,
-            nil
-        ]
-        
-        let expectedArray = [
-            1,
-            2,
-            4,
-            5,
-            6,
-            9
-        ]
-        
-        let actualArray = testArray.compact()
-        
-        try assertEqual(actualArray, expectedArray)
-    }
-    
-    func testFlatten() throws {
-        let testArray: [[Int]] = [
-            [1, 2, 3],
-            [4, 5, 6],
-            [7, 8, 9],
-            [10, 11, 12]
-        ]
-        
-        let expectedArray = Array(1...12)
-        
-        let actualArray = testArray.flatten()
-        
-        try assertEqual(actualArray, expectedArray)
     }
 }

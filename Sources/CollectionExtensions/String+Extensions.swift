@@ -18,13 +18,13 @@ public extension Sequence {
             .sorted(by: \.key)
     }
     
-    func alphabetized<Name: StringProtocol>(by name: (Element) throws -> Name) throws -> [(key: String, values: [Element])] {
-        try trySorted(by: name)
-            .grouped(by: { element in try name(element).alphabeticPosition })
-            .lazy
-            .compactMap { key, value in key.map { key in (key: String(key), values: value) } }
-            .sorted(by: \.key)
-    }
+//    func alphabetized<Name: StringProtocol>(by name: (Element) throws -> Name) throws -> [(key: String, values: [Element])] {
+//        try trySorted(by: name)
+//            .grouped(by: { element in try name(element).alphabeticPosition })
+//            .lazy
+//            .compactMap { key, value in key.map { key in (key: String(key), values: value) } }
+//            .sorted(by: \.key)
+//    }
 }
 
 public extension Sequence where Element == String {
