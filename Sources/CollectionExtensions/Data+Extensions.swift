@@ -47,69 +47,96 @@ public struct InvalidHexString: LocalizedError {
 
 public extension UInt8 {
     init(hexCharacter: Character) throws {
-        switch hexCharacter.lowercased() {
-            case "0": self = 0x0
-            case "1": self = 0x1
-            case "2": self = 0x2
-            case "3": self = 0x3
-            case "4": self = 0x4
-            case "5": self = 0x5
-            case "6": self = 0x6
-            case "7": self = 0x7
-            case "8": self = 0x8
-            case "9": self = 0x9
-            case "a": self = 0xa
-            case "b": self = 0xb
-            case "c": self = 0xc
-            case "d": self = 0xd
-            case "e": self = 0xe
-            case "f": self = 0xf
+        self = switch hexCharacter.lowercased() {
+            case "0": 0x0
+            case "1": 0x1
+            case "2": 0x2
+            case "3": 0x3
+            case "4": 0x4
+            case "5": 0x5
+            case "6": 0x6
+            case "7": 0x7
+            case "8": 0x8
+            case "9": 0x9
+            case "a": 0xa
+            case "b": 0xb
+            case "c": 0xc
+            case "d": 0xd
+            case "e": 0xe
+            case "f": 0xf
             default: throw InvalidHexCharacter(character: hexCharacter)
+        }
+    }
+    
+    init(hexCharacters: (Character, Character)) throws {
+        let (mostSignificantNibble, leastSignificantNibble): (UInt8, UInt8)
+        
+        do {
+            mostSignificantNibble = try UInt8(hexCharacter: hexCharacters.0)
+            leastSignificantNibble = try UInt8(hexCharacter: hexCharacters.1)
+        } catch {
+            throw InvalidHexByte.invalidCharacter(string: "\(hexCharacters.0)\(hexCharacters.1)")
+        }
+        
+        self = mostSignificantNibble << 4 + leastSignificantNibble
+    }
+    
+    var hexCharacters: (Character, Character) {
+        ((self >> 4).hexCharacterOfFirstNibble, hexCharacterOfFirstNibble)
+    }
+    
+    var hexDescription: String {
+        let characters = hexCharacters
+        
+        return "\(characters.0)\(characters.1)"
+    }
+    
+    private var hexCharacterOfFirstNibble: Character {
+        switch (self & (1 << 4)) {
+            case 0x0: "0"
+            case 0x1: "1"
+            case 0x2: "2"
+            case 0x3: "3"
+            case 0x4: "4"
+            case 0x5: "5"
+            case 0x6: "6"
+            case 0x7: "7"
+            case 0x8: "8"
+            case 0x9: "9"
+            case 0xa: "a"
+            case 0xb: "b"
+            case 0xc: "c"
+            case 0xd: "d"
+            case 0xe: "e"
+            default: "f"
         }
     }
 }
 
-private func parseHex(
-    character1: Character,
-    character2: Character
-) throws -> UInt8 {
-    let (mostSignificantNibble, leastSignificantNibble): (UInt8, UInt8)
-    
-    do {
-        mostSignificantNibble = try UInt8(hexCharacter: character1)
-        leastSignificantNibble = try UInt8(hexCharacter: character2)
-    } catch {
-        throw InvalidHexByte.invalidCharacter(string: "\(character1)\(character2)")
-    }
-    
-    return mostSignificantNibble << 4 + leastSignificantNibble
-}
-
-struct HexByteFormat: ParseableFormatStyle {
-    struct ParseStrategy: Foundation.ParseStrategy {
-        func parse(_ value: String) throws -> UInt8 {
+public struct HexByteFormat: ParseableFormatStyle {
+    public struct ParseStrategy: Foundation.ParseStrategy {
+        public func parse(_ value: String) throws -> UInt8 {
             let characters = value.store(in: Array.self)
             
             guard characters.count == 2 else {
                 throw InvalidHexByte.invalidCount(string: value)
             }
             
-            return try parseHex(
-                character1: characters[0],
-                character2: characters[1]
+            return try .init(hexCharacters:
+                (characters[0], characters[1])
             )
         }
     }
     
-    var parseStrategy: ParseStrategy { .init() }
+    public var parseStrategy: ParseStrategy { .init() }
     
-    func format(_ value: UInt8) -> String {
-        .init(format: "%02x", value)
+    public func format(_ value: UInt8) -> String {
+        value.hexDescription
     }
 }
 
-struct HexDataFormat<FormatInput: Sequence<UInt8>>: FormatStyle {
-    func format(_ value: FormatInput) -> String {
+public struct HexDataFormat<FormatInput: Sequence<UInt8>>: FormatStyle {
+    public func format(_ value: FormatInput) -> String {
         .init(value.flatMap(Self.byteFormat.format))
     }
     
@@ -117,34 +144,32 @@ struct HexDataFormat<FormatInput: Sequence<UInt8>>: FormatStyle {
 }
 
 extension HexDataFormat: ParseableFormatStyle where FormatInput: RangeReplaceableCollection {
-    struct ParseStrategy: Foundation.ParseStrategy {
-        func parse(_ value: String) throws -> FormatInput {
+    public struct ParseStrategy<FormatOuput: Sequence<Character>>: Foundation.ParseStrategy {
+        public func parse(_ value: FormatOuput) throws -> FormatInput {
             var result = FormatInput()
             
-            var index = value.startIndex
+            var first: Character?
             
-            while index < value.endIndex {
-                let character1 = value[index]
-                value.formIndex(after: &index)
-                
-                if index == value.endIndex {
-                    throw InvalidHexString.invalidCount(string: value)
-                }
-                
-                let character2 = value[index]
-                
-                do {
-                    let byte = try parseHex(
-                        character1: character1,
-                        character2: character2
-                    )
+            for character in value {
+                if let firstCharacter = first {
+                    do {
+                        let byte = try UInt8(hexCharacters:
+                            (firstCharacter, character)
+                        )
+                        
+                        result.append(byte)
+                    } catch {
+                        throw InvalidHexString.invalidCharacter(string: String(value))
+                    }
                     
-                    result.append(byte)
-                } catch {
-                    throw InvalidHexString.invalidCharacter(string: value)
+                    first = nil
+                } else {
+                    first = character
                 }
-                
-                value.formIndex(after: &index)
+            }
+            
+            if first != nil {
+                throw InvalidHexString.invalidCount(string: String(value))
             }
             
             return result
@@ -153,13 +178,7 @@ extension HexDataFormat: ParseableFormatStyle where FormatInput: RangeReplaceabl
         private static var byteStrategy: HexByteFormat.ParseStrategy { .init() }
     }
     
-    var parseStrategy: ParseStrategy { .init() }
-}
-
-extension UInt8 {
-    var hexDescription: String {
-        String(format: "%02x", self)
-    }
+    public var parseStrategy: ParseStrategy<String> { .init() }
 }
 
 public extension Sequence<UInt8> {
@@ -169,5 +188,23 @@ public extension Sequence<UInt8> {
     
     var hexDescription: String {
         HexDataFormat().format(self)
+    }
+}
+
+public extension RangeReplaceableCollection<UInt8> {
+    init(hexString: some Sequence<Character>) throws {
+        self = try HexDataFormat.ParseStrategy().parse(hexString)
+    }
+}
+
+public extension Sequence<Character> {
+    var hexData: [UInt8] {
+        get throws {
+            try hexData(in: [UInt8].self)
+        }
+    }
+    
+    func hexData<R: RangeReplaceableCollection<UInt8>>(in type: R.Type) throws -> R {
+        try .init(hexString: self)
     }
 }
