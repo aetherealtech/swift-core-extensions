@@ -69,18 +69,7 @@ final class CollectionTests: XCTestCase {
         
         try assertEqual(expectedResult, testArray[safe: indices])
     }
-    
-    func testContainsBy() throws {
-        let testArray = [
-            TestStruct.stub(intMember: 0),
-            TestStruct.stub(intMember: 1),
-            TestStruct.stub(intMember: 2),
-        ]
-        
-        try assertTrue(testArray.contains(TestStruct.stub(intMember: 0), by: { $0.intMember == $1.intMember }))
-        try assertFalse(testArray.contains(TestStruct.stub(intMember: 3), by: { $0.intMember == $1.intMember }))
-    }
-    
+
     func testCartesianProduct() throws {
         enum SomeEnum {
             case thisCase

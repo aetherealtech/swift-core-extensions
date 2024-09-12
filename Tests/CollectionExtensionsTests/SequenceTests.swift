@@ -595,4 +595,577 @@ final class SequenceTests: XCTestCase {
         
         try assertEqual(expectedResult, result)
     }
+    
+    func testContainsByTrue() throws {
+        let testSequence = DestructiveSequence(array: [
+            TestStruct.stub(intMember: 0),
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 2),
+        ])
+        
+        try assertTrue(testSequence.contains(TestStruct.stub(intMember: 0), by: { $0.intMember == $1.intMember }))
+    }
+    
+    func testContainsByFalse() throws {
+        let testSequence = DestructiveSequence(array: [
+            TestStruct.stub(intMember: 0),
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 2),
+        ])
+        
+        try assertFalse(testSequence.contains(TestStruct.stub(intMember: 3), by: { $0.intMember == $1.intMember }))
+    }
+    
+    func testErase() throws {
+        let expectedResult = [
+            TestStruct.stub(intMember: 0),
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 4),
+            TestStruct.stub(intMember: 5),
+        ]
+        
+        let testSequence = DestructiveSequence(array: expectedResult)
+        
+        let result = Array(testSequence.erase())
+  
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testAppending() throws {
+        let testSequence = DestructiveSequence(array: [
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            9
+        ]
+        
+        
+        let result = testSequence
+            .appending(9)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testAppendingIfTrue() throws {
+        let testSequence = DestructiveSequence(array: [
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            9
+        ]
+        
+        
+        let result = testSequence
+            .appending(9, if: true)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testAppendingIfFalse() throws {
+        let testSequence = DestructiveSequence(array: [
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        
+        let result = testSequence
+            .appending(9, if: false)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testAppendingContentsOf() throws {
+        let testSequence = DestructiveSequence(array: [
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            9,
+            2,
+            7
+        ]
+        
+        
+        let result = testSequence
+            .appending(contentsOf: DestructiveSequence(array: [9, 2, 7]))
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testAppendingContentsOfIfTrue() throws {
+        let testSequence = DestructiveSequence(array: [
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            9,
+            2,
+            7
+        ]
+        
+        
+        let result = testSequence
+            .appending(contentsOf: DestructiveSequence(array: [9, 2, 7]), if: true)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testAppendingContentsOfIfFalse() throws {
+        let testSequence = DestructiveSequence(array: [
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        
+        let result = testSequence
+            .appending(contentsOf: DestructiveSequence(array: [9, 2, 7]), if: false)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testPrepending() throws {
+        let testSequence = DestructiveSequence(array: [
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            9,
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        
+        let result = testSequence
+            .prepending(9)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testPrependingIfTrue() throws {
+        let testSequence = DestructiveSequence(array: [
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            9,
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        
+        let result = testSequence
+            .prepending(9, if: true)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testPrependingIfFalse() throws {
+        let testSequence = DestructiveSequence(array: [
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        
+        let result = testSequence
+            .prepending(9, if: false)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testInserting() throws {
+        let testSequence = DestructiveSequence(array: [
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            9,
+            2,
+            8,
+            5
+        ]
+        
+        
+        let result = testSequence
+            .inserting(9, at: 2)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testInsertingIfTrue() throws {
+        let testSequence = DestructiveSequence(array: [
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            9,
+            2,
+            8,
+            5
+        ]
+        
+        
+        let result = testSequence
+            .inserting(9, at: 2, if: true)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testInsertingIfFalse() throws {
+        let testSequence = DestructiveSequence(array: [
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        
+        let result = testSequence
+            .inserting(9, at: 2, if: false)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemovingAllWhere() throws {
+        let testArray = [
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9),
+            TestStruct.stub(intMember: 4),
+        ]
+        
+        let testSequence = DestructiveSequence(array: testArray)
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[1],
+            testArray[4],
+            testArray[5],
+            testArray[6]
+        ]
+        
+        let result = testSequence
+            .removingAll { $0.intMember % 2 == 0 }
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemovingAtIndex() throws {
+        let testSequence = DestructiveSequence(array: [
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            5
+        ]
+        
+        let result = testSequence
+            .removing(at: 3)
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemovingAtIndices() throws {
+        let testSequence = DestructiveSequence(array: [
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            8,
+        ]
+        
+        let result = testSequence
+            .removing(at: [1, 2, 4])
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemovingFirst() throws {
+        let testSequence = DestructiveSequence(array: [
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let result = testSequence
+            .removingFirst()
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemovingFirstWhere() throws {
+        let testSequence = DestructiveSequence(array: [
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            8,
+            5
+        ]
+        
+        let result = testSequence
+            .removingFirst { $0 % 2 == 0 }
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemovingAllOfBy() throws {
+        let testArray = [
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9),
+            TestStruct.stub(intMember: 3),
+        ]
+        
+        let testSequence = DestructiveSequence(array: testArray)
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[3],
+            testArray[4],
+            testArray[6]
+        ]
+        
+        let result = testSequence
+            .removingAll(of: TestStruct.stub(intMember: 3), by: { $0.intMember == $1.intMember })
+        
+        try assertEqual(expectedResult, result)
+    }
+
+    func testRemovingAllOfSequenceBy() throws {
+        let testArray = [
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9),
+            TestStruct.stub(intMember: 3),
+        ]
+        
+        let testSequence = DestructiveSequence(array: testArray)
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[3],
+            testArray[4]
+        ]
+        
+        let values = [
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9)
+        ]
+
+        let result = testSequence
+            .removingAll(of: DestructiveSequence(array: values), by: { $0.intMember == $1.intMember })
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemovingAllOfCollectionBy() throws {
+        let testArray = [
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9),
+            TestStruct.stub(intMember: 3),
+        ]
+        
+        let testSequence = DestructiveSequence(array: testArray)
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[3],
+            testArray[4]
+        ]
+        
+        let values = [
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9)
+        ]
+        
+        let result = testSequence
+            .removingAll(of: values, by: { $0.intMember == $1.intMember })
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemovingDuplicatesBy() throws {
+        let testArray = [
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9),
+            TestStruct.stub(intMember: 3),
+        ]
+        
+        let testSequence = DestructiveSequence(array: testArray)
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[1],
+            testArray[2],
+            testArray[3],
+            testArray[4],
+            testArray[6]
+        ]
+        
+        let result = testSequence
+            .removingDuplicates(by: { $0.intMember == $1.intMember })
+        
+        try assertEqual(expectedResult, result)
+    }
+    
 }

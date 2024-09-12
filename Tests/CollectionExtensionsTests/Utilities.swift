@@ -14,22 +14,18 @@ struct TestStruct: Equatable {
     var innerMember: InnerStruct
 }
 
-struct DestructiveSequence<Element>: Sequence {
-    struct Iterator: IteratorProtocol {
-        mutating func next() -> Element? {
-            guard !array.isEmpty else {
-                return nil
-            }
-            
-            return array.removeFirst()
-        }
-        
-        var array: [Element]
+struct DestructiveSequence<Element>: Sequence, IteratorProtocol {
+    mutating func next() -> Element? {
+        return iterator.next()
     }
     
     func makeIterator() -> Iterator {
-        .init(array: array)
+        self
     }
     
-    let array: [Element]
+    init(array: [Element]) {
+        iterator = array.makeIterator()
+    }
+    
+    private var iterator: [Element].Iterator
 }

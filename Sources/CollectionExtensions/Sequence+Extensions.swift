@@ -182,14 +182,14 @@ public extension Sequence {
     }
     
     func inserting(
-        _ element: Element,
+        _ elementToInsert: Element,
         at indexToInsert: Int
     ) -> [Element] {
         var result: [Element] = []
         
         for (index, element) in enumerated() {
             if index == indexToInsert {
-                result.append(element)
+                result.append(elementToInsert)
             }
             
             result.append(element)
@@ -243,12 +243,11 @@ public extension Sequence {
     func removingFirst() -> [Element] {
         var result: [Element] = []
         
-        for (index, element) in enumerated() {
-            if index == 0 {
-                continue
-            }
-            
-            result.append(element)
+        var iterator = makeIterator()
+        _ = iterator.next()
+        
+        while let next = iterator.next() {
+            result.append(next)
         }
         
         return result
