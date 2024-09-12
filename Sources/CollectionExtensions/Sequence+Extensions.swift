@@ -281,9 +281,10 @@ public extension Sequence {
         of elementsToRemove: Elements,
         by equality: (Element, Element) throws -> Bool
     ) rethrows -> [Element] {
-        var result = Array(self)
-        try result.removeAll(of: elementsToRemove, by: equality)
-        return result
+        try elementsToRemove.removingAll(
+            from: self,
+            by: equality
+        )
     }
     
     func removingAll<Elements: Collection<Element>>(
@@ -292,7 +293,7 @@ public extension Sequence {
     ) rethrows -> [Element] {
         try filter { element in try !elementsToRemove.contains(element, by: equality) }
     }
-
+    
     func removingDuplicates(
         by equality: (Element, Element) throws -> Bool
     ) rethrows -> [Element] {
