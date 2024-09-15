@@ -318,3 +318,164 @@ public extension Sequence {
         return result
     }
 }
+
+public extension Sequence {
+    func cartesianProduct<each Others: Sequence>(
+        with others: repeat each Others
+    ) -> [(Element, repeat (each Others).Element)] {
+        Sequences.cartesianProduct(self, repeat each others)
+    }
+    
+    func zip<each Others: Sequence>(
+        with others: repeat each Others
+    ) -> [(Element, repeat (each Others).Element)] {
+        Sequences.zip(self, repeat each others)
+    }
+}
+
+private func arrayToTuple<each Ts>(_ values: some Sequence) -> (repeat each Ts) {
+    var iterator = values.makeIterator()
+    
+    return (repeat iterator.next() as! each Ts)
+}
+
+public enum Sequences {
+    static func cartesianProduct<each S: Sequence>(
+        _ sequences: repeat each S
+    ) -> [(repeat (each S).Element)] {
+        var erasedSequences = [any Sequence]()
+        
+        repeat (erasedSequences.append(each sequences))
+        
+        let erasedResult = cartesianProduct(erasedSequences)
+        
+        return erasedResult
+            .map { erasedValue in arrayToTuple(erasedValue) }
+    }
+    
+    static func zip<each S: Sequence>(
+        _ sequences: repeat each S
+    ) -> [(repeat (each S).Element)] {
+        var erasedSequences = [any Sequence]()
+        
+        repeat (erasedSequences.append(each sequences))
+        
+        let erasedResult = zip(erasedSequences)
+        
+        return erasedResult
+            .map { erasedValue in arrayToTuple(erasedValue) }
+    }
+    
+    private static func cartesianProduct(
+        _ sequences: [any Sequence]
+    ) -> [[Any]] {
+        guard !sequences.isEmpty else {
+            return []
+        }
+        
+        enum IteratorState {
+            case iterating(Int, AnyIterator<Any>.Iterator)
+            case finished(Int)
+  
+            var count: Int? {
+                switch self {
+                    case let .finished(count): count
+                    default: nil
+                }
+            }
+        }
+        
+        var iterators: [IteratorState] = sequences
+            .map { .iterating(0, $0.fullyErased().makeIterator()) }
+        
+        var currentIndex: [Int] = sequences
+            .map { _ in 0 }
+        
+        var results: [[Any]] = []
+        var done = false
+        
+        while true {
+            let nextValue = iterators.indices.reversed()
+                .map { outerIndex in
+                    switch iterators[outerIndex] {
+                        case let .iterating(index, iterator):
+                            if index != currentIndex[outerIndex] {
+                                break
+                            }
+                            
+                            if let next = iterator.next() {
+                                iterators[outerIndex] = .iterating(index + 1, iterator)
+                                return next
+                            } else {
+                                iterators[outerIndex] = .finished(currentIndex[outerIndex])
+                                currentIndex[outerIndex] = 0
+                                if outerIndex > 0 {
+                                    currentIndex[outerIndex - 1] += 1
+                                }
+                            }
+                            
+                        case .finished:
+                            break
+                    }
+                    
+                    let lookupIndex = currentIndex.enumerated()
+                        .map { oIndex, currentIndex in oIndex <= outerIndex ? currentIndex : 0 }
+                    
+                    let strides = currentIndex.indices
+                        .map { oIndex in iterators[(oIndex + 1)...].map { $0.count ?? 0 }.reduce(1, *) }
+                    
+                    let resultIndex = (outerIndex..<lookupIndex.count)
+                        .map { oIndex in lookupIndex[oIndex] * strides[oIndex] }
+                        .reduce(0, +)
+                    
+                    return results[resultIndex][outerIndex]
+                }
+            
+            results.append(nextValue.reversed())
+            
+            currentIndex[currentIndex.count - 1] += 1
+            
+            for index in currentIndex.indices.reversed() {
+                if let count = iterators[index].count, currentIndex[index] == count {
+                    currentIndex[index] = 0
+                    if index == 0 {
+                        done = true
+                        break
+                    }
+                    currentIndex[index - 1] += 1
+                }
+            }
+            
+            if done {
+                break
+            }
+        }
+        
+        return results
+    }
+    
+    private static func zip(
+        _ sequences: [any Sequence]
+    ) -> [[Any]] {
+        guard !sequences.isEmpty else {
+            return []
+        }
+        
+        var results = [[Any]]()
+        
+        let iterators = sequences
+            .map { $0.fullyErased().makeIterator() }
+        
+        while true {
+            let value = iterators.compactMap { $0.next() }
+            
+            if value.count < sequences.count {
+                break
+            }
+            
+            results .append(value)
+        }
+        
+        return results
+    }
+}

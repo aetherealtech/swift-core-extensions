@@ -1168,4 +1168,121 @@ final class SequenceTests: XCTestCase {
         try assertEqual(expectedResult, result)
     }
     
+    func testCartesianProduct() throws {
+        enum SomeEnum {
+            case thisCase
+            case thatCase
+        }
+        
+        let first = [0, 1, 2, 3]
+        let second = ["A", "B", "C"]
+        let third = [SomeEnum.thisCase, SomeEnum.thatCase]
+        let fourth = [1.1, 1.2, 1.3]
+
+        let result1 = Sequences.cartesianProduct(first, second, third)
+        let result2 = Sequences.cartesianProduct(first, second, third, fourth)
+        
+        let result1Member = first.cartesianProduct(with: second, third)
+        let result2Member = first.cartesianProduct(with: second, third, fourth)
+        
+        var index = 0
+        
+        for x in 0..<first.count {
+            for y in 0..<second.count {
+                for z in 0..<third.count {
+                    let result = result1[index]
+                    try assertEqual(result.0, first[x])
+                    try assertEqual(result.1, second[y])
+                    try assertEqual(result.2, third[z])
+                    
+                    let resultMember = result1Member[index]
+                    try assertEqual(resultMember.0, first[x])
+                    try assertEqual(resultMember.1, second[y])
+                    try assertEqual(resultMember.2, third[z])
+                    
+                    index += 1
+                }
+            }
+        }
+        
+        index = 0
+        
+        for x in 0..<first.count {
+            for y in 0..<second.count {
+                for z in 0..<third.count {
+                    for w in 0..<fourth.count {
+                        let result = result2[index]
+                        try assertEqual(result.0, first[x])
+                        try assertEqual(result.1, second[y])
+                        try assertEqual(result.2, third[z])
+                        try assertEqual(result.3, fourth[w])
+                        
+                        let resultMember = result2Member[index]
+                        try assertEqual(resultMember.0, first[x])
+                        try assertEqual(resultMember.1, second[y])
+                        try assertEqual(resultMember.2, third[z])
+                        try assertEqual(resultMember.3, fourth[w])
+                        
+                        index += 1
+                    }
+                }
+            }
+        }
+    }
+    
+    func testCartesianProductEmpty() throws {
+        let result: [()] = Sequences.cartesianProduct()
+        
+        try assertTrue(result.isEmpty)
+    }
+    
+    func testZip() throws {
+        enum SomeEnum {
+            case thisCase
+            case thatCase
+        }
+        
+        let first = [0, 1, 2, 3]
+        let second = ["A", "B", "C"]
+        let third = [SomeEnum.thisCase, SomeEnum.thatCase]
+        let fourth = [1.1, 1.2, 1.3]
+
+        let result1 = Sequences.zip(first, second, third)
+        let result2 = Sequences.zip(first, second, third, fourth)
+        
+        let result1Member = first.zip(with: second, third)
+        let result2Member = first.zip(with: second, third, fourth)
+        
+        for index in 0..<2 {
+            let result = result1[index]
+            try assertEqual(result.0, first[index])
+            try assertEqual(result.1, second[index])
+            try assertEqual(result.2, third[index])
+            
+            let resultMember = result1Member[index]
+            try assertEqual(resultMember.0, first[index])
+            try assertEqual(resultMember.1, second[index])
+            try assertEqual(resultMember.2, third[index])
+        }
+        
+        for index in 0..<2 {
+            let result = result2[index]
+            try assertEqual(result.0, first[index])
+            try assertEqual(result.1, second[index])
+            try assertEqual(result.2, third[index])
+            try assertEqual(result.3, fourth[index])
+            
+            let resultMember = result2Member[index]
+            try assertEqual(resultMember.0, first[index])
+            try assertEqual(resultMember.1, second[index])
+            try assertEqual(resultMember.2, third[index])
+            try assertEqual(resultMember.3, fourth[index])
+        }
+    }
+    
+    func testZipEmpty() throws {
+        let result: [()] = Sequences.zip()
+        
+        try assertTrue(result.isEmpty)
+    }
 }
