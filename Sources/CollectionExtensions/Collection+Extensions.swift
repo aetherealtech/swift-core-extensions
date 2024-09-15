@@ -81,108 +81,230 @@ public extension Collection {
     }
 }
 
-private extension Int {
-    mutating func postIncrement() -> Int {
-        let result = self
-        self += 1
-        return result
-    }
-}
-
-private func arrayToTuple<each Ts>(_ values: [Any]) -> (repeat each Ts) {
-    var index = 0
+private func arrayToTuple<each Ts>(_ values: some Sequence) -> (repeat each Ts) {
+    var iterator = values.makeIterator()
     
-    return (repeat values[index.postIncrement()] as! each Ts)
+    return (repeat iterator.next() as! each Ts)
 }
 
 public enum Collections {
-    static func cartesianProduct<each C: Collection>(
-        _ collections: repeat each C
-    ) -> [(repeat (each C).Element)] {
-        var erasedCollections = [[Any]]()
+    static func cartesianProduct<each S: Sequence>(
+        _ sequences: repeat each S
+    ) -> [(repeat (each S).Element)] {
+        var erasedSequences = [any Sequence]()
         
-        repeat (erasedCollections.append(.init(each collections)))
+        repeat (erasedSequences.append(each sequences))
         
-        let erasedResult = cartesianProduct(erasedCollections)
-        
-        return erasedResult
-            .map { erasedValue in arrayToTuple(erasedValue) }
-    }
-    
-    static func zip<each C: Collection>(
-        _ collections: repeat each C
-    ) -> [(repeat (each C).Element)] {
-        var erasedCollections = [[Any]]()
-        
-        repeat (erasedCollections.append(.init(each collections)))
-        
-        let erasedResult = zip(erasedCollections)
+        let erasedResult = cartesianProduct(erasedSequences)
         
         return erasedResult
             .map { erasedValue in arrayToTuple(erasedValue) }
     }
     
-    private static func cartesianProduct<Element>(
-        _ collections: [[Element]]
-    ) -> [[Element]] {
-        guard !collections.isEmpty else {
-            return []
+    static func zip<each S: Sequence>(
+        _ sequences: repeat each S
+    ) -> [(repeat (each S).Element)] {
+        var erasedSequences = [any Sequence]()
+        
+        repeat (erasedSequences.append(each sequences))
+        
+        let erasedResult = zip(erasedSequences)
+        
+        return erasedResult
+            .map { erasedValue in arrayToTuple(erasedValue) }
+    }
+    
+    private static func cartesianProduct(
+        _ sequences: [any Sequence]
+    ) -> [[Any]] {
+        enum IteratorState {
+            case iterating(Int, AnyIterator<Any>.Iterator)
+            case finished(Int)
+            
+            var iterator: AnyIterator<Any>.Iterator? {
+                switch self {
+                    case let .iterating(_, iterator): iterator
+                    default: nil
+                }
+            }
+            
+            var count: Int? {
+                switch self {
+                    case let .finished(count): count
+                    default: nil
+                }
+            }
         }
         
-        var result = [[Element]]()
+        var iterators: [IteratorState] = sequences
+            .map { .iterating(0, $0.fullyErased().makeIterator()) }
         
-        let count = collections
-            .map(\.count)
-            .reduce(1, *)
+        var currentIndex: [Int] = sequences
+            .map { _ in 0 }
         
-        for resultIndex in 0..<count {
-            let indices = collections.indices
+        var results: [[Any]] = []
+        
+        while true {
+            let nextValue = iterators.indices.reversed()
                 .map { outerIndex in
-                    let innerCount = collections.suffix(from: outerIndex + 1)
-                        .map(\.count)
-                        .reduce(1, *)
+                    switch iterators[outerIndex] {
+                        case let .iterating(index, iterator):
+                            if index != currentIndex[outerIndex] {
+                                break
+                            }
+                            
+                            if let next = iterator.next() {
+                                iterators[outerIndex] = .iterating(index + 1, iterator)
+                                return next
+                            } else {
+                                iterators[outerIndex] = .finished(currentIndex[outerIndex])
+                                currentIndex[outerIndex] = 0
+                                if outerIndex > 0 {
+                                    currentIndex[outerIndex - 1] += 1
+                                }
+                            }
+                            
+                        case .finished:
+                            break
+                    }
                     
-                    return (resultIndex / innerCount) % collections[outerIndex].count
+                    let lookupIndex = currentIndex.enumerated()
+                        .map { oIndex, currentIndex in oIndex <= outerIndex ? currentIndex : 0 }
+                    
+                    let strides = currentIndex.indices
+                        .map { oIndex in iterators[(oIndex + 1)...].map { $0.count ?? 0 }.reduce(1, *) }
+                    
+                    let resultIndex = (outerIndex..<lookupIndex.count)
+                        .map { oIndex in lookupIndex[oIndex] * strides[oIndex] }
+                        .reduce(0, +)
+                    
+                    return results[resultIndex][outerIndex]
                 }
             
-            let element = indices
-                .enumerated()
-                .map { collectionIndex, index in
-                    collections[collectionIndex][index]
-                }
+            results.append(nextValue.reversed())
             
-            result.append(element)
+            currentIndex[currentIndex.count - 1] += 1
+            
+            for index in currentIndex.indices.reversed() {
+                if let count = iterators[index].count, currentIndex[index] == count {
+                    currentIndex[index] = 0
+                    if index == 0 {
+                        return results
+                    }
+                    currentIndex[index - 1] += 1
+                }
+            }
         }
-        
-        return result
     }
     
-    private static func zip<Element>(
-        _ collections: [[Element]]
-    ) -> [[Element]] {
-        guard !collections.isEmpty else {
-            return []
-        }
+    private static func zip(
+        _ sequences: [any Sequence]
+    ) -> [[Any]] {
+        var results = [[Any]]()
         
-        var result = [[Element]]()
+        let iterators = sequences
+            .map { $0.fullyErased().makeIterator() }
         
-        let count = collections
-            .map(\.count)
-            .min()!
-        
-        for index in 0..<count {
-            let element = collections
-                .enumerated()
-                .map { collectionIndex, collectionElement in
-                    collections[collectionIndex][index]
-                }
+        while true {
+            let value = iterators.compactMap { $0.next() }
             
-            result.append(element)
+            if value.count < sequences.count {
+                break
+            }
+            
+            results .append(value)
         }
         
-        return result
+        return results
     }
 }
+
+//public enum Collections {
+//    static func cartesianProduct<each C: Sequence>(
+//        _ sequences: repeat each C
+//    ) -> [(repeat (each C).Element)] {
+//        var erasedSequences = [any Sequence]()
+//        
+//        repeat (erasedSequences.append(each sequences))
+//        
+//        let erasedResult = cartesianProduct(erasedSequences)
+//        
+//        return erasedResult
+//            .map { erasedValue in arrayToTuple(erasedValue) }
+//    }
+//    
+//    static func zip<each C: Sequence>(
+//        _ sequences: repeat each C
+//    ) -> [(repeat (each C).Element)] {
+//        var erasedSequences = [any Sequence]()
+//        
+//        repeat (erasedSequences.append(each sequences))
+//        
+//        let erasedResult = zip(erasedSequences)
+//        
+//        return erasedResult
+//            .map { erasedValue in arrayToTuple(erasedValue) }
+//    }
+//    
+//    private static func cartesianProduct(
+//        _ sequences: [any Sequence]
+//    ) -> [[Any]] {
+//        var result: [[Any]] = []
+//        
+//        var iterators = sequences
+//            .map { $0.fullyErased().makeIterator() }
+//        
+//        for sequence in sequences {
+//            
+//        }
+//        var sequences = sequences
+//        
+//        var result = sequences
+//            .removeFirst()
+//            .fullyErased()
+//            .lazy
+//            .map { [$0] }
+//            .erase()
+//        
+//        for sequence in sequences {
+//            result = result
+//                .lazy
+//                .flatMap { element in
+//                    sequence
+//                        .fullyErased()
+//                        .lazy
+//                        .map { element.appending($0) }
+//                }
+//                .erase()
+//        }
+//        
+//        return result
+//    }
+//    
+//    private static func zip(
+//        _ sequences: [any Sequence]
+//    ) -> [[Any]] {
+//        var sequences = sequences
+//        
+//        var result = sequences
+//            .removeFirst()
+//            .fullyErased()
+//            .lazy
+//            .map { [$0] }
+//            .erase()
+//        
+//    
+//        for sequence in sequences {
+//            result = LazyZipSequence(base1: result, base2: sequence.fullyErased())
+//                .map { current, next in
+//                    current.appending(next)
+//                }
+//                .erase()
+//        }
+//        
+//        return result
+//    }
+//}
 
 public extension MutableCollection {
     mutating func mutableForEach(

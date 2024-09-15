@@ -135,6 +135,14 @@ public extension Sequence {
     func erase() -> AnySequence<Element> {
         .init(self)
     }
+    
+    func fullyErased() -> AnySequence<Any> {
+        let result: LazyMapSequence<Self, Any> = lazy
+            .map { $0 as Any }
+        
+        return result
+            .erase()
+    }
 }
 
 public extension Sequence {
