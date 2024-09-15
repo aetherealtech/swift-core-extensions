@@ -75,7 +75,7 @@ public extension Sequence {
         sorted(using: compares)
     }
     
-    func sorted<Compares: Sequence<(Element, Element) -> ComparisonResult>>(using compares: Compares) -> [Element] {
+    func sorted<Compares: Collection<(Element, Element) -> ComparisonResult>>(using compares: Compares) -> [Element] {
         sorted { lhs, rhs in CompareFunctions.compare(lhs, rhs, using: compares) }
     }
     
@@ -83,19 +83,19 @@ public extension Sequence {
         try sorted(using: compares)
     }
     
-    func sorted<Compares: Sequence<(Element, Element) throws -> ComparisonResult>>(using compares: Compares) throws -> [Element] {
+    func sorted<Compares: Collection<(Element, Element) throws -> ComparisonResult>>(using compares: Compares) throws -> [Element] {
         try sorted { lhs, rhs in try CompareFunctions.compare(lhs, rhs, using: compares) }
     }
 
-    func sorted<R: Comparable & Equatable, Transforms: Sequence<(Element) -> R>>(by transforms: Transforms) -> [Element] {
+    func sorted<R: Comparable & Equatable, Transforms: Collection<(Element) -> R>>(by transforms: Transforms) -> [Element] {
         sorted { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: transforms) }
     }
     
-    func sorted<R: Comparable & Equatable, Transforms: Sequence<(Element) throws -> R>>(by transforms: Transforms) throws -> [Element] {
+    func sorted<R: Comparable & Equatable, Transforms: Collection<(Element) throws -> R>>(by transforms: Transforms) throws -> [Element] {
         try sorted { lhs, rhs in try CompareFunctions.compare(lhs, rhs, by: transforms) }
     }
     
-    func sorted<R: Comparable & Equatable, KeyPaths: Sequence<KeyPath<Element, R>>>(by keyPaths: KeyPaths) -> [Element] {
+    func sorted<R: Comparable & Equatable, KeyPaths: Collection<KeyPath<Element, R>>>(by keyPaths: KeyPaths) -> [Element] {
         sorted { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: keyPaths) }
     }
     

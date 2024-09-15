@@ -644,23 +644,23 @@ public extension RandomAccessCollection where Self: MutableCollection {
         try sort(using: compares)
     }
     
-    mutating func sort<Compares: Sequence<(Element, Element) -> ComparisonResult>>(using compares: Compares) {
+    mutating func sort<Compares: Collection<(Element, Element) -> ComparisonResult>>(using compares: Compares) {
         sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, using: compares) }
     }
     
-    mutating func sort<Compares: Sequence<(Element, Element) throws -> ComparisonResult>>(using compares: Compares) throws {
+    mutating func sort<Compares: Collection<(Element, Element) throws -> ComparisonResult>>(using compares: Compares) throws {
         try sort { lhs, rhs in try CompareFunctions.compare(lhs, rhs, using: compares) }
     }
 
-    mutating func sort<R: Comparable & Equatable, Transforms: Sequence<(Element) -> R>>(by transforms: Transforms) {
+    mutating func sort<R: Comparable & Equatable, Transforms: Collection<(Element) -> R>>(by transforms: Transforms) {
         sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: transforms) }
     }
     
-    mutating func sort<R: Comparable & Equatable, Transforms: Sequence<(Element) throws -> R>>(by transforms: Transforms) throws {
+    mutating func sort<R: Comparable & Equatable, Transforms: Collection<(Element) throws -> R>>(by transforms: Transforms) throws {
         try sort { lhs, rhs in try CompareFunctions.compare(lhs, rhs, by: transforms) }
     }
     
-    mutating func sort<R: Comparable & Equatable, KeyPaths: Sequence<KeyPath<Element, R>>>(by keyPaths: KeyPaths) {
+    mutating func sort<R: Comparable & Equatable, KeyPaths: Collection<KeyPath<Element, R>>>(by keyPaths: KeyPaths) {
         sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: keyPaths) }
     }
 }

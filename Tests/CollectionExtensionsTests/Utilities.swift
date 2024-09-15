@@ -14,8 +14,8 @@ struct TestStruct: Equatable {
     var innerMember: InnerStruct
 }
 
-struct DestructiveSequence<Element>: Sequence, IteratorProtocol {
-    mutating func next() -> Element? {
+final class DestructiveSequence<Element>: Sequence, IteratorProtocol {
+    func next() -> Element? {
         return iterator.next()
     }
     

@@ -446,10 +446,10 @@ final class SequenceTests: XCTestCase {
             testArray[6]
         ]
         
-        let compares: DestructiveSequence<(TestStruct, TestStruct) -> ComparisonResult> = .init(array: [
+        let compares: [(TestStruct, TestStruct) -> ComparisonResult] = [
             { $0.intMember.compare(to: $1.intMember) },
             { $0.innerMember.intMember.compare(to: $1.innerMember.intMember) }
-        ])
+        ]
         
         let result = testSequence
             .sorted(using: compares)
@@ -482,10 +482,10 @@ final class SequenceTests: XCTestCase {
             testArray[6]
         ]
         
-        let compares: DestructiveSequence<(TestStruct, TestStruct) throws -> ComparisonResult> = .init(array: [
+        let compares: [(TestStruct, TestStruct) throws -> ComparisonResult] = [
             { $0.intMember.compare(to: $1.intMember) },
             { $0.innerMember.intMember.compare(to: $1.innerMember.intMember) }
-        ])
+        ]
         
         let result = try testSequence
             .sorted(using: compares)
@@ -518,10 +518,10 @@ final class SequenceTests: XCTestCase {
             testArray[6]
         ]
         
-        let transforms: DestructiveSequence<(TestStruct) -> Int> = .init(array: [
+        let transforms: [(TestStruct) -> Int] = [
             { $0.intMember },
             { $0.innerMember.intMember }
-        ])
+        ]
         
         let result = testSequence
             .sorted(by: transforms)
@@ -554,10 +554,10 @@ final class SequenceTests: XCTestCase {
             testArray[6]
         ]
         
-        let transforms: DestructiveSequence<(TestStruct) throws -> Int> = .init(array: [
+        let transforms: [(TestStruct) throws -> Int] = [
             \.intMember,
             \.innerMember.intMember
-        ])
+        ]
         
         let result = try testSequence
             .sorted(by: transforms)
@@ -590,10 +590,10 @@ final class SequenceTests: XCTestCase {
             testArray[6]
         ]
         
-        let keyPaths: DestructiveSequence<KeyPath<TestStruct, Int>> = .init(array: [
+        let keyPaths: [KeyPath<TestStruct, Int>] = [
             \.intMember,
             \.innerMember.intMember
-        ])
+        ]
 
         let result = testSequence
             .sorted(by: keyPaths)
