@@ -117,6 +117,10 @@ public enum Collections {
     private static func cartesianProduct(
         _ sequences: [any Sequence]
     ) -> [[Any]] {
+        guard !sequences.isEmpty else {
+            return []
+        }
+        
         enum IteratorState {
             case iterating(Int, AnyIterator<Any>.Iterator)
             case finished(Int)
@@ -200,6 +204,10 @@ public enum Collections {
     private static func zip(
         _ sequences: [any Sequence]
     ) -> [[Any]] {
+        guard !sequences.isEmpty else {
+            return []
+        }
+        
         var results = [[Any]]()
         
         let iterators = sequences
