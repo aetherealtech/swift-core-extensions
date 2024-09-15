@@ -5,6 +5,11 @@ import XCTest
 @testable import CollectionExtensions
 
 final class SequenceTests: XCTestCase {
+    enum SomeEnum {
+        case thisCase
+        case thatCase
+    }
+    
     func testStore() throws {
         let expectedResult = [
             1,
@@ -1169,11 +1174,6 @@ final class SequenceTests: XCTestCase {
     }
     
     func testCartesianProduct() throws {
-        enum SomeEnum {
-            case thisCase
-            case thatCase
-        }
-        
         let first = [0, 1, 2, 3]
         let second = ["A", "B", "C"]
         let third = [SomeEnum.thisCase, SomeEnum.thatCase]
@@ -1237,11 +1237,6 @@ final class SequenceTests: XCTestCase {
     }
     
     func testZip() throws {
-        enum SomeEnum {
-            case thisCase
-            case thatCase
-        }
-        
         let first = [0, 1, 2, 3]
         let second = ["A", "B", "C"]
         let third = [SomeEnum.thisCase, SomeEnum.thatCase]

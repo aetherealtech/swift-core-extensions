@@ -1,4 +1,7 @@
-public struct LazyInsertedSequence<Source: Sequence, Inserted: Sequence>: LazySequenceProtocol where Source.Element == Inserted.Element {
+public struct LazyInsertedSequence<
+    Source: Sequence,
+    Inserted: Sequence<Source.Element>
+>: LazySequenceProtocol {
     public struct Iterator: IteratorProtocol {
         public mutating func next() -> Source.Element? {
             if remainingUntilInsert == 0 {

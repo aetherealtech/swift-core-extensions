@@ -1,4 +1,7 @@
-public struct LazySparseSubCollection<Source: Collection, Indices: Sequence>: LazySequenceProtocol where Indices.Element == Source.Index {
+public struct LazySparseSubCollection<
+    Source: Collection,
+    Indices: Sequence<Source.Index>
+>: LazySequenceProtocol {
     public typealias Element = Source.Element
     
     public struct Iterator: IteratorProtocol {

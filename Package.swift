@@ -225,11 +225,15 @@ let package = Package(
             ],
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
-//        .testTarget(
-//            name: "LazyCollectionExtensionsTests",
-//            dependencies: ["LazyCollectionExtensions"],
-//            swiftSettings: [.concurrencyChecking(.complete)]
-//        ),
+        .testTarget(
+            name: "LazyCollectionExtensionsTests",
+            dependencies: [
+                "LazyCollectionExtensions",
+                .product(name: "Assertions", package: "swift-assertions"),
+                .product(name: "Stubbing", package: "swift-stubbing"),
+            ],
+            swiftSettings: [.concurrencyChecking(.complete)]
+        ),
         .testTarget(
             name: "NumericExtensionsTests",
             dependencies: [

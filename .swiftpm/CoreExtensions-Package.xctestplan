@@ -81,6 +81,13 @@
         "identifier" : "CompareFunctionsTests",
         "name" : "CompareFunctionsTests"
       }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "LazyCollectionExtensionsTests",
+        "name" : "LazyCollectionExtensionsTests"
+      }
     }
   ],
   "version" : 1
