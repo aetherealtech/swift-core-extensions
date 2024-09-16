@@ -120,43 +120,17 @@ public func compare<T, R: Comparable & Equatable, KeyPaths: Sequence<KeyPath<T, 
     )
 }
 
-private func nextCompare<T, R: Comparable & Equatable>(
-    result: inout ComparisonResult,
-    lhs: T,
-    rhs: T,
-    transform: (T) throws -> R
-) rethrows {
-    guard result == .orderedSame else {
-        return
-    }
-    
-    result = try compare(lhs, rhs, by: transform, using: R.compare)
-}
-
-private func nextCompare<T, R: Comparable & Equatable>(
-    result: inout ComparisonResult,
-    lhs: T,
-    rhs: T,
-    keyPath: KeyPath<T, R>
-) {
-    guard result == .orderedSame else {
-        return
-    }
-    
-    result = compare(lhs, rhs, by: keyPath, using: R.compare)
-}
-
 public func compare<
     T,
     each Rs: Comparable & Equatable
 >(
     _ lhs: T,
     _ rhs: T,
-    by transforms: repeat (T) -> each Rs
+    by transforms: repeat @escaping (T) -> each Rs
 ) -> ComparisonResult {
     var result = ComparisonResult.orderedSame
-    repeat nextCompare(result: &result, lhs: lhs, rhs: rhs, transform: each transforms)
-    
+    repeat (result = result == .orderedSame ? (each transforms)(lhs).compare(to: (each transforms)(rhs)) : result)
+
     return result
 }
 
@@ -166,10 +140,10 @@ public func tryCompare<
 >(
     _ lhs: T,
     _ rhs: T,
-    by transforms: repeat (T) throws -> each Rs
+    by transforms: repeat @escaping (T) throws -> each Rs
 ) throws -> ComparisonResult {
     var result = ComparisonResult.orderedSame
-    repeat try nextCompare(result: &result, lhs: lhs, rhs: rhs, transform: each transforms)
+    repeat (result = result == .orderedSame ? try (each transforms)(lhs).compare(to: (each transforms)(rhs)) : result)
     
     return result
 }
@@ -183,7 +157,7 @@ public func compare<
     by keyPaths: repeat KeyPath<T, each Rs>
 ) -> ComparisonResult {
     var result = ComparisonResult.orderedSame
-    repeat nextCompare(result: &result, lhs: lhs, rhs: rhs, keyPath: each keyPaths)
+    repeat (result = result == .orderedSame ? lhs[keyPath: (each keyPaths)].compare(to: rhs[keyPath: (each keyPaths)]) : result)
     
     return result
 }

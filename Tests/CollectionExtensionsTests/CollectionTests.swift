@@ -1885,37 +1885,37 @@ final class CollectionTests: XCTestCase {
         try assertEqual(expectedResult, testArray)
     }
     
-//    func testTrySortByTransforms() throws {
-//        var testArray = [
-//            TestStruct.stub(intMember: 1, innerMember: .stub(intMember: 6),
-//            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 3),
-//            TestStruct.stub(intMember: 2, innerMember: .stub(intMember: 7),
-//            TestStruct.stub(intMember: 8, innerMember: .stub(intMember: 3),
-//            TestStruct.stub(intMember: 5, innerMember: .stub(intMember: 3),
-//            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 2),
-//            TestStruct.stub(intMember: 9, innerMember: .stub(intMember: 5),
-//            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 9),
-//        ]
-//        
-//        let expectedResult = [
-//            testArray[0],
-//            testArray[2],
-//            testArray[5],
-//            testArray[1],
-//            testArray[7],
-//            testArray[4],
-//            testArray[3],
-//            testArray[6]
-//        ]
-//        
-//        let firstTransform: (TestStruct) throws -> Int = { $0.intMember }
-//        let secondTransform: (TestStruct) throws -> Int = { _ in throw TestError() }
-//        
-//        try testArray
-//            .trySort(by: firstTransform, secondTransform)
-//        
-//        try assertEqual(expectedResult, testArray)
-//    }
+    func testTrySortByTransforms() throws {
+        var testArray = [
+            TestStruct.stub(intMember: 1, innerMember: .stub(intMember: 6)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 2, innerMember: .stub(intMember: 7)),
+            TestStruct.stub(intMember: 8, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 5, innerMember: .stub(intMember: 3)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 2)),
+            TestStruct.stub(intMember: 9, innerMember: .stub(intMember: 5)),
+            TestStruct.stub(intMember: 3, innerMember: .stub(intMember: 9)),
+        ]
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[5],
+            testArray[1],
+            testArray[7],
+            testArray[4],
+            testArray[3],
+            testArray[6]
+        ]
+        
+        let firstTransform: (TestStruct) throws -> Int = { $0.intMember }
+        let secondTransform: (TestStruct) throws -> Int = { $0.innerMember.intMember }
+        
+        try testArray
+            .trySort(by: firstTransform, secondTransform)
+        
+        try assertEqual(expectedResult, testArray)
+    }
     
     func testSortByKeyPaths() throws {
         var testArray = [

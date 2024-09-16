@@ -618,17 +618,16 @@ public extension RandomAccessCollection where Self: MutableCollection {
     }
 
     mutating func sort<each Rs: Comparable>(
-        by transforms: repeat (Element) -> each Rs
+        by transforms: repeat @escaping (Element) -> each Rs
     ) {
         sort { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: repeat each transforms) }
     }
     
-    // This crashes on access of the last transform, even if everything is inlined into this package.  Will open a bug report.
-//    mutating func trySort<each Rs: Comparable>(
-//        by transforms: repeat (Element) throws -> each Rs
-//    ) throws {
-//        try sort { lhs, rhs in try tryCompare(lhs, rhs, by: repeat each transforms) }
-//    }
+    mutating func trySort<each Rs: Comparable>(
+        by transforms: repeat @escaping (Element) throws -> each Rs
+    ) throws {
+        try sort { lhs, rhs in try tryCompare(lhs, rhs, by: repeat each transforms) }
+    }
     
     mutating func sort<each Rs: Comparable>(
         by keyPaths: repeat KeyPath<Element, each Rs>

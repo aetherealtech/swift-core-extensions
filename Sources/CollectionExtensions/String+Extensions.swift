@@ -11,11 +11,13 @@ public extension Sequence where Element: StringProtocol {
 
 public extension Sequence {
     func alphabetized<Name: StringProtocol>(by name: (Element) -> Name) -> [(key: String, values: [Element])] {
-        sorted(by: name)
-            .grouped(by: { element in name(element).alphabeticPosition })
-            .lazy
-            .compactMap { key, value in key.map { key in (key: String(key), values: value) } }
-            .sorted(by: \.key)
+        withoutActuallyEscaping(name) { name in
+            sorted(by: name)
+                .grouped(by: { element in name(element).alphabeticPosition })
+                .lazy
+                .compactMap { key, value in key.map { key in (key: String(key), values: value) } }
+                .sorted(by: \.key)
+        }
     }
     
 //    func alphabetized<Name: StringProtocol>(by name: (Element) throws -> Name) throws -> [(key: String, values: [Element])] {

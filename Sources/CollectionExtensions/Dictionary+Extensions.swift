@@ -4,10 +4,10 @@ import Foundation
 public extension Dictionary {
     mutating func value(
         at key: Key,
-        orInsert newValue: @autoclosure () -> Value
-    ) -> Value {
+        orInsert newValue: @autoclosure () throws -> Value
+    ) rethrows -> Value {
         guard let existing = self[key] else {
-            let newValue = newValue()
+            let newValue = try newValue()
             self[key] = newValue
             return newValue
         }
@@ -28,7 +28,7 @@ public extension Dictionary {
         _ transform: (Key) throws -> ResultKey,
         uniquingKeysWith: (Value, Value) throws -> Value
     ) rethrows -> [ResultKey: Value] {
-        try map { element in
+        try lazy.map { element in
             try (transform(element.key), element.value)
         }
         .store(
@@ -40,7 +40,7 @@ public extension Dictionary {
     func mapKeys<ResultKey: Hashable>(
         _ transform: (Key) throws -> ResultKey
     ) rethrows -> [ResultKey: Value] {
-        try map { element in
+        try lazy.map { element in
             try (transform(element.key), element.value)
         }
         .store(
@@ -50,38 +50,28 @@ public extension Dictionary {
 
     func sortedByKeys(
         using compare: (Key, Key) throws -> ComparisonResult
-    ) rethrows -> [(key: Key, value: Value)] {
-        try keys
-            .sorted(using: compare)
-            .map { key in (key, self[key]!) }
+    ) rethrows -> [Element] {
+        try sorted(by: { lhs, rhs in try compare(lhs.key, rhs.key) == .orderedAscending })
     }
 
     func sortedByKeys(
-        by compare: (Key, Key) throws -> Bool
-    ) rethrows -> [(key: Key, value: Value)] {
-        try keys
-            .sorted(by: compare)
-            .map { key in (key, self[key]!) }
+        using compare: (Key, Key) throws -> Bool
+    ) rethrows -> [Element] {
+        try sorted(by: { lhs, rhs in try compare(lhs.key, rhs.key) })
     }
 
     func sortedByKeys<R>(
-        by transform: (Element) throws -> R,
-        using compare: (R, R) throws -> Bool
-    ) rethrows -> [(key: Key, value: Value)] {
-        try sorted(by: { lhs, rhs in try compare(transform(lhs), transform(rhs)) })
-    }
-    
-    func sortedByKeys<R: Comparable>(
-        by transform: (Element) throws -> R
-    ) rethrows -> [Element] {
-        try sorted(by: transform, using: <)
-    }
-    
-    func sortedByKeys<R>(
-        by transform: (Element) throws -> R,
+        by transform: (Key) throws -> R,
         using compare: (R, R) throws -> ComparisonResult
-    ) rethrows -> [(key: Key, value: Value)] {
-        try sorted { lhs, rhs in try CompareFunctions.compare(lhs, rhs, by: transform, using: compare) }
+    ) rethrows -> [Element] {
+        try sortedByKeys { lhs, rhs in try CompareFunctions.compare(lhs, rhs, by: transform, using: compare) }
+    }
+
+    func sortedByKeys<R>(
+        by transform: (Key) throws -> R,
+        using compare: (R, R) throws -> Bool
+    ) rethrows -> [Element] {
+        try sortedByKeys(using: { lhs, rhs in try compare(transform(lhs), transform(rhs)) })
     }
     
     func sortedByKeys(using compares: (Key, Key) -> ComparisonResult...) -> [Element] {
@@ -92,48 +82,51 @@ public extension Dictionary {
         try sortedByKeys(using: compares)
     }
     
-    func sortedByKeys<Compares: Sequence<(Key, Key) -> ComparisonResult>>(using compares: Compares) -> [(key: Key, value: Value)] {
+    func sortedByKeys<Compares: Collection<(Key, Key) -> ComparisonResult>>(using compares: Compares) -> [Element] {
         sortedByKeys { lhs, rhs in CompareFunctions.compare(lhs, rhs, using: compares) }
     }
     
-    func sortedByKeys<Compares: Sequence<(Key, Key) throws -> ComparisonResult>>(using compares: Compares) throws -> [(key: Key, value: Value)] {
+    func sortedByKeys<Compares: Collection<(Key, Key) throws -> ComparisonResult>>(using compares: Compares) throws -> [Element] {
         try sortedByKeys { lhs, rhs in try CompareFunctions.compare(lhs, rhs, using: compares) }
     }
     
-    func sortedByKeys<R: Comparable & Equatable>(by transforms: (Key) -> R...) -> [(key: Key, value: Value)] {
-        sortedByKeys(by: transforms)
+    func sortedByKeys<
+        each Rs: Comparable & Equatable
+    >(
+        by transforms: repeat @escaping (Key) -> each Rs
+    ) -> [Element] {
+        sorted(by: { lhs, rhs in CompareFunctions.compare(lhs.key, rhs.key, by: repeat each transforms) == .orderedAscending })
     }
     
-    func sortedByKeys<R: Comparable & Equatable>(by transforms: (Key) throws -> R...) throws -> [(key: Key, value: Value)] {
-        try sortedByKeys(by: transforms)
+    func trySortedByKeys<
+        each Rs: Comparable & Equatable
+    >(
+        by transforms: repeat @escaping (Key) throws -> each Rs
+    ) throws -> [Element] {
+        try sorted(by: { lhs, rhs in try CompareFunctions.tryCompare(lhs.key, rhs.key, by: repeat each transforms) == .orderedAscending })
+//        try sortedByKeys { lhs, rhs in try CompareFunctions.tryCompare(lhs, rhs, by: repeat each transforms) }
     }
     
-    func sortedByKeys<R: Comparable & Equatable, Transforms: Sequence<(Key) -> R>>(by transforms: Transforms) -> [(key: Key, value: Value)] {
+    // Same crash as in Collection+Extensions and Sequence+Extensions
+    
+//    func trySortedByKeys<
+//        each Rs: Comparable & Equatable
+//    >(
+//        by transforms: repeat @escaping (Key) throws -> each Rs
+//    ) throws -> [Element] {
+//        try sortedByKeys { lhs, rhs in try CompareFunctions.tryCompare(lhs, rhs, by: repeat each transforms) }
+//    }
+    
+    func sortedByKeys<R: Comparable & Equatable, Transforms: Collection<(Key) -> R>>(by transforms: Transforms) -> [Element] {
         sortedByKeys { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: transforms) }
     }
     
-    func sortedByKeys<R: Comparable & Equatable, Transforms: Sequence<(Key) throws -> R>>(by transforms: Transforms) throws -> [(key: Key, value: Value)] {
+    func sortedByKeys<R: Comparable & Equatable, Transforms: Collection<(Key) throws -> R>>(by transforms: Transforms) throws -> [Element] {
         try sortedByKeys { lhs, rhs in try CompareFunctions.compare(lhs, rhs, by: transforms) }
     }
     
-    func sortedByKeys<
-        each Rs: Comparable & Equatable
-    >(
-        by transforms: repeat (Key) -> each Rs
-    ) -> [(key: Key, value: Value)] {
-        sortedByKeys { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: repeat each transforms) }
-    }
-    
-    func sortedByKeys<
-        each Rs: Comparable & Equatable
-    >(
-        by transforms: repeat (Key) throws -> each Rs
-    ) throws -> [(key: Key, value: Value)] {
-        try sortedByKeys { lhs, rhs in try CompareFunctions.tryCompare(lhs, rhs, by: repeat each transforms) }
-    }
-    
-    func sortedByKeys() -> [(key: Key, value: Value)] where Key: Comparable {
-        sortedByKeys(by: <)
+    func sortedByKeys() -> [Element] where Key: Comparable {
+        sortedByKeys(using: <)
     }
 
     func allKeys(

@@ -1,9 +1,9 @@
 import Stubbing
 
 @Stubbable
-struct TestStruct: Equatable {
+struct TestStruct: Hashable {
     @Stubbable
-    struct InnerStruct: Equatable {
+    struct InnerStruct: Hashable {
         var intMember: Int
         var floatMember: Double
     }

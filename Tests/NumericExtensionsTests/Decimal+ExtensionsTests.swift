@@ -36,7 +36,7 @@ final class DecimalExtensionsTests: XCTestCase {
         let generateDigit: () -> Character = { Int.random(in: 0...9).description.first! }
         
         for _ in 0..<100 {
-            var string = (String((0..<5).map { _ in generateDigit() }) + "." + (0..<5).map { _ in generateDigit() })
+            let string = (String((0..<5).map { _ in generateDigit() }) + "." + (0..<5).map { _ in generateDigit() })
                 .trimmingCharacters(in: ["0"])
             
             let decimal = Decimal(string: string)!

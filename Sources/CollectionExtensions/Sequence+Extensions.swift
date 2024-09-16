@@ -54,14 +54,13 @@ public extension Sequence {
         try sorted(by: { lhs, rhs in try compare(lhs[keyPath: keyPath], rhs[keyPath: keyPath]) })
     }
     
-    func sorted<each Rs: Comparable>(by transforms: repeat (Element) -> each Rs) -> [Element] {
+    func sorted<each Rs: Comparable>(by transforms: repeat @escaping (Element) -> each Rs) -> [Element] {
         sorted { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: repeat each transforms) }
     }
     
-    // This crashes on access of the last transform, even if everything is inlined into this package.  Will open a bug report.
-//    func trySorted<each Rs: Comparable>(by transforms: repeat (Element) throws -> each Rs) throws -> [Element] {
-//        try sorted { lhs, rhs in try CompareFunctions.tryCompare(lhs, rhs, by: repeat each transforms) }
-//    }
+    func trySorted<each Rs: Comparable>(by transforms: repeat @escaping (Element) throws -> each Rs) throws -> [Element] {
+        try sorted { lhs, rhs in try CompareFunctions.tryCompare(lhs, rhs, by: repeat each transforms) }
+    }
     
     func sorted<each Rs: Comparable>(by keyPaths: repeat KeyPath<Element, each Rs>) -> [Element] {
         sorted { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: repeat each keyPaths) }
