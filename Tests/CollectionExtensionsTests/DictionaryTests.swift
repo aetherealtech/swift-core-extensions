@@ -923,7 +923,7 @@ final class DictionaryTests: XCTestCase {
         try assertEqual(expectedResult, result)
     }
     
-    func testRemoveKeys() throws {
+    func testRemoveKeysWhere() throws {
         var testDictionary = [
             0: "A",
             1: "B",
@@ -944,7 +944,7 @@ final class DictionaryTests: XCTestCase {
         try assertEqual(expectedMutation, testDictionary)
     }
     
-    func testRemovingKeys() throws {
+    func testRemovingKeysWhere() throws {
         let testDictionary = [
             0: "A",
             1: "B",
@@ -965,7 +965,7 @@ final class DictionaryTests: XCTestCase {
         try assertEqual(expectedResult, result)
     }
     
-    func testRemoveValues() throws {
+    func testRemoveValuesWhere() throws {
         var testDictionary = [
             0: "A",
             1: "B",
@@ -986,7 +986,7 @@ final class DictionaryTests: XCTestCase {
         try assertEqual(expectedMutation, testDictionary)
     }
     
-    func testRemovingValues() throws {
+    func testRemovingValuesWhere() throws {
         let testDictionary = [
             0: "A",
             1: "B",
@@ -1003,6 +1003,162 @@ final class DictionaryTests: XCTestCase {
  
         let result = testDictionary
             .removingValues { !["A", "C", "E"].contains($0) }
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemoveKeysBy() throws {
+        var testDictionary = [
+            TestStruct.stub(intMember: 0): "A",
+            TestStruct.stub(intMember: 1): "B",
+            TestStruct.stub(intMember: 2): "C",
+            TestStruct.stub(intMember: 3): "D",
+            TestStruct.stub(intMember: 4): "E"
+        ]
+        
+        let expectedMutation = testDictionary
+            .filter { ![0, 2].contains($0.key.intMember) }
+ 
+        testDictionary
+            .remove(keys: [.stub(intMember: 0), .stub(intMember: 2)], by: { $0.intMember == $1.intMember })
+        
+        try assertEqual(expectedMutation, testDictionary)
+    }
+    
+    func testRemovingKeysBy() throws {
+        let testDictionary = [
+            TestStruct.stub(intMember: 0): "A",
+            TestStruct.stub(intMember: 1): "B",
+            TestStruct.stub(intMember: 2): "C",
+            TestStruct.stub(intMember: 3): "D",
+            TestStruct.stub(intMember: 4): "E"
+        ]
+        
+        let expectedResult = testDictionary
+            .filter { ![0, 2].contains($0.key.intMember) }
+ 
+        let result = testDictionary
+            .removing(keys: [.stub(intMember: 0), .stub(intMember: 2)], by: { $0.intMember == $1.intMember })
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemoveValuesBy() throws {
+        var testDictionary = [
+            0: TestStruct.stub(stringMember: "A"),
+            1: TestStruct.stub(stringMember: "B"),
+            2: TestStruct.stub(stringMember: "C"),
+            3: TestStruct.stub(stringMember: "D"),
+            4: TestStruct.stub(stringMember: "E")
+        ]
+        
+        let expectedMutation = testDictionary
+            .filter { !["B", "D"].contains($0.value.stringMember) }
+ 
+        testDictionary
+            .remove(values: [.stub(stringMember: "B"), .stub(stringMember: "D")], by: { $0.stringMember == $1.stringMember })
+        
+        try assertEqual(expectedMutation, testDictionary)
+    }
+    
+    func testRemovingValuesBy() throws {
+        let testDictionary = [
+            0: TestStruct.stub(stringMember: "A"),
+            1: TestStruct.stub(stringMember: "B"),
+            2: TestStruct.stub(stringMember: "C"),
+            3: TestStruct.stub(stringMember: "D"),
+            4: TestStruct.stub(stringMember: "E")
+        ]
+        
+        let expectedResult = testDictionary
+            .filter { !["B", "D"].contains($0.value.stringMember) }
+ 
+        let result = testDictionary
+            .removing(values: [.stub(stringMember: "B"), .stub(stringMember: "D")], by: { $0.stringMember == $1.stringMember })
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemoveKeys() throws {
+        var testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let expectedMutation = [
+            1: "B",
+            3: "D",
+            4: "E"
+        ]
+ 
+        testDictionary
+            .remove(keys: [0, 2])
+        
+        try assertEqual(expectedMutation, testDictionary)
+    }
+    
+    func testRemovingKeys() throws {
+        let testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let expectedResult = [
+            1: "B",
+            3: "D",
+            4: "E"
+        ]
+ 
+        let result = testDictionary
+            .removing(keys: [0, 2])
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemoveValues() throws {
+        var testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let expectedMutation = [
+            0: "A",
+            2: "C",
+            4: "E"
+        ]
+ 
+        testDictionary
+            .remove(values: ["B", "D"])
+        
+        try assertEqual(expectedMutation, testDictionary)
+    }
+    
+    func testRemovingValues() throws {
+        let testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let expectedResult = [
+            0: "A",
+            2: "C",
+            4: "E"
+        ]
+ 
+        let result = testDictionary
+            .removing(values: ["B", "D"])
         
         try assertEqual(expectedResult, result)
     }
