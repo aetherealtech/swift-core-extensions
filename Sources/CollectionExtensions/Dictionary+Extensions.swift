@@ -103,20 +103,9 @@ public extension Dictionary {
     >(
         by transforms: repeat @escaping (Key) throws -> each Rs
     ) throws -> [Element] {
-        try sorted(by: { lhs, rhs in try CompareFunctions.tryCompare(lhs.key, rhs.key, by: repeat each transforms) == .orderedAscending })
-//        try sortedByKeys { lhs, rhs in try CompareFunctions.tryCompare(lhs, rhs, by: repeat each transforms) }
+        try sortedByKeys { lhs, rhs in try CompareFunctions.tryCompare(lhs, rhs, by: repeat each transforms) }
     }
-    
-    // Same crash as in Collection+Extensions and Sequence+Extensions
-    
-//    func trySortedByKeys<
-//        each Rs: Comparable & Equatable
-//    >(
-//        by transforms: repeat @escaping (Key) throws -> each Rs
-//    ) throws -> [Element] {
-//        try sortedByKeys { lhs, rhs in try CompareFunctions.tryCompare(lhs, rhs, by: repeat each transforms) }
-//    }
-    
+
     func sortedByKeys<R: Comparable & Equatable, Transforms: Collection<(Key) -> R>>(by transforms: Transforms) -> [Element] {
         sortedByKeys { lhs, rhs in CompareFunctions.compare(lhs, rhs, by: transforms) }
     }
@@ -132,10 +121,14 @@ public extension Dictionary {
     func allKeys(
         where condition: (Element) throws -> Bool
     ) rethrows -> Set<Key> {
-        try filter(condition)
-            .lazy
-            .map(\.key)
-            .store()
+        // Simply using `filter` here would require collecting intermediate results in an array, because the lazy transforms, including `filter`, don't support throwing.  Doing it "by hand" is more efficient since we can just directly collect the results into what gets returned.
+        var result: Set<Key> = []
+        
+        for element in self where try condition(element) {
+            result.insert(element.key)
+        }
+        
+        return result
     }
     
     func allKeys(
@@ -150,13 +143,28 @@ public extension Dictionary {
     ) -> Set<Key> where Value: Equatable {
         allKeys(for: valueToMatch, by: ==)
     }
+    
+    mutating func mutableForEach(
+        _ body: (Key, inout Value) throws -> Void
+    ) rethrows {
+        for index in indices {
+            try body(keys[index], &values[index])
+        }
+    }
 
     mutating func mutableForEachValues(
         _ body: (inout Value) throws -> Void
     ) rethrows {
-        for (key, var value) in self {
-            try body(&value)
-            self[key] = value
+        for index in indices {
+            try body(&values[index])
+        }
+    }
+    
+    mutating func mapInPlace(
+        _ transform: (Key, Value) throws -> Value
+    ) rethrows {
+        try mutableForEach { key, value in
+            value = try transform(key, value)
         }
     }
     
@@ -171,26 +179,23 @@ public extension Dictionary {
     @discardableResult
     mutating func mutate<R>(
         at key: Key,
-        _ work: (inout Value?) -> R
-    ) -> R {
-        var value = self[key]
-        let result = work(&value)
-        self[key] = value
-
-        return result
+        _ work: (inout Value?) throws -> R
+    ) rethrows -> R {
+        try work(&self[key])
     }
 
     @discardableResult
     mutating func mutate<R>(
         at key: Key,
-        defaultValue: @autoclosure () -> Value,
-        _ work: (inout Value) -> R
-    ) -> R {
-        var value = self[key] ?? defaultValue()
-        let result = work(&value)
-        self[key] = value
-
-        return result
+        defaultValue: @autoclosure () throws -> Value,
+        _ work: (inout Value) throws -> R
+    ) rethrows -> R {
+        let index = try index(forKey: key) ?? {
+            self[key] = try defaultValue()
+            return self.index(forKey: key).unsafelyUnwrapped
+        }()
+        
+        return try work(&values[index])
     }
     
     mutating func filterInPlace(_ condition: (Element) throws -> Bool) rethrows {
@@ -199,34 +204,20 @@ public extension Dictionary {
         }
     }
     
-    func filter(_ condition: (Element) -> Bool) -> Self {
-        var result = Self()
-        
-        for element in self {
-            if !condition(element) {
-                continue
-            }
-            
-            result[element.key] = element.value
-        }
-        
-        return result
-    }
-    
     mutating func filterKeysInPlace(_ condition: (Key) throws -> Bool) rethrows {
-        try filterInPlace { key, _ in try !condition(key) }
+        try filterInPlace { key, _ in try condition(key) }
     }
     
     func filterKeys(_ condition: (Key) throws -> Bool) rethrows -> Self {
-        try filter { key, _ in try !condition(key) }
+        try filter { key, _ in try condition(key) }
     }
     
     mutating func filterValuesInPlace(_ condition: (Value) throws -> Bool) rethrows {
-        try filterInPlace { _, value in try !condition(value) }
+        try filterInPlace { _, value in try condition(value) }
     }
     
     func filterValues(_ condition: (Value) throws -> Bool) rethrows -> Self {
-        try filter { _, value in try !condition(value) }
+        try filter { _, value in try condition(value) }
     }
 
     mutating func remove(where condition: (Element) throws -> Bool) rethrows {

@@ -29,3 +29,5 @@ final class DestructiveSequence<Element>: Sequence, IteratorProtocol {
     
     private var iterator: [Element].Iterator
 }
+
+struct TestError: Error, Equatable {}

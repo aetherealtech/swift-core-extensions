@@ -120,6 +120,7 @@ public func compare<T, R: Comparable & Equatable, KeyPaths: Sequence<KeyPath<T, 
     )
 }
 
+// The following two functions can be made to compile without the `@escaping`, but they will crash in certain scenarios.  This makes sense as the variadic parameters are likely bundled into a tuple, which if done by hand would require the `@escaping`.
 public func compare<
     T,
     each Rs: Comparable & Equatable

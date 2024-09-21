@@ -38,7 +38,7 @@ final class OptionalExtensionsTests: XCTestCase {
         
         let testMessage = "Test message"
         
-        try assertThrowsError(try value.require(testMessage)) { error in
+        try assertThrowsError { try value.require(testMessage) } errorHandler: { error in
             guard let error = error as? UnwrappedNil else {
                 throw Fail("Error should be UnwrappedNil")
             }
@@ -57,7 +57,7 @@ final class OptionalExtensionsTests: XCTestCase {
         
         let testError = TestError()
         
-        try assertThrowsError(try value.require(testError)) { error in
+        try assertThrowsError { try value.require(testError) } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }

@@ -452,4 +452,558 @@ final class DictionaryTests: XCTestCase {
         
         try assertTrue(expectedResult.elementsEqual(result, by: { $0.key == $1.key && $0.value == $1.value }))
     }
+    
+    func testSortedByKeys() throws {
+        let testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let keys = testDictionary
+            .keys
+            .sorted()
+        
+        let expectedResult = keys
+            .map { key in (key: key, value: testDictionary[key]!) }
+
+        let result = testDictionary
+            .sortedByKeys()
+        
+        try assertTrue(expectedResult.elementsEqual(result, by: { $0.key == $1.key && $0.value == $1.value }))
+    }
+    
+    func testAllKeysWhere() throws {
+        let testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+ 
+        let expectedResult: Set<Int> = [
+            0,
+            1,
+            3,
+        ]
+
+        let result = testDictionary
+            .allKeys { key, value in
+                key == 0 || key == 1 || value == "D"
+            }
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testAllKeysForValueBy() throws {
+        let testDictionary = [
+            0: TestStruct.stub(stringMember: "A"),
+            1: TestStruct.stub(stringMember: "B"),
+            2: TestStruct.stub(stringMember: "A"),
+            3: TestStruct.stub(stringMember: "D"),
+            4: TestStruct.stub(stringMember: "A")
+        ]
+ 
+        let expectedResult: Set<Int> = [
+            0,
+            2,
+            4,
+        ]
+
+        let result = testDictionary
+            .allKeys(for: TestStruct.stub(stringMember: "A"), by: { $0.stringMember == $1.stringMember })
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testAllKeysForValue() throws {
+        let testDictionary = [
+            0: "A",
+            1: "B",
+            2: "A",
+            3: "D",
+            4: "A"
+        ]
+ 
+        let expectedResult: Set<Int> = [
+            0,
+            2,
+            4,
+        ]
+
+        let result = testDictionary
+            .allKeys(for: "A")
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testMutableForEach() throws {
+        var testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+ 
+        let expectedResult = [
+            0: "A0",
+            1: "B1",
+            2: "C2",
+            3: "D3",
+            4: "E4"
+        ]
+
+        testDictionary
+            .mutableForEach { key, value in
+                value.append(key.description)
+            }
+        
+        try assertEqual(expectedResult, testDictionary)
+    }
+    
+    func testMutableForEachValues() throws {
+        var testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+ 
+        let expectedResult = [
+            0: "AA",
+            1: "BB",
+            2: "CC",
+            3: "DD",
+            4: "EE"
+        ]
+
+        testDictionary
+            .mutableForEachValues { value in
+                value.append(value)
+            }
+        
+        try assertEqual(expectedResult, testDictionary)
+    }
+    
+    func testMapInPlace() throws {
+        var testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+ 
+        let expectedResult = [
+            0: "A0",
+            1: "B1",
+            2: "C2",
+            3: "D3",
+            4: "E4"
+        ]
+
+        testDictionary
+            .mapInPlace { key, value in
+                value.appending(key.description)
+            }
+        
+        try assertEqual(expectedResult, testDictionary)
+    }
+    
+    func testMapValuesInPlace() throws {
+        var testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+ 
+        let expectedResult = [
+            0: "AA",
+            1: "BB",
+            2: "CC",
+            3: "DD",
+            4: "EE"
+        ]
+
+        testDictionary
+            .mapValuesInPlace { value in
+                value.appending(value)
+            }
+        
+        try assertEqual(expectedResult, testDictionary)
+    }
+    
+    func testMutateAtPresent() throws {
+        var testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let expectedMutation = [
+            0: "A",
+            1: "BF",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+ 
+        let expectedResult = "BF"
+
+        let result = testDictionary
+            .mutate(at: 1) { value in
+                value?.append("F")
+                return value
+            }
+        
+        try assertEqual(expectedResult, result)
+        try assertEqual(expectedMutation, testDictionary)
+    }
+    
+    func testMutateAtAbsent() throws {
+        var testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let expectedMutation = testDictionary
+
+        let expectedResult: String? = nil
+
+        let result = testDictionary
+            .mutate(at: 6) { value in
+                value?.append("F")
+                return value
+            }
+        
+        try assertEqual(expectedResult, result)
+        try assertEqual(expectedMutation, testDictionary)
+    }
+    
+    func testMutateAtRemove() throws {
+        var testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let expectedMutation = [
+            0: "A",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+ 
+        let expectedResult = "B"
+
+        let result = testDictionary
+            .mutate(at: 1) { value in
+                let original = value
+                value = nil
+                return original
+            }
+        
+        try assertEqual(expectedResult, result)
+        try assertEqual(expectedMutation, testDictionary)
+    }
+    
+    func testMutateAtDefaultPresent() throws {
+        var testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let expectedMutation = [
+            0: "A",
+            1: "BF",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+ 
+        let expectedResult = "BF"
+
+        let result = try testDictionary
+            .mutate(at: 1, defaultValue: { throw Fail("Should not have run") }()) { value in
+                value.append("F")
+                return value
+            }
+        
+        try assertEqual(expectedResult, result)
+        try assertEqual(expectedMutation, testDictionary)
+    }
+    
+    func testMutateAtDefaultAbsent() throws {
+        var testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let expectedMutation = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E",
+            6: "FF"
+        ]
+
+        let expectedResult = "FF"
+
+        let result = testDictionary
+            .mutate(at: 6, defaultValue: "F") { value in
+                value.append("F")
+                return value
+            }
+        
+        try assertEqual(expectedResult, result)
+        try assertEqual(expectedMutation, testDictionary)
+    }
+    
+    func testFilterInPlace() throws {
+        var testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let expectedMutation = [
+            0: "A",
+            2: "C",
+            4: "E"
+        ]
+ 
+        testDictionary
+            .filterInPlace { $0.key.isMultiple(of: 2) }
+        
+        try assertEqual(expectedMutation, testDictionary)
+    }
+    
+    func testFilterKeysInPlace() throws {
+        var testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let expectedMutation = [
+            0: "A",
+            2: "C",
+            4: "E"
+        ]
+ 
+        testDictionary
+            .filterKeysInPlace { $0.isMultiple(of: 2) }
+        
+        try assertEqual(expectedMutation, testDictionary)
+    }
+    
+    func testFilterKeys() throws {
+        let testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let expectedResult = [
+            0: "A",
+            2: "C",
+            4: "E"
+        ]
+ 
+        let result = testDictionary
+            .filterKeys { $0.isMultiple(of: 2) }
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testFilterValuesInPlace() throws {
+        var testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let expectedMutation = [
+            0: "A",
+            2: "C",
+            4: "E"
+        ]
+ 
+        testDictionary
+            .filterValuesInPlace { ["A", "C", "E"].contains($0) }
+        
+        try assertEqual(expectedMutation, testDictionary)
+    }
+    
+    func testFilterValues() throws {
+        let testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let expectedResult = [
+            0: "A",
+            2: "C",
+            4: "E"
+        ]
+ 
+        let result = testDictionary
+            .filterValues { ["A", "C", "E"].contains($0) }
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemoveWhere() throws {
+        var testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let expectedMutation = [
+            3: "D",
+        ]
+ 
+        testDictionary
+            .remove { $0.key.isMultiple(of: 2) || $0.value == "B" }
+        
+        try assertEqual(expectedMutation, testDictionary)
+    }
+    
+    func testRemovingWhere() throws {
+        let testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let expectedResult = [
+            3: "D",
+        ]
+ 
+        let result = testDictionary
+            .removing { $0.key.isMultiple(of: 2) || $0.value == "B" }
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemoveKeys() throws {
+        var testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let expectedMutation = [
+            0: "A",
+            2: "C",
+            4: "E"
+        ]
+ 
+        testDictionary
+            .removeKeys { !$0.isMultiple(of: 2) }
+        
+        try assertEqual(expectedMutation, testDictionary)
+    }
+    
+    func testRemovingKeys() throws {
+        let testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let expectedResult = [
+            0: "A",
+            2: "C",
+            4: "E"
+        ]
+ 
+        let result = testDictionary
+            .removingKeys { !$0.isMultiple(of: 2) }
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testRemoveValues() throws {
+        var testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let expectedMutation = [
+            0: "A",
+            2: "C",
+            4: "E"
+        ]
+ 
+        testDictionary
+            .removeValues { !["A", "C", "E"].contains($0) }
+        
+        try assertEqual(expectedMutation, testDictionary)
+    }
+    
+    func testRemovingValues() throws {
+        let testDictionary = [
+            0: "A",
+            1: "B",
+            2: "C",
+            3: "D",
+            4: "E"
+        ]
+        
+        let expectedResult = [
+            0: "A",
+            2: "C",
+            4: "E"
+        ]
+ 
+        let result = testDictionary
+            .removingValues { !["A", "C", "E"].contains($0) }
+        
+        try assertEqual(expectedResult, result)
+    }
 }

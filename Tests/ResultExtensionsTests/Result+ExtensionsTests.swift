@@ -45,7 +45,7 @@ final class ResultExtensionsTests: XCTestCase {
             throw TestError(details: errorDetails)
         }
         
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -67,7 +67,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = Result<Int, TestError>.failure(.init(details: errorDetails))
             .eraseErrorType()
                 
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -96,7 +96,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = Result<Int?, TestError>.failure(.init(details: errorDetails))
             .compact()
                 
-        try assertThrowsError(try result?.get()) { error in
+        try assertThrowsError { try result?.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -118,7 +118,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = Result<Result<Int, TestError>, TestError>.success(.failure(.init(details: errorDetails)))
             .flatten()
         
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -133,7 +133,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = Result<Result<Int, TestError>, TestError>.failure(.init(details: errorDetails))
             .flatten()
                 
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -155,7 +155,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = Result<Result<Int, TestError>, Error>.success(.failure(.init(details: errorDetails)))
             .flatten()
         
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -170,7 +170,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = Result<Result<Int, TestError>, Error>.failure(TestError(details: errorDetails))
             .flatten()
                 
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -199,7 +199,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = Result<String, TestError>.failure(.init(details: errorDetails))
             .compactMap(Int.init)
                 
-        try assertThrowsError(try result?.get()) { error in
+        try assertThrowsError { try result?.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -221,7 +221,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = Result<String, TestError>.success("")
             .tryMap { try Int($0) ?? { throw TestError(details: errorDetails) }() }
         
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -236,7 +236,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = Result<String, TestError>.failure(.init(details: errorDetails))
             .tryMap { try Int($0) ?? { throw TestError(details: "") }() }
                 
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -259,7 +259,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = Result<Int, TestError>.failure(.init(details: errorDetails))
             .tryMapError { error in TestError(details: error.details + errorDetailsExtra) }
         
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -274,7 +274,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = Result<Int, TestError>.failure(.init(details: ""))
             .tryMapError { error -> TestError in throw TestError(details: errorDetails) }
                 
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -303,7 +303,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = Result<String, TestError>.success("")
             .tryCompactMap { _ in throw TestError(details: errorDetails) }
         
-        try assertThrowsError(try result?.get()) { error in
+        try assertThrowsError { try result?.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -318,7 +318,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = Result<String, TestError>.failure(.init(details: errorDetails))
             .tryCompactMap(Int.init)
                 
-        try assertThrowsError(try result?.get()) { error in
+        try assertThrowsError { try result?.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -340,7 +340,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = Result<String, TestError>.success("5")
             .tryFlatMap { string in Result<Int, TestError>.failure(.init(details: errorDetails)) }
         
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -355,7 +355,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = Result<String, TestError>.success("")
             .tryFlatMap { _ -> Result<Int, TestError> in throw TestError(details: errorDetails) }
         
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -370,7 +370,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = Result<String, TestError>.failure(.init(details: errorDetails))
             .tryFlatMap { string in Result<Int, TestError>.success(Int(string)!) }
 
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -418,7 +418,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = Result<Int, TestError>.failure(.init(details: errorDetails))
             .tryCatch { error in throw TestError(details: error.details + errorDetailsExtra) }
         
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -440,7 +440,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = await Result<String, TestError>.failure(.init(details: errorDetails))
             .mapAsync { Int($0)! }
                 
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -463,7 +463,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = await Result<String, TestError>.failure(.init(details: errorDetails))
             .mapErrorAsync { error in TestError(details: error.details + errorDetailsExtra) }
                 
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -485,7 +485,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = await Result<String, TestError>.success("5")
             .flatMapAsync { string in Result<Int, TestError>.failure(.init(details: errorDetails)) }
         
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -500,7 +500,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = await Result<String, TestError>.failure(.init(details: errorDetails))
             .flatMapAsync { string in Result<Int, TestError>.success(Int(string)!) }
 
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -532,7 +532,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = await Result<String, TestError>.failure(.init(details: errorDetails))
             .flatMapErrorAsync { error in .failure(TestError(details: error.details + errorDetailsExtra)) }
         
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -561,7 +561,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = await Result<String, TestError>.failure(.init(details: errorDetails))
             .compactMapAsync(Int.init)
                 
-        try assertThrowsError(try result?.get()) { error in
+        try assertThrowsError { try result?.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -583,7 +583,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = await Result<String, TestError>.success("")
             .tryMapAsync { try Int($0) ?? { throw TestError(details: errorDetails) }() }
         
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -598,7 +598,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = await Result<String, TestError>.failure(.init(details: errorDetails))
             .tryMapAsync { try Int($0) ?? { throw TestError(details: "") }() }
                 
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -621,7 +621,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = await Result<Int, TestError>.failure(.init(details: errorDetails))
             .tryMapErrorAsync { error in TestError(details: error.details + errorDetailsExtra) }
         
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -636,7 +636,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = await Result<Int, TestError>.failure(.init(details: ""))
             .tryMapErrorAsync { error -> TestError in throw TestError(details: errorDetails) }
                 
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -665,7 +665,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = await Result<String, TestError>.success("")
             .tryCompactMapAsync { _ in throw TestError(details: errorDetails) }
         
-        try assertThrowsError(try result?.get()) { error in
+        try assertThrowsError { try result?.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -680,7 +680,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = await Result<String, TestError>.failure(.init(details: errorDetails))
             .tryCompactMapAsync(Int.init)
                 
-        try assertThrowsError(try result?.get()) { error in
+        try assertThrowsError { try result?.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -702,7 +702,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = await Result<String, TestError>.success("5")
             .tryFlatMapAsync { string in Result<Int, TestError>.failure(.init(details: errorDetails)) }
         
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -717,7 +717,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = await Result<String, TestError>.success("")
             .tryFlatMapAsync { _ -> Result<Int, TestError> in throw TestError(details: errorDetails) }
         
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -732,7 +732,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = await Result<String, TestError>.failure(.init(details: errorDetails))
             .tryFlatMapAsync { string in Result<Int, TestError>.success(Int(string)!) }
 
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
@@ -780,7 +780,7 @@ final class ResultExtensionsTests: XCTestCase {
         let result = await Result<Int, TestError>.failure(.init(details: errorDetails))
             .tryCatchAsync { error in throw TestError(details: error.details + errorDetailsExtra) }
         
-        try assertThrowsError(try result.get()) { error in
+        try assertThrowsError { try result.get() } errorHandler: { error in
             guard let error = error as? TestError else {
                 throw Fail("Error should be TestError")
             }
