@@ -1,4 +1,5 @@
 import Foundation
+import OptionalExtensions
 
 public enum StringParseError: LocalizedError {
     case invalidASCIICharacter

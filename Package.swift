@@ -76,6 +76,7 @@ let package = Package(
             dependencies: [
                 "AsyncExtensions",
                 "CollectionExtensions",
+                "OptionalExtensions",
                 "ResultExtensions",
                 .product(name: "Synchronization", package: "swift-synchronization"),
             ],
@@ -97,7 +98,6 @@ let package = Package(
             name: "CollectionExtensions",
             dependencies: [
                 "CompareFunctions",
-                "OptionalExtensions"
             ],
             swiftSettings: [.concurrencyChecking(.complete)]
         ),
@@ -154,6 +154,7 @@ let package = Package(
             name: "LazyCollectionExtensions",
             dependencies: [
                 "CollectionExtensions",
+                "OptionalExtensions",
                 "ResultExtensions",
             ],
             swiftSettings: [.concurrencyChecking(.complete)]
