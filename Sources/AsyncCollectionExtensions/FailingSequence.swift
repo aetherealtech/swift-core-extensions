@@ -26,13 +26,13 @@ public extension AsyncSequence {
         }
     }
     
-    func tryFlatMap<R: AsyncSequence, InnerR>(_ transform: @escaping @Sendable (Element) async throws -> R) -> AsyncFlatMapSequence<Self, AnyAsyncSequence<Result<InnerR, any Error>>> where R.Element == InnerR {
+    func tryFlatMap<R: AsyncSequence, InnerR>(_ transform: @escaping @Sendable (Element) async throws -> R) -> AsyncThrowingFlatMapSequence<Self, AnyAsyncSequence<Result<InnerR, any Error>>> where R.Element == InnerR {
         tryFlatMap { outerValue in
             try await transform(outerValue).map { innerValue in Result<InnerR, Error>.success(innerValue) }
         }
     }
     
-    func tryFlatMap<R: AsyncSequence, InnerR>(_ transform: @escaping @Sendable (Element) async throws -> R) -> AsyncFlatMapSequence<Self, AnyAsyncSequence<Result<InnerR, any Error>>> where R.Element == Result<InnerR, any Error> {
+    func tryFlatMap<R: AsyncSequence, InnerR>(_ transform: @escaping @Sendable (Element) async throws -> R) -> AsyncThrowingFlatMapSequence<Self, AnyAsyncSequence<Result<InnerR, any Error>>> where R.Element == Result<InnerR, any Error> {
         flatMap { element in
             let innerResult = await Result { try await transform(element) }
             switch innerResult {
@@ -76,13 +76,13 @@ public extension AsyncSequence {
         }
     }
     
-    func flatMapSuccess<Success, R: AsyncSequence, InnerR>(_ transform: @escaping @Sendable (Success) async throws -> R) -> AsyncFlatMapSequence<Self, AnyAsyncSequence<Result<InnerR, any Error>>> where Element == Result<Success, any Error>, R.Element == InnerR {
+    func flatMapSuccess<Success, R: AsyncSequence, InnerR>(_ transform: @escaping @Sendable (Success) async throws -> R) -> AsyncThrowingFlatMapSequence<Self, AnyAsyncSequence<Result<InnerR, any Error>>> where Element == Result<Success, any Error>, R.Element == InnerR {
         flatMapSuccess { outerValue in
             try await transform(outerValue).map { innerValue in Result<InnerR, Error>.success(innerValue) }
         }
     }
     
-    func flatMapSuccess<Success, R: AsyncSequence, InnerR>(_ transform: @escaping @Sendable (Success) async throws -> R) -> AsyncFlatMapSequence<Self, AnyAsyncSequence<Result<InnerR, any Error>>> where Element == Result<Success, any Error>, R.Element == Result<InnerR, any Error> {
+    func flatMapSuccess<Success, R: AsyncSequence, InnerR>(_ transform: @escaping @Sendable (Success) async throws -> R) -> AsyncThrowingFlatMapSequence<Self, AnyAsyncSequence<Result<InnerR, any Error>>> where Element == Result<Success, any Error>, R.Element == Result<InnerR, any Error> {
         flatMap { result in
             let innerResult = await result.tryMapAsync(transform)
             switch innerResult {
@@ -98,7 +98,7 @@ public extension AsyncSequence {
         }
     }
     
-    func `catch`<Success, S: AsyncSequence>(_ catcher: @escaping @Sendable (any Error) -> S) -> AsyncFlatMapSequence<Self, AnyAsyncSequence<Success>> where Element == Result<Success, any Error>, S.Element == Success {
+    func `catch`<Success, S: AsyncSequence>(_ catcher: @escaping @Sendable (any Error) -> S) -> AsyncThrowingFlatMapSequence<Self, AnyAsyncSequence<Success>> where Element == Result<Success, any Error>, S.Element == Success {
         flatMap { result in
             switch result {
                 case let .success(element): return [element].async.erase()

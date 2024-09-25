@@ -6,9 +6,9 @@ import Synchronization
 public extension Publisher {
     @discardableResult
     func subscribe(
-        receiveValue: @escaping (Output) -> Void,
-        receiveCompletion: @escaping (Subscribers.Completion<Failure>) -> Void,
-        until: @escaping (Output) -> Bool
+        receiveValue: @escaping @Sendable (Output) -> Void,
+        receiveCompletion: @escaping @Sendable (Subscribers.Completion<Failure>) -> Void,
+        until: @escaping @Sendable (Output) -> Bool
     ) -> some Cancellable {
         let subscriber = UntilSubscriber(
             receiveValue: receiveValue,
@@ -26,8 +26,8 @@ public extension Publisher {
 public extension Publisher where Failure == Never {
     @discardableResult
     func subscribe(
-        receiveValue: @escaping (Output) -> Void,
-        until: @escaping (Output) -> Bool
+        receiveValue: @escaping @Sendable (Output) -> Void,
+        until: @escaping @Sendable (Output) -> Bool
     ) -> some Cancellable {
         subscribe(
             receiveValue: receiveValue,
@@ -38,7 +38,7 @@ public extension Publisher where Failure == Never {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public final class UntilSubscriber<Input, Failure: Error>: Subscriber, Cancellable {
+public final class UntilSubscriber<Input, Failure: Error>: Subscriber, Cancellable, Sendable {
     private enum State {
         case ready
         case subscribed(Subscription)
@@ -46,9 +46,9 @@ public final class UntilSubscriber<Input, Failure: Error>: Subscriber, Cancellab
     }
     
     init(
-        receiveValue: @escaping (Input) -> Void,
-        receiveCompletion: @escaping (Subscribers.Completion<Failure>) -> Void,
-        until: @escaping (Input) -> Bool
+        receiveValue: @escaping @Sendable (Input) -> Void,
+        receiveCompletion: @escaping @Sendable (Subscribers.Completion<Failure>) -> Void,
+        until: @escaping @Sendable (Input) -> Bool
     ) {
         self.receiveValue = receiveValue
         self.receiveCompletion = receiveCompletion
@@ -112,10 +112,9 @@ public final class UntilSubscriber<Input, Failure: Error>: Subscriber, Cancellab
         }
     }
     
-    private let receiveValue: (Input) -> Void
-    private let receiveCompletion: (Subscribers.Completion<Failure>) -> Void
-    private let until: (Input) -> Bool
+    private let receiveValue: @Sendable (Input) -> Void
+    private let receiveCompletion: @Sendable (Subscribers.Completion<Failure>) -> Void
+    private let until: @Sendable (Input) -> Bool
 
-    @Synchronized
-    private var state: State = .ready
+    private let _state: Synchronized<State> = .init(wrappedValue: .ready)
 }

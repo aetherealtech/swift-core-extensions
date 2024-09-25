@@ -23,7 +23,7 @@ extension Sequence {
 public extension Sequence where Self: Sendable {
     func awaitAll<R>(maxConcurrency: Int = .max) async -> [R] where Element == AsyncElement<R> {
         if let collection = self as? any RandomAccessCollection {
-            let results = UnsafeMutableBufferPointer<R>.allocate(capacity: collection.count)
+            nonisolated(unsafe) let results = UnsafeMutableBufferPointer<R>.allocate(capacity: collection.count)
             defer { results.deallocate() }
          
             await enumerated()
@@ -66,7 +66,7 @@ public extension Sequence where Self: Sendable {
 
     func awaitAll<R>(maxConcurrency: Int = .max) async throws -> [R] where Element == AsyncThrowingElement<R> {
         if let collection = self as? any RandomAccessCollection {
-            let results = UnsafeMutableBufferPointer<R>.allocate(capacity: collection.count)
+            nonisolated(unsafe) let results = UnsafeMutableBufferPointer<R>.allocate(capacity: collection.count)
             defer { results.deallocate() }
 
             try await enumerated()
@@ -110,7 +110,7 @@ public extension Sequence where Self: Sendable {
     func flattenAwaitAll<R: Sequence & Sendable, InnerR>(maxConcurrency: Int = .max) async -> [InnerR] where Element == AsyncElement<R>, R.Element == AsyncElement<InnerR> {
         if let collection = self as? any RandomAccessCollection {
             if R.self is any RandomAccessCollection.Type {
-                let results = UnsafeMutableBufferPointer<UnsafeMutableBufferPointer<InnerR>>.allocate(capacity: collection.count)
+                nonisolated(unsafe) let results = UnsafeMutableBufferPointer<UnsafeMutableBufferPointer<InnerR>>.allocate(capacity: collection.count)
                 defer {
                     results.forEach { innerResults in innerResults.deallocate() }
                     results.deallocate()
@@ -141,7 +141,7 @@ public extension Sequence where Self: Sendable {
                 return results
                     .flatten()
             } else {
-                let results = UnsafeMutableBufferPointer<Synchronized<[InnerR?]>>.allocate(capacity: collection.count)
+                nonisolated(unsafe) let results = UnsafeMutableBufferPointer<Synchronized<[InnerR?]>>.allocate(capacity: collection.count)
                 defer {
                     results.deallocate()
                 }
@@ -273,7 +273,7 @@ public extension Sequence where Self: Sendable {
     func flattenAwaitAll<R: Sequence & Sendable, InnerR>(maxConcurrency: Int = .max) async throws -> [InnerR] where Element == AsyncThrowingElement<R>, R.Element == AsyncThrowingElement<InnerR> {
         if let collection = self as? any RandomAccessCollection {
             if R.self is any RandomAccessCollection.Type {
-                let results = UnsafeMutableBufferPointer<UnsafeMutableBufferPointer<InnerR>>.allocate(capacity: collection.count)
+                nonisolated(unsafe) let results = UnsafeMutableBufferPointer<UnsafeMutableBufferPointer<InnerR>>.allocate(capacity: collection.count)
                 defer {
                     results.forEach { innerResults in innerResults.deallocate() }
                     results.deallocate()
@@ -304,7 +304,7 @@ public extension Sequence where Self: Sendable {
                 return results
                     .flatten()
             } else {
-                let results = UnsafeMutableBufferPointer<Synchronized<[InnerR?]>>.allocate(capacity: collection.count)
+                nonisolated(unsafe) let results = UnsafeMutableBufferPointer<Synchronized<[InnerR?]>>.allocate(capacity: collection.count)
                 defer {
                     results.deallocate()
                 }

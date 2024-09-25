@@ -51,7 +51,7 @@ public extension AsyncSequence {
         compactMap { element in element }
     }
 
-    func flatten<InnerElement>() -> AsyncFlatMapSequence<Self, Self.Element> where Element: AsyncSequence, Element.Element == InnerElement {
+    func flatten<InnerElement>() -> AsyncThrowingFlatMapSequence<Self, Self.Element> where Element: AsyncSequence, Element.Element == InnerElement {
         flatMap { element in element }
     }
     
@@ -165,7 +165,7 @@ public extension AsyncSequence {
         )
     }
 
-    func cartesianProduct<Other: AsyncSequence & Sendable>(with other: Other) -> AsyncFlatMapSequence<Self, AsyncMapSequence<Other, (Self.Element, Other.Element)>> where Element: Sendable, Other.Element: Sendable {
+    func cartesianProduct<Other: AsyncSequence & Sendable>(with other: Other) -> AsyncThrowingFlatMapSequence<Self, AsyncMapSequence<Other, (Self.Element, Other.Element)>> where Element: Sendable, Other.Element: Sendable {
         flatMap { element in
             other
                 .map { otherElement in

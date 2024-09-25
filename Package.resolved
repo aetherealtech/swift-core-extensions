@@ -1,5 +1,5 @@
 {
-  "originHash" : "27eb4c9dabc5f6bc69081bd868c18b4eaf78a08df56cc3ee214762d1c0a50708",
+  "originHash" : "523816b15b8e7d3505dfd49f0afa4d03a2ea30212d1d85d86fd6c0b3a99d169e",
   "pins" : [
     {
       "identity" : "swift-assertions",
@@ -7,7 +7,7 @@
       "location" : "https://github.com/aetherealtech/swift-assertions",
       "state" : {
         "branch" : "master",
-        "revision" : "8b71a9c8e32c6dde21da8522fa137b365bc0bfc7"
+        "revision" : "651337bab5f9911e083cf445a5bbab4bfc753395"
       }
     },
     {
@@ -16,7 +16,7 @@
       "location" : "https://github.com/aetherealtech/swift-backports",
       "state" : {
         "branch" : "master",
-        "revision" : "8fe3d5342bc8bbc6cbd546d0b385372a13cb0eaf"
+        "revision" : "3592783200c14e0ada334545f76cd0dbc10f2174"
       }
     },
     {
@@ -34,7 +34,7 @@
       "location" : "https://github.com/aetherealtech/swift-stubbing",
       "state" : {
         "branch" : "master",
-        "revision" : "7945d06a880b44bd2720bf8f703284c78c66c95e"
+        "revision" : "3dc35d7c20e516881d458d3af5c7f5359cc4c557"
       }
     },
     {
@@ -43,7 +43,7 @@
       "location" : "https://github.com/aetherealtech/swift-synchronization",
       "state" : {
         "branch" : "master",
-        "revision" : "cfb0a9d8c7af5641548c79f965b8d5bcf0219da9"
+        "revision" : "d9162762c51a12e536b93089312a3cc0a2272ef9"
       }
     },
     {
@@ -60,8 +60,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
       "state" : {
-        "revision" : "bc2a151366f2cd0e347274544933bc2acb00c9fe",
-        "version" : "1.4.0"
+        "revision" : "27d767d643fa2cf083d0a73d74fa84cacb53e85c",
+        "version" : "1.4.1"
       }
     }
   ],

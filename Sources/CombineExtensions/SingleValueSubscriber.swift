@@ -6,8 +6,8 @@ import Synchronization
 public extension Publisher {
     @discardableResult
     func subscribeNext(
-        receiveValue: @escaping (Output) -> Void,
-        receiveCompletion: @escaping (Subscribers.Completion<Failure>) -> Void
+        receiveValue: @escaping @Sendable (Output) -> Void,
+        receiveCompletion: @escaping @Sendable (Subscribers.Completion<Failure>) -> Void
     ) -> SingleValueSubscriber<Output, Failure> {
         let subscriber = SingleValueSubscriber(
             receiveValue: receiveValue,
@@ -24,7 +24,7 @@ public extension Publisher {
 public extension Publisher where Failure == Never {
     @discardableResult
     func subscribeNext(
-        receiveValue: @escaping (Output) -> Void
+        receiveValue: @escaping @Sendable (Output) -> Void
     ) -> SingleValueSubscriber<Output, Failure> {
         subscribeNext(
             receiveValue: receiveValue,
@@ -34,7 +34,7 @@ public extension Publisher where Failure == Never {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public final class SingleValueSubscriber<Input, Failure: Error>: Subscriber, Cancellable {
+public final class SingleValueSubscriber<Input, Failure: Error>: Subscriber, Cancellable, Sendable {
     private enum State {
         case ready
         case subscribed(Subscription)
@@ -42,8 +42,8 @@ public final class SingleValueSubscriber<Input, Failure: Error>: Subscriber, Can
     }
     
     init(
-        receiveValue: @escaping (Input) -> Void,
-        receiveCompletion: @escaping (Subscribers.Completion<Failure>) -> Void
+        receiveValue: @escaping @Sendable (Input) -> Void,
+        receiveCompletion: @escaping @Sendable (Subscribers.Completion<Failure>) -> Void
     ) {
         self.receiveValue = receiveValue
         self.receiveCompletion = receiveCompletion
@@ -103,10 +103,9 @@ public final class SingleValueSubscriber<Input, Failure: Error>: Subscriber, Can
         }
     }
 
-    private let receiveValue: (Input) -> Void
-    private let receiveCompletion: (Subscribers.Completion<Failure>) -> Void
+    private let receiveValue: @Sendable (Input) -> Void
+    private let receiveCompletion: @Sendable (Subscribers.Completion<Failure>) -> Void
 
-    @Synchronized
-    private var state: State = .ready
+    private let _state: Synchronized<State> = .init(wrappedValue: .ready)
 }
 

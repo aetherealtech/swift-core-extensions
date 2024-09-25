@@ -1,4 +1,4 @@
-// swift-tools-version: 5.10
+// swift-tools-version: 6.0
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -79,27 +79,23 @@ let package = Package(
                 "OptionalExtensions",
                 "ResultExtensions",
                 .product(name: "Synchronization", package: "swift-synchronization"),
-            ],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            ]
         ),
         .target(
             name: "AsyncExtensions",
             dependencies: [
                 "ResultExtensions",
-            ],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            ]
         ),
         .target(
             name: "CodableExtensions",
-            dependencies: [],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            dependencies: []
         ),
         .target(
             name: "CollectionExtensions",
             dependencies: [
                 "CompareFunctions",
-            ],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            ]
         ),
         .target(
             name: "CombineExtensions",
@@ -110,13 +106,11 @@ let package = Package(
                 "DateExtensions",
                 .product(name: "Synchronization", package: "swift-synchronization"),
                 "OptionalExtensions"
-            ],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            ]
         ),
         .target(
             name: "CompareFunctions",
-            dependencies: [],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            dependencies: []
         ),
         .target(
             name: "CoreExtensions",
@@ -134,21 +128,18 @@ let package = Package(
                 "OptionalExtensions",
                 "ResultExtensions",
                 "URLExtensions",
-            ],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            ]
         ),
         .target(
             name: "DateExtensions",
             dependencies: [
                 "CollectionExtensions",
                 .product(name: "Backports", package: "swift-backports"),
-            ],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            ]
         ),
         .target(
             name: "FileSystemExtensions",
-            dependencies: [],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            dependencies: []
         ),
         .target(
             name: "LazyCollectionExtensions",
@@ -156,41 +147,34 @@ let package = Package(
                 "CollectionExtensions",
                 "OptionalExtensions",
                 "ResultExtensions",
-            ],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            ]
         ),
         .target(
             name: "NumericExtensions",
-            dependencies: [],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            dependencies: []
         ),
         .target(
             name: "OptionalExtensions",
-            dependencies: [],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            dependencies: []
         ),
         .target(
             name: "ResultExtensions",
-            dependencies: [],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            dependencies: []
         ),
         .target(
             name: "URLExtensions",
-            dependencies: [],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            dependencies: []
         ),
         .testTarget(
             name: "AsyncCollectionExtensionsTests",
-            dependencies: ["AsyncCollectionExtensions"],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            dependencies: ["AsyncCollectionExtensions"]
         ),
         .testTarget(
             name: "AsyncExtensionsTests",
             dependencies: [
                 "AsyncExtensions",
                 .product(name: "Assertions", package: "swift-assertions"),
-            ],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            ]
         ),
         .testTarget(
             name: "CollectionExtensionsTests",
@@ -198,24 +182,21 @@ let package = Package(
                 "CollectionExtensions",
                 .product(name: "Assertions", package: "swift-assertions"),
                 .product(name: "Stubbing", package: "swift-stubbing"),
-            ],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            ]
         ),
         .testTarget(
             name: "CombineExtensionsTests",
             dependencies: [
                 "CombineExtensions",
                 .product(name: "Assertions", package: "swift-assertions"),
-            ],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            ]
         ),
         .testTarget(
             name: "CompareFunctionsTests",
             dependencies: [
                 "CompareFunctions",
                 .product(name: "Assertions", package: "swift-assertions"),
-            ],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            ]
         ),
         .testTarget(
             name: "DateExtensionsTests",
@@ -223,8 +204,7 @@ let package = Package(
                 "CollectionExtensions",
                 "DateExtensions",
                 .product(name: "Assertions", package: "swift-assertions"),
-            ],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            ]
         ),
         .testTarget(
             name: "LazyCollectionExtensionsTests",
@@ -232,32 +212,28 @@ let package = Package(
                 "LazyCollectionExtensions",
                 .product(name: "Assertions", package: "swift-assertions"),
                 .product(name: "Stubbing", package: "swift-stubbing"),
-            ],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            ]
         ),
         .testTarget(
             name: "NumericExtensionsTests",
             dependencies: [
                 "NumericExtensions",
                 .product(name: "Assertions", package: "swift-assertions"),
-            ],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            ]
         ),
         .testTarget(
             name: "OptionalExtensionsTests",
             dependencies: [
                 "OptionalExtensions",
                 .product(name: "Assertions", package: "swift-assertions"),
-            ],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            ]
         ),
         .testTarget(
             name: "ResultExtensionsTests",
             dependencies: [
                 "ResultExtensions",
                 .product(name: "Assertions", package: "swift-assertions"),
-            ],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            ]
         ),
         .testTarget(
             name: "URLExtensionsTests",
@@ -268,24 +244,7 @@ let package = Package(
             ],
             resources: [
                 .process("dummy.pdf")
-            ],
-            swiftSettings: [.concurrencyChecking(.complete)]
+            ]
         ),
     ]
 )
-
-extension SwiftSetting {
-    enum ConcurrencyChecking: String {
-        case complete
-        case minimal
-        case targeted
-    }
-    
-    static func concurrencyChecking(_ setting: ConcurrencyChecking = .minimal) -> Self {
-        unsafeFlags([
-            "-Xfrontend", "-strict-concurrency=\(setting)",
-            "-Xfrontend", "-warn-concurrency",
-            "-Xfrontend", "-enable-actor-data-race-checks",
-        ])
-    }
-}
