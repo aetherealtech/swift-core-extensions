@@ -66,7 +66,6 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/aetherealtech/swift-assertions", branch: "master"),
-        .package(url: "https://github.com/aetherealtech/swift-backports", branch: "master"),
         .package(url: "https://github.com/aetherealtech/swift-stubbing", branch: "master"),
         .package(url: "https://github.com/aetherealtech/swift-synchronization", branch: "master"),
     ],
@@ -134,7 +133,6 @@ let package = Package(
             name: "DateExtensions",
             dependencies: [
                 "CollectionExtensions",
-                .product(name: "Backports", package: "swift-backports"),
             ]
         ),
         .target(

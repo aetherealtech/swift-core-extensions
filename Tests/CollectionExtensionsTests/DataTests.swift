@@ -5,11 +5,11 @@ import XCTest
 
 final class DataTests: XCTestCase {
     func testStringWithEncoding() throws {
-        let types: [any RangeReplaceableCollection<UInt8>.Type] = [
-            [UInt8].self,
-            Data.self
-        ]
-        
+        try testStringWithEncoding(type: Data.self)
+        try testStringWithEncoding(type: [UInt8].self)
+    }
+    
+    private func testStringWithEncoding<S: RangeReplaceableCollection<UInt8>>(type: S.Type) throws {
         let encodings = [
             String.Encoding.utf8,
             String.Encoding.utf16,
@@ -19,15 +19,11 @@ final class DataTests: XCTestCase {
         let expectedResult = "BláhBláh"
         
         for encoding in encodings {
-            let data = expectedResult.data(using: encoding)!
+            let data = S(expectedResult.data(using: encoding)!)
             
-            for type in types {
-                let data = type.init(data)
-                
-                let result = data.string(encoding: encoding)
-                
-                try assertEqual(expectedResult, result)
-            }
+            let result = data.string(encoding: encoding)
+            
+            try assertEqual(expectedResult, result)
         }
     }
 }

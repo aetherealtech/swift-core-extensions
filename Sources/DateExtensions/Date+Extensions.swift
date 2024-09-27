@@ -1,6 +1,17 @@
-import Backports
 import CollectionExtensions
 import Foundation
+
+private extension Date {
+    @inline(__always)
+    func distance_backport(to other: Date) -> TimeInterval {
+        other.timeIntervalSince(self)
+    }
+
+    @inline(__always)
+    func advanced_backport(by n: TimeInterval) -> Date {
+        addingTimeInterval(n)
+    }
+}
 
 @available(macOS, obsoleted: 13.0, message: "Date itself is now Strideable")
 @available(iOS, obsoleted: 16.0, message: "Date itself is now Strideable")
@@ -10,11 +21,19 @@ public struct StrideableDate: Strideable {
     public typealias Stride = TimeInterval
 
     public func distance(to other: Self) -> TimeInterval {
-        date.distance(to: other.date)
+        if #available(macOS 10.15, iOS 16.0, tvOS 16.0, watchOS 9.0, *) {
+            return date.distance(to: other.date)
+        } else {
+            return date.distance_backport(to: other.date)
+        }
     }
 
     public func advanced(by n: TimeInterval) -> Self {
-        .init(date: date.advanced(by: n))
+        if #available(macOS 10.15, iOS 16.0, tvOS 16.0, watchOS 9.0, *) {
+            return .init(date: date.advanced(by: n))
+        } else {
+            return .init(date: date.advanced_backport(by: n))
+        }
     }
     
     public let date: Date

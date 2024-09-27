@@ -1,5 +1,5 @@
 {
-  "originHash" : "523816b15b8e7d3505dfd49f0afa4d03a2ea30212d1d85d86fd6c0b3a99d169e",
+  "originHash" : "8b2789b33ed26758c9f14da2358ef365cafdf8b78906d8210c536772f1ab590d",
   "pins" : [
     {
       "identity" : "swift-assertions",
@@ -8,15 +8,6 @@
       "state" : {
         "branch" : "master",
         "revision" : "651337bab5f9911e083cf445a5bbab4bfc753395"
-      }
-    },
-    {
-      "identity" : "swift-backports",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/aetherealtech/swift-backports",
-      "state" : {
-        "branch" : "master",
-        "revision" : "3592783200c14e0ada334545f76cd0dbc10f2174"
       }
     },
     {
@@ -34,7 +25,7 @@
       "location" : "https://github.com/aetherealtech/swift-stubbing",
       "state" : {
         "branch" : "master",
-        "revision" : "3dc35d7c20e516881d458d3af5c7f5359cc4c557"
+        "revision" : "77d8df15f6041b3e95011bbe75d93c56826f59ea"
       }
     },
     {
