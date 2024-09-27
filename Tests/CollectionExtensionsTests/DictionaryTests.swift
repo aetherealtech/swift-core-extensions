@@ -142,11 +142,13 @@ final class DictionaryTests: XCTestCase {
         
         let expectedResult = keys
             .map { key in (key: key, value: testDictionary[key]!) }
+            .map(KeyValuePair.init)
         
         let result = testDictionary
             .sortedByKeys(using: { $0.intMember.compare(to: $1.intMember) })
+            .map(KeyValuePair.init)
         
-        try assertTrue(expectedResult.elementsEqual(result, by: { $0.key == $1.key && $0.value == $1.value }))
+        try assertEqual(expectedResult, result)
     }
     
     func testSortedByKeysUsingSimpleCompare() throws {
@@ -164,11 +166,13 @@ final class DictionaryTests: XCTestCase {
         
         let expectedResult = keys
             .map { key in (key: key, value: testDictionary[key]!) }
+            .map(KeyValuePair.init)
         
         let result = testDictionary
             .sortedByKeys(using: { $0.intMember < $1.intMember })
+            .map(KeyValuePair.init)
         
-        try assertTrue(expectedResult.elementsEqual(result, by: { $0.key == $1.key && $0.value == $1.value }))
+        try assertEqual(expectedResult, result)
     }
     
     func testSortedByKeysByTransformUsingCompare() throws {
@@ -186,14 +190,16 @@ final class DictionaryTests: XCTestCase {
         
         let expectedResult = keys
             .map { key in (key: key, value: testDictionary[key]!) }
+            .map(KeyValuePair.init)
         
         let result = testDictionary
             .sortedByKeys(
                 by: { $0.innerMember },
                 using: { $0.intMember.compare(to: $1.intMember) }
             )
+            .map(KeyValuePair.init)
         
-        try assertTrue(expectedResult.elementsEqual(result, by: { $0.key == $1.key && $0.value == $1.value }))
+        try assertEqual(expectedResult, result)
     }
     
     func testSortedByKeysByTransformUsingSimpleCompare() throws {
@@ -211,14 +217,16 @@ final class DictionaryTests: XCTestCase {
         
         let expectedResult = keys
             .map { key in (key: key, value: testDictionary[key]!) }
+            .map(KeyValuePair.init)
         
         let result = testDictionary
             .sortedByKeys(
                 by: { $0.innerMember },
                 using: { $0.intMember < $1.intMember }
             )
+            .map(KeyValuePair.init)
         
-        try assertTrue(expectedResult.elementsEqual(result, by: { $0.key == $1.key && $0.value == $1.value }))
+        try assertEqual(expectedResult, result)
     }
     
     func testSortedByKeysUsingComparesVariadic() throws {
@@ -237,6 +245,7 @@ final class DictionaryTests: XCTestCase {
         
         let expectedResult = keys
             .map { key in (key: key, value: testDictionary[key]!) }
+            .map(KeyValuePair.init)
         
         let compare1: (TestStruct, TestStruct) -> ComparisonResult = { $0.intMember.compare(to: $1.intMember) }
         let compare2: (TestStruct, TestStruct) -> ComparisonResult = { $0.innerMember.intMember.compare(to: $1.innerMember.intMember) }
@@ -245,8 +254,9 @@ final class DictionaryTests: XCTestCase {
             .sortedByKeys(
                 using: compare1, compare2
             )
+            .map(KeyValuePair.init)
         
-        try assertTrue(expectedResult.elementsEqual(result, by: { $0.key == $1.key && $0.value == $1.value }))
+        try assertEqual(expectedResult, result)
     }
     
     func testSortedByKeysUsingThrowingComparesVariadic() throws {
@@ -265,6 +275,7 @@ final class DictionaryTests: XCTestCase {
         
         let expectedResult = keys
             .map { key in (key: key, value: testDictionary[key]!) }
+            .map(KeyValuePair.init)
         
         let compare1: (TestStruct, TestStruct) throws -> ComparisonResult = { $0.intMember.compare(to: $1.intMember) }
         let compare2: (TestStruct, TestStruct) throws -> ComparisonResult = { $0.innerMember.intMember.compare(to: $1.innerMember.intMember) }
@@ -273,8 +284,9 @@ final class DictionaryTests: XCTestCase {
             .sortedByKeys(
                 using: compare1, compare2
             )
+            .map(KeyValuePair.init)
         
-        try assertTrue(expectedResult.elementsEqual(result, by: { $0.key == $1.key && $0.value == $1.value }))
+        try assertEqual(expectedResult, result)
     }
     
     func testSortedByKeysUsingComparesCollection() throws {
@@ -293,6 +305,7 @@ final class DictionaryTests: XCTestCase {
         
         let expectedResult = keys
             .map { key in (key: key, value: testDictionary[key]!) }
+            .map(KeyValuePair.init)
         
         let compares: [(TestStruct, TestStruct) -> ComparisonResult] = [
             { $0.intMember.compare(to: $1.intMember) },
@@ -303,8 +316,9 @@ final class DictionaryTests: XCTestCase {
             .sortedByKeys(
                 using: compares
             )
+            .map(KeyValuePair.init)
         
-        try assertTrue(expectedResult.elementsEqual(result, by: { $0.key == $1.key && $0.value == $1.value }))
+        try assertEqual(expectedResult, result)
     }
     
     func testSortedByKeysUsingThrowingComparesCollection() throws {
@@ -323,6 +337,7 @@ final class DictionaryTests: XCTestCase {
         
         let expectedResult = keys
             .map { key in (key: key, value: testDictionary[key]!) }
+            .map(KeyValuePair.init)
         
         let compares: [(TestStruct, TestStruct) throws -> ComparisonResult] = [
             { $0.intMember.compare(to: $1.intMember) },
@@ -333,8 +348,9 @@ final class DictionaryTests: XCTestCase {
             .sortedByKeys(
                 using: compares
             )
+            .map(KeyValuePair.init)
         
-        try assertTrue(expectedResult.elementsEqual(result, by: { $0.key == $1.key && $0.value == $1.value }))
+        try assertEqual(expectedResult, result)
     }
     
     func testSortedByKeysByTransformsVariadic() throws {
@@ -353,6 +369,7 @@ final class DictionaryTests: XCTestCase {
         
         let expectedResult = keys
             .map { key in (key: key, value: testDictionary[key]!) }
+            .map(KeyValuePair.init)
         
         let transform1: (TestStruct) -> Int = { $0.intMember }
         let transform2: (TestStruct) -> Int = { $0.innerMember.intMember }
@@ -361,8 +378,9 @@ final class DictionaryTests: XCTestCase {
             .sortedByKeys(
                 by: transform1, transform2
             )
+            .map(KeyValuePair.init)
         
-        try assertTrue(expectedResult.elementsEqual(result, by: { $0.key == $1.key && $0.value == $1.value }))
+        try assertEqual(expectedResult, result)
     }
     
     func testSortedByKeysByThrowingTransformsVariadic() throws {
@@ -381,6 +399,7 @@ final class DictionaryTests: XCTestCase {
         
         let expectedResult = keys
             .map { key in (key: key, value: testDictionary[key]!) }
+            .map(KeyValuePair.init)
         
         let transform1: (TestStruct) throws -> Int = { $0.intMember }
         let transform2: (TestStruct) throws -> Int = { $0.innerMember.intMember }
@@ -389,8 +408,9 @@ final class DictionaryTests: XCTestCase {
             .trySortedByKeys(
                 by: transform1, transform2
             )
+            .map(KeyValuePair.init)
         
-        try assertTrue(expectedResult.elementsEqual(result, by: { $0.key == $1.key && $0.value == $1.value }))
+        try assertEqual(expectedResult, result)
     }
     
     func testSortedByKeysByTransformsCollection() throws {
@@ -409,6 +429,7 @@ final class DictionaryTests: XCTestCase {
         
         let expectedResult = keys
             .map { key in (key: key, value: testDictionary[key]!) }
+            .map(KeyValuePair.init)
         
         let transforms: [(TestStruct) -> Int] = [
             { $0.intMember },
@@ -419,8 +440,9 @@ final class DictionaryTests: XCTestCase {
             .sortedByKeys(
                 by: transforms
             )
+            .map(KeyValuePair.init)
         
-        try assertTrue(expectedResult.elementsEqual(result, by: { $0.key == $1.key && $0.value == $1.value }))
+        try assertEqual(expectedResult, result)
     }
     
     func testSortedByKeysByThrowingTransformsCollection() throws {
@@ -439,6 +461,7 @@ final class DictionaryTests: XCTestCase {
         
         let expectedResult = keys
             .map { key in (key: key, value: testDictionary[key]!) }
+            .map(KeyValuePair.init)
         
         let transforms: [(TestStruct) throws -> Int] = [
             { $0.intMember },
@@ -449,8 +472,9 @@ final class DictionaryTests: XCTestCase {
             .sortedByKeys(
                 by: transforms
             )
+            .map(KeyValuePair.init)
         
-        try assertTrue(expectedResult.elementsEqual(result, by: { $0.key == $1.key && $0.value == $1.value }))
+        try assertEqual(expectedResult, result)
     }
     
     func testSortedByKeys() throws {
@@ -468,11 +492,13 @@ final class DictionaryTests: XCTestCase {
         
         let expectedResult = keys
             .map { key in (key: key, value: testDictionary[key]!) }
+            .map(KeyValuePair.init)
 
         let result = testDictionary
             .sortedByKeys()
+            .map(KeyValuePair.init)
         
-        try assertTrue(expectedResult.elementsEqual(result, by: { $0.key == $1.key && $0.value == $1.value }))
+        try assertEqual(expectedResult, result)
     }
     
     func testAllKeysWhere() throws {

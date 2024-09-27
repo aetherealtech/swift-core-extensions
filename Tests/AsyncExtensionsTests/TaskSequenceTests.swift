@@ -344,9 +344,13 @@ final class TaskSequenceTests: XCTestCase {
         let stream = tasks
             .flattenStream(maxConcurrency: 5)
         
-        var expectedValues: [(Int, Int)] = []
-      
-        var receivedValues: [(Int, Int)] = []
+        struct Result: Equatable {
+            let outer: Int
+            let inner: Int
+        }
+        
+        var expectedValues: [Result] = []
+        var receivedValues: [Result] = []
         
         var remainingOuter = 10
         var remainingInner: [Int: Int] = [:]
@@ -370,7 +374,7 @@ final class TaskSequenceTests: XCTestCase {
                 if remainingInner[outerIndex]! == 0 {
                     remainingInner[outerIndex] = nil
                 }
-                expectedValues.append((outerIndex, next.0))
+                expectedValues.append(.init(outer: outerIndex, inner: next.0))
                 next.1.resume()
                 return
             }
@@ -383,7 +387,7 @@ final class TaskSequenceTests: XCTestCase {
         await fireNextInner(remainingInner.keys.randomElement()!)
                 
         for await index in stream {
-            receivedValues.append(index)
+            receivedValues.append(.init(outer: index.0, inner: index.1))
             
             if receivedValues.count < 50 {
                 while remainingOuter > 0, !activeOuterContinuations.value.isEmpty, remainingInner.isEmpty || Bool.random() {
@@ -406,7 +410,7 @@ final class TaskSequenceTests: XCTestCase {
             try assertEqual(startedInnerTasksForOuterTask, Array(0..<5))
         }
         
-        try assertTrue(expectedValues.elementsEqual(receivedValues, by: { $0.0 == $1.0 && $0.1 == $1.1 }))
+        try assertEqual(expectedValues, receivedValues)
         try assertEqual(runningTasks.maxRunningTasks, 5)
         
         withExtendedLifetime(subscription) { }
@@ -469,9 +473,13 @@ final class TaskSequenceTests: XCTestCase {
         let stream = tasks
             .flattenStream(maxConcurrency: 5)
         
-        var expectedValues: [(Int, Int)] = []
-      
-        var receivedValues: [(Int, Int)] = []
+        struct Result: Equatable {
+            let outer: Int
+            let inner: Int
+        }
+        
+        var expectedValues: [Result] = []
+        var receivedValues: [Result] = []
         
         var remainingOuter = 10
         var remainingInner: [Int: Int] = [:]
@@ -495,7 +503,7 @@ final class TaskSequenceTests: XCTestCase {
                 if remainingInner[outerIndex]! == 0 {
                     remainingInner[outerIndex] = nil
                 }
-                expectedValues.append((outerIndex, next.0))
+                expectedValues.append(.init(outer: outerIndex, inner: next.0))
                 next.1.resume()
                 return
             }
@@ -508,7 +516,7 @@ final class TaskSequenceTests: XCTestCase {
         await fireNextInner(remainingInner.keys.randomElement()!)
         
         for try await index in stream {
-            receivedValues.append(index)
+            receivedValues.append(.init(outer: index.0, inner: index.1))
             
             if receivedValues.count < 50 {
                 while remainingOuter > 0, !activeOuterContinuations.value.isEmpty, remainingInner.isEmpty || Bool.random() {
@@ -531,7 +539,7 @@ final class TaskSequenceTests: XCTestCase {
             try assertEqual(startedInnerTasksForOuterTask, Array(0..<5))
         }
         
-        try assertTrue(expectedValues.elementsEqual(receivedValues, by: { $0.0 == $1.0 && $0.1 == $1.1 }))
+        try assertEqual(expectedValues, receivedValues)
         try assertEqual(runningTasks.maxRunningTasks, 5)
         
         withExtendedLifetime(subscription) { }
@@ -638,10 +646,15 @@ final class TaskSequenceTests: XCTestCase {
         let stream = tasks
             .flattenStream(maxConcurrency: 5)
         
-        var expectedValues: [(Int, Int)] = []
+        struct Result: Equatable {
+            let outer: Int
+            let inner: Int
+        }
+        
+        var expectedValues: [Result] = []
         var failedTask: TaskID?
       
-        var receivedValues: [(Int, Int)] = []
+        var receivedValues: [Result] = []
         
         var remainingOuter = 10
         var remainingInner: [Int: Int] = [:]
@@ -670,7 +683,7 @@ final class TaskSequenceTests: XCTestCase {
                     failedTask = .inner(outerIndex, next.0)
                     next.1.resume(throwing: TestError())
                 } else {
-                    expectedValues.append((outerIndex, next.0))
+                    expectedValues.append(.init(outer: outerIndex, inner: next.0))
                     next.1.resume()
                 }
                 
@@ -686,7 +699,7 @@ final class TaskSequenceTests: XCTestCase {
         
         do {
             for try await index in stream {
-                receivedValues.append(index)
+                receivedValues.append(.init(outer: index.0, inner: index.1))
                 
                 if receivedValues.count < 50 {
                     while remainingOuter > 0, !activeOuterContinuations.value.isEmpty, remainingInner.isEmpty || Bool.random() {
@@ -712,13 +725,14 @@ final class TaskSequenceTests: XCTestCase {
         
         var expectedCancelledTasks: Set<TaskID> = .init(startedOuterTasks.map(TaskID.outer) + startedInnerTasks.flatMap { outerIndex, innerTasks in innerTasks.map { innerIndex in .inner(outerIndex, innerIndex)}})
         for value in remainingInner.map(\.0) { expectedCancelledTasks.remove(.outer(value)) }
-        for (outerIndex, innerIndex) in receivedValues {
+        for receivedValue in receivedValues {
+            let (outerIndex, innerIndex) = (receivedValue.outer, receivedValue.inner)
             expectedCancelledTasks.remove(.outer(outerIndex))
             expectedCancelledTasks.remove(.inner(outerIndex, innerIndex))
         }
         expectedCancelledTasks.remove(failedTask!)
         
-        try assertTrue(expectedValues.elementsEqual(receivedValues, by: { $0.0 == $1.0 && $0.1 == $1.1 }))
+        try assertEqual(expectedValues, receivedValues)
         try assertEqual(expectedCancelledTasks, cancelledTasks)
         
         withExtendedLifetime(subscription) { }

@@ -1,6 +1,13 @@
 import CompareFunctions
 import Foundation
 
+public struct KeyValuePair<Key: Hashable, Value> {
+    public var key: Key
+    public var value: Value
+}
+
+extension KeyValuePair: Equatable where Value: Equatable {}
+
 public extension Dictionary {
     mutating func value(
         at key: Key,

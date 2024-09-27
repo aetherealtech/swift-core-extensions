@@ -31,6 +31,26 @@ final class StrideTests: XCTestCase {
         }
     }
     
+    protocol FloatAccuracy<T> {
+        associatedtype T: FloatingPoint
+        
+        static var accuracy: T { get }
+    }
+    
+    enum ToOneThousandth: FloatAccuracy { static var accuracy: Double { 0.001 } }
+    
+    struct Approximation<Accuracy: FloatAccuracy>: Equatable {
+        typealias T = Accuracy.T
+        
+        var value: T
+        
+        static func == (lhs: Self, rhs: Self) -> Bool {
+            abs(lhs.value - rhs.value) < Accuracy.accuracy
+        }
+    }
+    
+    typealias ApproximationToOneThousandth = Approximation<ToOneThousandth>
+    
     func testStrideRegularIntervalsUntil() throws {
         for _ in 0..<100 {
             let initial = Double.random(in: 0.0..<1000.0)
@@ -44,18 +64,19 @@ final class StrideTests: XCTestCase {
                 until: until
             )
     
-            let collectedValues = Array(sequence)
+            let collectedValues = sequence
+                .map(ApproximationToOneThousandth.init)
 
-            var expectedResults: [Double] = []
+            var expectedResults: [ApproximationToOneThousandth] = []
             
             var current = initial
             
             while current < until {
-                expectedResults.append(current)
+                expectedResults.append(.init(value: current))
                 current += interval
             }
             
-            try assertTrue(expectedResults.elementsEqual(collectedValues, by: { abs($0 - $1) < 0.001 }))
+            try assertEqual(expectedResults, collectedValues)
         }
     }
     
