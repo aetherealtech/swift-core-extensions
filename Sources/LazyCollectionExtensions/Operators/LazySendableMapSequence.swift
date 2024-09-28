@@ -49,7 +49,7 @@ extension LazySendableMapSequence: RandomAccessCollection where Base: RandomAcce
 
 // This compiles without the constraint, but I think that's a compiler bug.  The constraint *is* required on `filter`.
 public extension LazySequenceProtocol where Elements: Sendable {
-    func map<Result>(_ transform: @escaping @Sendable (Element) -> Result) -> LazySendableMapSequence<Elements, Result> {
+    func mapSendable<Result>(_ transform: @escaping @Sendable (Element) -> Result) -> LazySendableMapSequence<Elements, Result> {
         .init(
             base: elements,
             transform: transform

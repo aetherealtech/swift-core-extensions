@@ -145,8 +145,8 @@ public extension LazySequenceProtocol {
             .map(\.element)
     }
     
-    func removing(
-        whereIndices condition: @escaping (Int) -> Bool
+    func removingWhereIndices(
+        _ condition: @escaping (Int) -> Bool
     ) -> LazyMapSequence<LazyFilterSequence<EnumeratedSequence<Self>>, Element> {
         return enumerated()
             .lazy
@@ -169,6 +169,15 @@ public extension LazySequenceProtocol {
         filter { element in !condition(element) }
     }
     
+    func removingAll(
+        of elementToRemove: Element,
+        by compare: @escaping (Element, Element) -> Bool
+    ) -> LazyFilterSequence<Elements> {
+        return removingAll { element in
+            compare(element, elementToRemove)
+        }
+    }
+    
     func removingAll<Elements: Sequence<Element>>(
         of elementsToRemove: Elements,
         by compare: @escaping (Element, Element) -> Bool
@@ -177,15 +186,6 @@ public extension LazySequenceProtocol {
         
         return removingAll { element in
             elementsToRemove.contains(element, by: compare)
-        }
-    }
-    
-    func removingAll(
-        of elementToRemove: Element,
-        by compare: @escaping (Element, Element) -> Bool
-    ) -> LazyFilterSequence<Elements> {
-        return removingAll { element in
-            compare(element, elementToRemove)
         }
     }
 
@@ -198,7 +198,7 @@ public extension LazySequenceProtocol {
         )
     }
     
-    func removingDuplicates(
+    func removingDuplicatesSendable(
         by compare: @escaping @Sendable (Element, Element) -> Bool
     ) -> RemoveDuplicatesSequence<Elements, SendableDuplicateCompare<Element>> {
         .init(
@@ -238,7 +238,7 @@ public extension LazySequenceProtocol {
         )
     }
     
-    func accumulate<R>(
+    func accumulateSendable<R>(
         _ initialValue: R,
         _ accumulate: @escaping @Sendable (R, Element) -> R
     ) -> LazyAccumulateSequence<Elements, SendableAcculuator<R, Element>> {
@@ -252,47 +252,56 @@ public extension LazySequenceProtocol {
 
 // As with `map`, some of these compile without the constraint.
 public extension LazySequenceProtocol where Elements: Sendable {
-    func compactMap<Result>(_ transform: @escaping @Sendable (Element) -> Result?) -> LazySendableMapSequence<LazySendableFilterSequence<LazySendableMapSequence<Elements, Result?>>, Result> {
-        map(transform)
-            .filter { $0 != nil }
-            .map { $0.unsafelyUnwrapped }
+    func compactMapSendable<Result>(_ transform: @escaping @Sendable (Element) -> Result?) -> LazySendableMapSequence<LazySendableFilterSequence<LazySendableMapSequence<Elements, Result?>>, Result> {
+        mapSendable(transform)
+            .filterSendable { $0 != nil }
+            .mapSendable { $0.unsafelyUnwrapped }
     }
     
-    func removingAll(
+    func removingAllSendable(
         where condition: @escaping @Sendable (Element) -> Bool
     ) -> LazySendableFilterSequence<Elements> {
-        filter { element in !condition(element) }
+        filterSendable { element in !condition(element) }
     }
     
-    func removingAll<Elements: Sequence<Element>>(
+    func removingAllSendable(
+        of elementToRemove: Element,
+        by compare: @escaping @Sendable (Element, Element) -> Bool
+    ) -> LazySendableFilterSequence<Elements> where Element: Sendable {
+        return removingAllSendable { element in
+            compare(element, elementToRemove)
+        }
+    }
+    
+    func removingAllSendable<Elements: Sequence<Element>>(
         of elementsToRemove: Elements,
         by compare: @escaping @Sendable (Element, Element) -> Bool
     ) -> LazySendableFilterSequence<Self.Elements> where Element: Sendable {
         let elementsToRemove = elementsToRemove.store(in: Array.self)
         
-        return removingAll { element in
+        return removingAllSendable { element in
             elementsToRemove.contains(element, by: compare)
-        }
-    }
-    
-    func removingAll(
-        of elementToRemove: Element,
-        by compare: @escaping @Sendable (Element, Element) -> Bool
-    ) -> LazySendableFilterSequence<Elements> where Element: Sendable {
-        return removingAll { element in
-            compare(element, elementToRemove)
         }
     }
 }
 
 public extension LazySequenceProtocol where Self: Sendable {
-    func filterIndices(
+    func filterIndicesSendable(
         _ condition: @escaping @Sendable (Int) -> Bool
     ) -> LazySendableMapSequence<LazySendableFilterSequence<EnumeratedSequence<Self>>, Element> {
         return enumerated()
             .lazy
-            .filter { condition($0.offset) }
-            .map(\.element)
+            .filterSendable { condition($0.offset) }
+            .mapSendable(\.element)
+    }
+    
+    func removingWhereIndicesSendable(
+        _ condition: @escaping @Sendable (Int) -> Bool
+    ) -> LazySendableMapSequence<LazySendableFilterSequence<EnumeratedSequence<Self>>, Element> {
+        return enumerated()
+            .lazy
+            .removingAllSendable { condition($0.offset) }
+            .mapSendable(\.element)
     }
 }
 
@@ -310,7 +319,7 @@ public extension LazySequenceProtocol where Element: Equatable {
     }
 
     func removingDuplicates() -> RemoveDuplicatesSequence<Elements, SendableDuplicateCompare<Element>> {
-        removingDuplicates(by: { lhs, rhs in lhs == rhs })
+        removingDuplicatesSendable(by: { lhs, rhs in lhs == rhs })
     }
 }
 

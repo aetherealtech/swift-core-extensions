@@ -26,13 +26,14 @@ public struct RemoveDuplicatesSequence<
 >: LazySequenceProtocol {
     public struct Iterator: IteratorProtocol {
         public mutating func next() -> Source.Element? {
-            guard let next = source.next(), !checked.contains(where: { checking in compare(next, checking) }) else {
-                return nil
+            while let next = source.next() {
+                if !checked.contains(where: { checking in compare(next, checking) }) {
+                    checked.append(next)
+                    return next
+                }
             }
             
-            checked.append(next)
-            
-            return next
+            return nil
         }
         
         var source: Source.Iterator

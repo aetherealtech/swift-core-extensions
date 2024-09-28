@@ -30,7 +30,7 @@ public struct LazySendableFilterSequence<
 }
 
 public extension LazySequenceProtocol where Elements: Sendable {
-    func filter(_ condition: @escaping @Sendable (Element) -> Bool) -> LazySendableFilterSequence<Elements> {
+    func filterSendable(_ condition: @escaping @Sendable (Element) -> Bool) -> LazySendableFilterSequence<Elements> {
         .init(
             base: elements,
             condition: condition

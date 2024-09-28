@@ -482,6 +482,437 @@ final class LazySequenceTests: XCTestCase {
         try assertEqual(testArray, Array(result))
     }
     
+    func testFilterIndices() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            2,
+            5
+        ]
+        
+        let result = testSequence
+            .lazy
+            .filterIndices { $0.isMultiple(of: 2) }
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testRemovingAtIndex() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            5
+        ]
+        
+        let result = testSequence
+            .lazy
+            .removing(at: 3)
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testRemovingWhereIndices() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            3,
+            8
+        ]
+        
+        let result = testSequence
+            .lazy
+            .removingWhereIndices { $0.isMultiple(of: 2) }
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testRemovingAtIndices() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            8,
+            5
+        ]
+        
+        let result = testSequence
+            .lazy
+            .removing(at: DestructiveSequence([1, 2]))
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testRemovingAllWhere() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            5
+        ]
+        
+        let result = testSequence
+            .lazy
+            .removingAll { $0.isMultiple(of: 2) }
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testRemovingAllOfBy() throws {
+        let testArray = [
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9),
+            TestStruct.stub(intMember: 3),
+        ]
+        
+        let testSequence = DestructiveSequence(testArray)
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[3],
+            testArray[4],
+            testArray[6]
+        ]
+        
+        let result = testSequence
+            .lazy
+            .removingAll(of: TestStruct.stub(intMember: 3), by: { $0.intMember == $1.intMember })
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+
+    func testRemovingAllOfSequenceBy() throws {
+        let testArray = [
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9),
+            TestStruct.stub(intMember: 3),
+        ]
+        
+        let testSequence = DestructiveSequence(testArray)
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[3],
+            testArray[4]
+        ]
+        
+        let values = [
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9)
+        ]
+
+        let result = testSequence
+            .lazy
+            .removingAll(of: DestructiveSequence(values), by: { $0.intMember == $1.intMember })
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testRemovingDuplicatesBy() throws {
+        let testArray = [
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9),
+            TestStruct.stub(intMember: 3),
+        ]
+        
+        let testSequence = DestructiveSequence(testArray)
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[1],
+            testArray[2],
+            testArray[3],
+            testArray[4],
+            testArray[6]
+        ]
+        
+        let result = testSequence
+            .lazy
+            .removingDuplicates(by: { $0.intMember == $1.intMember })
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testRemovingDuplicatesBySendable() throws {
+        let testArray = [
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9),
+            TestStruct.stub(intMember: 3),
+        ]
+        
+        let testSequence = DestructiveSequence(testArray)
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[1],
+            testArray[2],
+            testArray[3],
+            testArray[4],
+            testArray[6]
+        ]
+        
+        let result = testSequence
+            .lazy
+            .removingDuplicatesSendable(by: { $0.intMember == $1.intMember })
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testLast() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = 5
+        
+        let result = testSequence
+            .lazy
+            .last
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testCount() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = 5
+        
+        let result = testSequence
+            .lazy
+            .count()
+        
+        try assertEqual(expectedResult, result)
+    }
+    
+    func testContainsAtLeastTrue() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+                
+        let result = testSequence
+            .lazy
+            .contains(atLeast: 4)
+        
+        try assertTrue(result)
+    }
+    
+    func testContainsAtLeastFalse() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+                
+        let result = testSequence
+            .lazy
+            .contains(atLeast: 6)
+        
+        try assertFalse(result)
+    }
+    
+    func testAccumulate() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            10,
+            11,
+            14,
+            16,
+            24,
+            29
+        ]
+                
+        let result = testSequence
+            .lazy
+            .accumulate(10, { $0 + $1 })
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testAccumulateSendable() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            10,
+            11,
+            14,
+            16,
+            24,
+            29
+        ]
+                
+        let result = testSequence
+            .lazy
+            .accumulateSendable(10, { $0 + $1 })
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testCompactMapSendable() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            2,
+            nil,
+            4,
+            5,
+            6,
+            nil,
+            nil,
+            9,
+            nil
+        ])
+        
+        let expectedResult = [
+            "1",
+            "2",
+            "4",
+            "5",
+            "6",
+            "9"
+        ]
+        
+        let result = testSequence
+            .lazy
+            .compactMapSendable { $0?.description }
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testRemovingAllWhereSendable() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            5
+        ]
+        
+        let result = testSequence
+            .lazy
+            .removingAllSendable { $0.isMultiple(of: 2) }
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testRemovingAllOfBySendable() throws {
+        let testArray = [
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9),
+            TestStruct.stub(intMember: 3),
+        ]
+        
+        let testSequence = DestructiveSequence(testArray)
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[3],
+            testArray[4],
+            testArray[6]
+        ]
+        
+        let result = testSequence
+            .lazy
+            .removingAllSendable(of: TestStruct.stub(intMember: 3), by: { $0.intMember == $1.intMember })
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
     func testCartesianProduct() async throws {
         let firstSource = [0, 1, 2, 3]
         let secondSource = ["A", "B", "C"]
@@ -542,6 +973,165 @@ final class LazySequenceTests: XCTestCase {
                 }
             }
         }
+    }
+    
+    func testRemovingAllOfSequenceBySendable() throws {
+        let testArray = [
+            TestStruct.stub(intMember: 1),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 2),
+            TestStruct.stub(intMember: 8),
+            TestStruct.stub(intMember: 5),
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9),
+            TestStruct.stub(intMember: 3),
+        ]
+        
+        let testSequence = DestructiveSequence(testArray)
+        
+        let expectedResult = [
+            testArray[0],
+            testArray[2],
+            testArray[3],
+            testArray[4]
+        ]
+        
+        let values = [
+            TestStruct.stub(intMember: 3),
+            TestStruct.stub(intMember: 9)
+        ]
+
+        let result = testSequence
+            .lazy
+            .removingAllSendable(of: DestructiveSequence(values), by: { $0.intMember == $1.intMember })
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testFilterIndicesSendable() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            2,
+            5
+        ]
+        
+        let result = testSequence
+            .lazy
+            .filterIndicesSendable { $0.isMultiple(of: 2) }
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testRemovingWhereIndicesSendable() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            3,
+            8
+        ]
+        
+        let result = testSequence
+            .lazy
+            .removingWhereIndicesSendable { $0.isMultiple(of: 2) }
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testRemovingAllOf() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5,
+            3,
+            9,
+            3
+        ])
+ 
+        let expectedResult = [
+            1,
+            2,
+            8,
+            5,
+            9
+        ]
+        
+        let result = testSequence
+            .lazy
+            .removingAll(of: 3)
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testRemovingAllOfSequence() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5,
+            3,
+            9,
+            3
+        ])
+ 
+        let expectedResult = [
+            1,
+            2,
+            8,
+            5
+        ]
+        
+        let result = testSequence
+            .lazy
+            .removingAll(of: DestructiveSequence([3, 9]))
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testRemovingDuplicates() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5,
+            3,
+            9,
+            3
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            9
+        ]
+        
+        let result = testSequence
+            .lazy
+            .removingDuplicates()
+        
+        let finalResult = Array(result)
+        
+        try assertEqual(expectedResult, finalResult)
     }
     
     func testCartesianProductCollection() async throws {

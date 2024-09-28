@@ -14,7 +14,7 @@ struct TestStruct: Hashable {
     var innerMember: InnerStruct
 }
 
-final class DestructiveSequence<Base: Sequence>: Sequence, IteratorProtocol {
+final class DestructiveSequence<Base: Sequence>: Sequence, IteratorProtocol, @unchecked Sendable {
     func next() -> Base.Element? {
         return iterator.next()
     }

@@ -34,7 +34,7 @@ public struct LazySendableFlatMapSequence<
 
 // Same as `map`, this also compiles without the constraint.
 public extension LazySequenceProtocol {
-    func flatMap<Result: Sequence>(_ transform: @escaping @Sendable (Element) -> Result) -> LazySendableFlatMapSequence<Elements, Result> {
+    func flatMapSendable<Result: Sequence>(_ transform: @escaping @Sendable (Element) -> Result) -> LazySendableFlatMapSequence<Elements, Result> {
         .init(
             base: elements,
             transform: transform
