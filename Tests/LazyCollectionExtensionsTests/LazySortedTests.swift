@@ -32,34 +32,6 @@ final class LazySortedTests: XCTestCase {
         try assertEqual(expectedResult, Array(result))
     }
 
-    func testSortedBySendable() throws {
-        let testArray = [
-            TestStruct.stub(intMember: 1),
-            TestStruct.stub(intMember: 3),
-            TestStruct.stub(intMember: 2),
-            TestStruct.stub(intMember: 8),
-            TestStruct.stub(intMember: 5),
-            TestStruct.stub(intMember: 9),
-        ]
-        
-        let testSequence = DestructiveSequence(testArray)
-        
-        let expectedResult = [
-            testArray[0],
-            testArray[2],
-            testArray[1],
-            testArray[4],
-            testArray[3],
-            testArray[5]
-        ]
-        
-        let result = testSequence
-            .lazy
-            .lazySortedSendable { $0.intMember < $1.intMember }
-        
-        try assertEqual(expectedResult, Array(result))
-    }
-    
     func testSorted() throws {
         let testArray = [
             1,

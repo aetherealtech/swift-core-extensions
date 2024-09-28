@@ -29,30 +29,4 @@ final class TerminateSequenceTests: XCTestCase {
         
         try assertEqual(expectedResult, Array(result))
     }
-    
-    func testTerminateSendable() throws {
-        let testSequence = DestructiveSequence([
-            1,
-            2,
-            4,
-            5,
-            3,
-            1,
-            6,
-            2,
-            9,
-        ])
-        
-        let expectedResult = [
-            1,
-            2,
-            4
-        ]
-        
-        let result = testSequence
-            .lazy
-            .terminateSendable { $0 > 4 }
-        
-        try assertEqual(expectedResult, Array(result))
-    }
 }

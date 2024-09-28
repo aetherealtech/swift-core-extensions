@@ -33,5 +33,3 @@ public enum LazyIfElseSequence<
         }
     }
 }
-
-extension LazyIfElseSequence: Sendable where If: Sendable, Else: Sendable {}

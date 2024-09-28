@@ -1,31 +1,10 @@
-public protocol TerminateCondition<Element> {
-    associatedtype Element
-    
-    func callAsFunction(_ element: Element) -> Bool
-}
-
-public struct NonSendableTerminateCondition<Element>: TerminateCondition {
-    public func callAsFunction(_ element: Element) -> Bool {
-        _closure(element)
-    }
-    
-    let _closure: (Element) -> Bool
-}
-
-public struct SendableTerminateCondition<Element>: TerminateCondition, Sendable {
-    public func callAsFunction(_ element: Element) -> Bool {
-        _closure(element)
-    }
-    
-    let _closure: @Sendable (Element) -> Bool
-}
-
 public struct LazyTerminatingSequence<
-    Base: Sequence,
-    Condition: TerminateCondition<Base.Element>
+    Base: Sequence
 >: LazySequenceProtocol {
+    public typealias Element = Base.Element
+    
     public struct Iterator: IteratorProtocol {
-        public mutating func next() -> Base.Element? {
+        public mutating func next() -> Element? {
             guard let next = base.next(), !terminateCondition(next) else {
                 return nil
             }
@@ -34,7 +13,7 @@ public struct LazyTerminatingSequence<
         }
         
         var base: Base.Iterator
-        let terminateCondition: Condition
+        let terminateCondition: (Element) -> Bool
     }
     
     public func makeIterator() -> Iterator {
@@ -45,23 +24,14 @@ public struct LazyTerminatingSequence<
     }
     
     let base: Base
-    let terminateCondition: Condition
+    let terminateCondition: (Element) -> Bool
 }
 
-extension LazyTerminatingSequence: Sendable where Base: Sendable, Condition: Sendable {}
-
 public extension LazySequenceProtocol {
-    func terminate(when condition: @escaping (Element) -> Bool) -> LazyTerminatingSequence<Elements, NonSendableTerminateCondition<Element>> {
+    func terminate(when condition: @escaping (Element) -> Bool) -> LazyTerminatingSequence<Elements> {
         .init(
             base: elements,
-            terminateCondition: .init(_closure: condition)
-        )
-    }
-    
-    func terminateSendable(when condition: @escaping @Sendable (Element) -> Bool) -> LazyTerminatingSequence<Elements, SendableTerminateCondition<Element>> {
-        .init(
-            base: elements,
-            terminateCondition: .init(_closure: condition)
+            terminateCondition: condition
         )
     }
 }

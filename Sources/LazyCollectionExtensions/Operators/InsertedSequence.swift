@@ -29,5 +29,3 @@ public struct LazyInsertedSequence<
     let inserted: Inserted
     let insertAt: Int
 }
-
-extension LazyInsertedSequence: Sendable where Source: Sendable, Inserted: Sendable {}

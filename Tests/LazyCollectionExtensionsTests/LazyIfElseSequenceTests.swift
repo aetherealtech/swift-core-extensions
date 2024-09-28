@@ -23,10 +23,8 @@ final class LazyIfElseSequenceTests: XCTestCase {
         
         let expectedResult = testIfArray
         
-        let result = LazyIfElseSequence(
-            if: testIfArray,
-            else: testElseArray,
-            condition: true
+        let result = LazyIfElseSequence<[Int], [Int]>.if(
+            testIfArray
         )
         
         try assertEqual(expectedResult, Array(result))
@@ -51,10 +49,8 @@ final class LazyIfElseSequenceTests: XCTestCase {
         
         let expectedResult = testElseArray
         
-        let result = LazyIfElseSequence(
-            if: testIfArray,
-            else: testElseArray,
-            condition: false
+        let result = LazyIfElseSequence<[Int], [Int]>.else(
+            testElseArray
         )
         
         try assertEqual(expectedResult, Array(result))

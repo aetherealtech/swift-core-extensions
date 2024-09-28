@@ -44,8 +44,6 @@ public struct LazySparseSubCollection<
     public let indices: Indices
 }
 
-extension LazySparseSubCollection: Sendable where Source: Sendable, Indices: Sendable {}
-
 extension LazySparseSubCollection: Collection where Indices: Collection {
     public subscript(position: Indices.Index) -> Source.Element {
         _read { yield source[indices[position]] }

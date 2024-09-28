@@ -1,32 +1,7 @@
-public protocol Accumulator<Element, Result> {
-    associatedtype Element
-    associatedtype Result
-    
-    func callAsFunction(_ current: Result, _ next: Element) -> Result
-}
-
-public struct NonSendableAcculuator<Element, Result>: Accumulator {
-    public func callAsFunction(_ current: Result, _ next: Element) -> Result {
-        _closure(current, next)
-    }
-    
-    let _closure: (Result, Element) -> Result
-}
-
-public struct SendableAcculuator<Element, Result>: Accumulator, Sendable {
-    public func callAsFunction(_ current: Result, _ next: Element) -> Result {
-        _closure(current, next)
-    }
-    
-    let _closure: @Sendable (Result, Element) -> Result
-}
-
 public struct LazyAccumulateSequence<
     Source: Sequence,
-    Acc: Accumulator
->: LazySequenceProtocol where Acc.Element == Source.Element {
-    public typealias Element = Acc.Result
-    
+    Element
+>: LazySequenceProtocol {
     public struct Iterator: IteratorProtocol {
         public mutating func next() -> Element? {
             guard let current else {
@@ -40,7 +15,7 @@ public struct LazyAccumulateSequence<
         
         var source: Source.Iterator
         var current: Element?
-        let accumulator: Acc
+        let accumulator: (Element, Source.Element) -> Element
     }
     
     public func makeIterator() -> Iterator {
@@ -53,7 +28,5 @@ public struct LazyAccumulateSequence<
     
     let source: Source
     let initial: Element
-    let accumulator: Acc
+    let accumulator: (Element, Source.Element) -> Element
 }
-
-extension LazyAccumulateSequence: Sendable where Source: Sendable, Element: Sendable, Acc: Sendable {}
