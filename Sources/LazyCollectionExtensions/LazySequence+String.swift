@@ -31,14 +31,6 @@ public extension LazySequenceProtocol where Element == String.Element {
     }
 }
 
-public extension LazySequenceProtocol {
-    func string<Codec: UnicodeCodec>(
-        codec: Codec.Type
-    ) -> ParsedUnicodeSequence<Codec, Self> where Element == Codec.CodeUnit {
-        .init(source: self)
-    }
-}
-
 public extension LazySequenceProtocol where Element == UInt8 {
     var asciiString: LazyMapSequence<Self.Elements, Result<Character, any Error>> {
         tryMap { byte in
@@ -48,6 +40,14 @@ public extension LazySequenceProtocol where Element == UInt8 {
             
             return Character(Unicode.ASCII.decode(.init(byte)))
         }
+    }
+}
+
+public extension LazySequenceProtocol {
+    func string<Codec: UnicodeCodec>(
+        codec: Codec.Type
+    ) -> ParsedUnicodeSequence<Codec, Self> where Element == Codec.CodeUnit {
+        .init(source: self)
     }
 }
 
@@ -69,8 +69,8 @@ public extension LazySequenceProtocol where Element == UTF32.CodeUnit {
     }
 }
 
-public struct ParsedUnicodeSequence<Codec: UnicodeCodec, Source: Sequence<Codec.CodeUnit>>: Sequence {
-    public typealias Element = Result<UnicodeScalar, Error>
+public struct ParsedUnicodeSequence<Codec: UnicodeCodec, Source: Sequence<Codec.CodeUnit>>: LazySequenceProtocol {
+    public typealias Element = Result<Character, any Error>
     
     public struct Iterator: IteratorProtocol {
         public mutating func next() -> Element? {
@@ -80,7 +80,7 @@ public struct ParsedUnicodeSequence<Codec: UnicodeCodec, Source: Sequence<Codec.
                 case .emptyInput:
                     return nil
                 case let .scalarValue(scalar):
-                    return .success(scalar)
+                    return .success(.init(scalar))
                 case .error:
                     return .failure(StringParseError.parseError)
             }
