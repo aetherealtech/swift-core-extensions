@@ -116,6 +116,7 @@ public extension LazySequenceProtocol {
     
     func tryStore<Success, C: RangeReplaceableCollection>(in type: C.Type = C.self) throws -> C where Element == Result<Success, any Error>, C.Element == Success {
         var stored = C.init()
+        
         for result in self {
             stored.append(try result.get())
         }
