@@ -40,7 +40,7 @@ public extension LazySequenceProtocol {
         if condition: Bool
     ) -> LazyInsertedSequence<LazyIfElseSequence<Elements, EmptyCollection<Element>>, Self.Elements> {
         .init(
-            source: .init(if: elementsToAppend, else: .init(), condition: condition),
+            source: condition ? .if(elementsToAppend) : .else(.init()),
             inserted: elements,
             insertAt: 0
         )
@@ -124,7 +124,7 @@ public extension LazySequenceProtocol {
     ) -> LazyInsertedSequence<Self.Elements, LazyIfElseSequence<Elements, EmptyCollection<Element>>> {
         .init(
             source: elements,
-            inserted: .init(if: elementsToInsert, else: .init(), condition: condition) ,
+            inserted: condition ? .if(elementsToInsert) : .else(.init()),
             insertAt: index
         )
     }

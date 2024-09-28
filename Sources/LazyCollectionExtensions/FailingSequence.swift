@@ -27,23 +27,24 @@ public extension LazySequenceProtocol {
         }
     }
     
-    func tryFlatMap<R: Sequence, InnerR>(_ transform: @escaping (Element) throws -> R) -> LazySequence<FlattenSequence<LazyMapSequence<Self.Elements, AnyLazySequence<Result<InnerR, any Error>>>>> where R.Element == InnerR {
+    func tryFlatMap<R: Sequence, InnerR>(_ transform: @escaping (Element) throws -> R) -> LazySequence<FlattenSequence<LazyMapSequence<Self.Elements, LazyIfElseSequence<LazySequence<LazyMapSequence<R, Result<InnerR, any Error>>>, CollectionOfOne<Result<InnerR, any Error>>>>>> where R.Element == InnerR {
         tryFlatMap { outerValue in
             try transform(outerValue).lazy.map(Result<InnerR, any Error>.success)
         }
     }
     
-    func tryFlatMap<R: Sequence, InnerR>(_ transform: @escaping (Element) throws -> R) -> LazySequence<FlattenSequence<LazyMapSequence<Self.Elements, AnyLazySequence<Result<InnerR, any Error>>>>> where R.Element == Result<InnerR, any Error> {
+    func tryFlatMap<R: Sequence, InnerR>(_ transform: @escaping (Element) throws -> R) -> LazySequence<FlattenSequence<LazyMapSequence<Self.Elements, LazyIfElseSequence<LazySequence<R>, CollectionOfOne<Result<InnerR, any Error>>>>>> where R.Element == Result<InnerR, any Error> {
         flatMap { element in
             let innerResult = Result { try transform(element) }
-            switch innerResult {
-                case let .success(innerElements): return innerElements.lazy.lazyErase()
-                case let .failure(error): return [Result<InnerR, any Error>.failure(error)].lazy.lazyErase()
+            
+            return switch innerResult {
+                case let .success(innerElements): .if(innerElements.lazy)
+                case let .failure(error): .else(.init(.failure(error)))
             }
         }
     }
     
-    func tryForEach<Success>(_ work: @escaping (Success) throws -> Void) throws where Element == Result<Success, any Error> {
+    func tryForEach<Success>(_ work: (Success) throws -> Void) throws where Element == Result<Success, any Error> {
         for result in self {
             try work(result.get())
         }
@@ -77,18 +78,19 @@ public extension LazySequenceProtocol {
         }
     }
     
-    func flatMapSuccess<Success, R: Sequence, InnerR>(_ transform: @escaping (Success) throws -> R) -> LazySequence<FlattenSequence<LazyMapSequence<Self.Elements, AnyLazySequence<Result<InnerR, any Error>>>>> where Element == Result<Success, any Error>, R.Element == InnerR {
+    func flatMapSuccess<Success, R: Sequence, InnerR>(_ transform: @escaping (Success) throws -> R) -> LazySequence<FlattenSequence<LazyMapSequence<Self.Elements, LazyIfElseSequence<LazySequence<LazyMapSequence<R, Result<InnerR, any Error>>>, CollectionOfOne<Result<InnerR, any Error>>>>>> where Element == Result<Success, any Error>, R.Element == InnerR {
         flatMapSuccess { outerValue in
             try transform(outerValue).lazy.map(Result<InnerR, any Error>.success)
         }
     }
     
-    func flatMapSuccess<Success, R: Sequence, InnerR>(_ transform: @escaping (Success) throws -> R) -> LazySequence<FlattenSequence<LazyMapSequence<Self.Elements, AnyLazySequence<Result<InnerR, any Error>>>>> where Element == Result<Success, any Error>, R.Element == Result<InnerR, any Error> {
+    func flatMapSuccess<Success, R: Sequence, InnerR>(_ transform: @escaping (Success) throws -> R) -> LazySequence<FlattenSequence<LazyMapSequence<Self.Elements, LazyIfElseSequence<LazySequence<R>, CollectionOfOne<Result<InnerR, any Error>>>>>> where Element == Result<Success, any Error>, R.Element == Result<InnerR, any Error> {
         flatMap { result in
             let innerResult = result.tryMap(transform)
-            switch innerResult {
-                case let .success(innerElements): return innerElements.lazy.lazyErase()
-                case let .failure(error): return [Result<InnerR, any Error>.failure(error)].lazy.lazyErase()
+            
+            return switch innerResult {
+                case let .success(innerElements): .if(innerElements.lazy)
+                case let .failure(error): .else(.init(.failure(error)))
             }
         }
     }
@@ -99,11 +101,11 @@ public extension LazySequenceProtocol {
         }
     }
     
-    func `catch`<Success, S: Sequence<Success>>(_ catcher: @escaping (any Error) -> S) -> LazySequence<FlattenSequence<LazyMapSequence<Self.Elements, AnyLazySequence<Success>>>> where Element == Result<Success, any Error> {
+    func `catch`<Success, S: Sequence<Success>>(_ catcher: @escaping (any Error) -> S) -> LazySequence<FlattenSequence<LazyMapSequence<Self.Elements, LazyIfElseSequence<CollectionOfOne<Success>, LazySequence<S>>>>> where Element == Result<Success, any Error> {
         flatMap { result in
             switch result {
-                case let .success(element): return [element].lazy.lazyErase()
-                case let .failure(error): return catcher(error).lazy.lazyErase()
+                case let .success(element): .if(.init(element))
+                case let .failure(error): .else(catcher(error).lazy)
             }
         }
     }
@@ -137,5 +139,130 @@ public extension LazySequenceProtocol {
     
     func printErrors<Success>(prefix: String = "") -> LazyMapSequence<Self.Elements, Result<Success, any Error>> where Element == Result<Success, any Error> {
         onError { error in print("\(prefix) \(error.localizedDescription)") }
+    }
+}
+
+public extension LazySequenceProtocol where Elements: Sendable {
+    func tryFilterSendable(_ condition: @escaping @Sendable (Element) throws -> Bool) -> LazySendableMapSequence<LazySendableFilterSequence<LazySendableMapSequence<Self.Elements, Result<Self.Element, any Error>?>>, Result<Self.Element, any Error>> {
+        compactMapSendable { element in
+            let included = Result { try condition(element) }
+            switch included {
+                case let .success(included): return included ? Result<Element, any Error>.success(element) : nil
+                case let .failure(error): return Result<Element, any Error>.failure(error)
+            }
+        }
+    }
+    
+    func tryMapSendable<R>(_ transform: @escaping @Sendable (Element) throws -> R) -> LazySendableMapSequence<Elements, Result<R, any Error>> {
+        mapSendable { element in Result { try transform(element) } }
+    }
+    
+    func tryCompactMapSendable<R>(_ transform: @escaping @Sendable (Element) throws -> R?) -> LazySendableMapSequence<LazySendableFilterSequence<LazySendableMapSequence<Self.Elements, Result<R, any Error>?>>, Result<R, any Error>> {
+        compactMapSendable { element in
+            let innerResult = Result { try transform(element) }
+            switch innerResult {
+                case let .success(innerResult): return innerResult.map(Result<R, any Error>.success)
+                case let .failure(error): return Result<R, any Error>.failure(error)
+            }
+        }
+    }
+    
+    func tryFlatMapSendable<R: Sequence, InnerR>(_ transform: @escaping @Sendable (Element) throws -> R) -> LazySendableFlattenSequence<LazySendableMapSequence<Self.Elements, LazyIfElseSequence<LazySequence<LazySendableMapSequence<R, Result<InnerR, any Error>>>, CollectionOfOne<Result<InnerR, any Error>>>>> where R.Element == InnerR {
+        tryFlatMapSendable { outerValue in
+            try transform(outerValue).lazy.mapSendable(Result<InnerR, any Error>.success)
+        }
+    }
+    
+    func tryFlatMapSendable<R: Sequence, InnerR>(_ transform: @escaping @Sendable (Element) throws -> R) -> LazySendableFlattenSequence<LazySendableMapSequence<Self.Elements, LazyIfElseSequence<LazySequence<R>, CollectionOfOne<Result<InnerR, any Error>>>>> where R.Element == Result<InnerR, any Error> {
+        flatMapSendable { element in
+            let innerResult = Result { try transform(element) }
+            
+            return switch innerResult {
+                case let .success(innerElements): .if(innerElements.lazy)
+                case let .failure(error): .else(.init(.failure(error)))
+            }
+        }
+    }
+    
+    func filterSuccessSendable<Success>(_ condition: @escaping @Sendable (Success) throws -> Bool) -> LazySendableMapSequence<LazySendableFilterSequence<LazySendableMapSequence<Self.Elements, Result<Success, any Error>?>>, Result<Success, any Error>> where Element == Result<Success, any Error> {
+        compactMapSendable { result in
+            switch result {
+                case let .success(element):
+                    let conditionResult = Result<Bool, any Error> { try condition(element) }
+                    switch conditionResult {
+                        case let .success(included): return included ? Result<Success, any Error>.success(element) : nil
+                        case let .failure(error): return Result<Success, any Error>.failure(error)
+                    }
+                case .failure: return result
+            }
+        }
+    }
+    
+    func mapSuccessSendable<Success, R>(_ transform: @escaping @Sendable (Success) throws -> R) -> LazySendableMapSequence<Elements, Result<R, any Error>> where Element == Result<Success, any Error> {
+        mapSendable { result in result.tryMap(transform) }
+    }
+    
+    func compactMapSuccess<Success, R>(_ transform: @escaping (Success) throws -> R?) -> LazyMapSequence<LazyFilterSequence<LazyMapSequence<Self.Elements, Result<R, any Error>?>>, Result<R, any Error>> where Element == Result<Success, any Error> {
+        compactMap { result in
+            let innerResult = result.tryMap(transform)
+            switch innerResult {
+                case let .success(innerElements): return innerElements.map(Result<R, any Error>.success)
+                case let .failure(error): return Result<R, any Error>.failure(error)
+            }
+        }
+    }
+    
+    func flatMapSuccess<Success, R: Sequence, InnerR>(_ transform: @escaping @Sendable (Success) throws -> R) -> LazySendableFlattenSequence<LazySendableMapSequence<Self.Elements, LazyIfElseSequence<LazySequence<LazySendableMapSequence<R, Result<InnerR, any Error>>>, CollectionOfOne<Result<InnerR, any Error>>>>> where Element == Result<Success, any Error>, R.Element == InnerR {
+        flatMapSuccessSendable { outerValue in
+            try transform(outerValue).lazy.mapSendable(Result<InnerR, any Error>.success)
+        }
+    }
+    
+    func flatMapSuccessSendable<Success, R: Sequence, InnerR>(_ transform: @escaping @Sendable (Success) throws -> R) -> LazySendableFlattenSequence<LazySendableMapSequence<Self.Elements, LazyIfElseSequence<LazySequence<R>, CollectionOfOne<Result<InnerR, any Error>>>>> where Element == Result<Success, any Error>, R.Element == Result<InnerR, any Error> {
+        flatMapSendable { result in
+            let innerResult = result.tryMap(transform)
+            
+            return switch innerResult {
+                case let .success(innerElements): .if(innerElements.lazy)
+                case let .failure(error): .else(.init(.failure(error)))
+            }
+        }
+    }
+    
+    func catchSendable<Success>(_ catcher: @escaping @Sendable (any Error) -> Success) -> LazySendableMapSequence<Elements, Success> where Element == Result<Success, any Error> {
+        mapSendable { result in
+            result.catch(catcher)
+        }
+    }
+    
+    func catchSendable<Success, S: Sequence<Success>>(_ catcher: @escaping @Sendable (any Error) -> S) -> LazySendableFlattenSequence<LazySendableMapSequence<Self.Elements, LazyIfElseSequence<CollectionOfOne<Success>, LazySequence<S>>>> where Element == Result<Success, any Error> {
+        flatMapSendable { result in
+            switch result {
+                case let .success(element): .if(.init(element))
+                case let .failure(error): .else(catcher(error).lazy)
+            }
+        }
+    }
+    
+    func valuesSendable<Success>() -> LazySendableMapSequence<LazySendableFilterSequence<LazySendableMapSequence<Self.Elements, Success?>>, Success> where Element == Result<Success, any Error> {
+        compactMapSendable(\.value)
+    }
+   
+    func errorsSendable<Success>() -> LazySendableMapSequence<LazySendableFilterSequence<LazySendableMapSequence<Self.Elements, (any Error)?>>, any Error> where Element == Result<Success, any Error> {
+        compactMapSendable(\.error)
+    }
+    
+    func onErrorSendable<Success>(_ handler: @escaping @Sendable (Error) -> Void) -> LazySendableMapSequence<Self.Elements, Result<Success, any Error>> where Element == Result<Success, any Error> {
+        mapSendable { result in
+            if case let .failure(error) = result {
+                handler(error)
+            }
+            
+            return result
+        }
+    }
+    
+    func printErrorsSendable<Success>(prefix: String = "") -> LazySendableMapSequence<Self.Elements, Result<Success, any Error>> where Element == Result<Success, any Error> {
+        onErrorSendable { error in print("\(prefix) \(error.localizedDescription)") }
     }
 }

@@ -1,7 +1,10 @@
-public struct LazyIfElseSequence<
+public enum LazyIfElseSequence<
     If: Sequence,
     Else: Sequence<If.Element>
 >: LazySequenceProtocol {
+    case `if`(If)
+    case `else`(Else)
+    
     public typealias Element = If.Element
     
     public enum Iterator: IteratorProtocol {
@@ -24,12 +27,11 @@ public struct LazyIfElseSequence<
     }
     
     public func makeIterator() -> Iterator {
-        condition ? .if(`if`.makeIterator()) : .else(`else`.makeIterator())
+        switch self {
+            case let .if(base): .if(base.makeIterator())
+            case let .else(base): .else(base.makeIterator())
+        }
     }
-    
-    let `if`: If
-    let `else`: Else
-    let condition: Bool
 }
 
 extension LazyIfElseSequence: Sendable where If: Sendable, Else: Sendable {}

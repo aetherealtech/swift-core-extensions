@@ -52,7 +52,7 @@ final class LazySendableMapTests: XCTestCase {
             try assertEqual(testArray[i].description, result[i])
         }
         
-        var index = 2
+        let index = 2
   
         try assertEqual(testArray.index(after: index), result.index(after: index))
 
