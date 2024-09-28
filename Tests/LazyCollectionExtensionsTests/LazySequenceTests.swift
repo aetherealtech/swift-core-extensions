@@ -3,10 +3,483 @@ import XCTest
 
 @testable import LazyCollectionExtensions
 
+enum SomeEnum {
+    case thisCase
+    case thatCase
+}
+
 final class LazySequenceTests: XCTestCase {
-    enum SomeEnum {
-        case thisCase
-        case thatCase
+    func testCompact() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            2,
+            nil,
+            4,
+            5,
+            6,
+            nil,
+            nil,
+            9,
+            nil
+        ])
+        
+        let expectedResult = [
+            1,
+            2,
+            4,
+            5,
+            6,
+            9
+        ]
+        
+        let result = testSequence
+            .lazy
+            .compact()
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testFlatten() throws {
+        let testSequence = DestructiveSequence([
+            DestructiveSequence([1, 2, 3]),
+            DestructiveSequence([4, 5, 6]),
+            DestructiveSequence([7, 8, 9]),
+            DestructiveSequence([10, 11, 12])
+        ])
+        
+        let expectedResult = Array(1...12)
+        
+        let result = testSequence
+            .lazy
+            .flatten()
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testAppending() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            9
+        ]
+        
+        let result = testSequence
+            .lazy
+            .appending(9)
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testAppendingIfTrue() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            9
+        ]
+        
+        let result = testSequence
+            .lazy
+            .appending(9, if: true)
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testAppendingIfFalse() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+
+        let testSequence = DestructiveSequence(testArray)
+        
+        let result = testSequence
+            .lazy
+            .appending(9, if: false)
+        
+        try assertEqual(testArray, Array(result))
+    }
+    
+    func testAppendingSequence() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            9,
+            4,
+            11,
+            7
+        ]
+        
+        let result = testSequence
+            .lazy
+            .appending(contentsOf: [9, 4, 11, 7])
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testAppendingSequenceIfTrue() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            8,
+            5,
+            9,
+            1,
+            11,
+            7
+        ]
+        
+        let result = testSequence
+            .lazy
+            .appending(contentsOf: [9, 1, 11, 7], if: true)
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testAppendingSequenceIfFalse() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+
+        let testSequence = DestructiveSequence(testArray)
+        
+        let result = testSequence
+            .lazy
+            .appending(contentsOf: [9, 1, 11, 7], if: false)
+        
+        try assertEqual(testArray, Array(result))
+    }
+    
+    func testPrepending() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            9,
+            1,
+            3,
+            2,
+            8,
+            5,
+        ]
+        
+        let result = testSequence
+            .lazy
+            .prepending(9)
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testPrependingIfTrue() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            9,
+            1,
+            3,
+            2,
+            8,
+            5,
+        ]
+        
+        let result = testSequence
+            .lazy
+            .prepending(9, if: true)
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testPrependingIfFalse() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+
+        let testSequence = DestructiveSequence(testArray)
+        
+        let result = testSequence
+            .lazy
+            .prepending(9, if: false)
+        
+        try assertEqual(testArray, Array(result))
+    }
+    
+    func testPrependingSequence() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            9,
+            4,
+            11,
+            7,
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+        
+        let result = testSequence
+            .lazy
+            .prepending(contentsOf: [9, 4, 11, 7])
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testPrependingSequenceIfTrue() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            9,
+            1,
+            11,
+            7,
+            1,
+            3,
+            2,
+            8,
+            5,
+        ]
+        
+        let result = testSequence
+            .lazy
+            .prepending(contentsOf: [9, 1, 11, 7], if: true)
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testPrependingSequenceIfFalse() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+
+        let testSequence = DestructiveSequence(testArray)
+        
+        let result = testSequence
+            .lazy
+            .prepending(contentsOf: [9, 1, 11, 7], if: false)
+        
+        try assertEqual(testArray, Array(result))
+    }
+    
+    func testInserting() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            9,
+            8,
+            5,
+        ]
+        
+        let result = testSequence
+            .lazy
+            .inserting(9, at: 3)
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testInsertingIfTrue() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            9,
+            8,
+            5,
+        ]
+        
+        let result = testSequence
+            .lazy
+            .inserting(9, at: 3, if: true)
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testInsertingIfFalse() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+
+        let testSequence = DestructiveSequence(testArray)
+        
+        let result = testSequence
+            .lazy
+            .inserting(9, at: 3, if: false)
+        
+        try assertEqual(testArray, Array(result))
+    }
+    
+    func testInsertingSequence() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            9,
+            4,
+            11,
+            7,
+            8,
+            5,
+        ]
+        
+        let result = testSequence
+            .lazy
+            .inserting(contentsOf: [9, 4, 11, 7], at: 3)
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testInsertingSequenceIfTrue() throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            1,
+            3,
+            2,
+            9,
+            1,
+            11,
+            7,
+            8,
+            5,
+        ]
+        
+        let result = testSequence
+            .lazy
+            .inserting(contentsOf: [9, 1, 11, 7], at: 3, if: true)
+        
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testInsertingSequenceIfFalse() throws {
+        let testArray = [
+            1,
+            3,
+            2,
+            8,
+            5
+        ]
+
+        let testSequence = DestructiveSequence(testArray)
+        
+        let result = testSequence
+            .lazy
+            .inserting(contentsOf: [9, 1, 11, 7], at: 3, if: false)
+        
+        try assertEqual(testArray, Array(result))
     }
     
     func testCartesianProduct() async throws {
@@ -22,11 +495,6 @@ final class LazySequenceTests: XCTestCase {
    
         let result1 = Array(LazySequences.cartesianProduct(first, second, third))
         let result2 = Array(LazySequences.cartesianProduct(first, second, third, fourth))
-        
-        for value in result1 {
-            print(value)
-            await Task.yield()
-        }
         
         let result1Member = Array(first.lazy.cartesianProduct(with: second, third))
         let result2Member = Array(first.lazy.cartesianProduct(with: second, third, fourth))
@@ -84,12 +552,7 @@ final class LazySequenceTests: XCTestCase {
 
         let result1 = Array(LazySequences.cartesianProduct(first, second, third))
         let result2 = Array(LazySequences.cartesianProduct(first, second, third, fourth))
-        
-        for value in result1 {
-            print(value)
-            await Task.yield()
-        }
-        
+
         let result1Member = Array(first.lazy.cartesianProduct(with: second, third))
         let result2Member = Array(first.lazy.cartesianProduct(with: second, third, fourth))
 

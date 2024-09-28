@@ -1,6 +1,10 @@
 import CompareFunctions
 import Foundation
 
+public func ==<Element: Equatable>(lhs: some Collection<Element>, rhs: some Collection<Element>) -> Bool {
+    lhs.elementsEqual(rhs)
+}
+
 public extension Collection {
     subscript(safe index: Index) -> Element? {
         guard indices.contains(index) else {

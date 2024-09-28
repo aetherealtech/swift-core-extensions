@@ -9,6 +9,22 @@ public extension LazySequenceProtocol {
         flatMap { element in element.lazy }
     }
     
+    func appending(
+        _ element: Element
+    ) -> LazyInsertedSequence<CollectionOfOne<Element>, Elements> {
+        appending(contentsOf: .init(element))
+    }
+    
+    func appending(
+        _ element: Element,
+        if condition: Bool
+    ) -> LazyInsertedSequence<LazyIfElseSequence<CollectionOfOne<Element>, EmptyCollection<Element>>, Elements> {
+        appending(
+            contentsOf: .init(element),
+            if: condition
+        )
+    }
+    
     func appending<Elements: Sequence<Element>>(
         contentsOf elementsToAppend: Elements
     ) -> LazyInsertedSequence<Elements, Self.Elements> {
@@ -19,44 +35,102 @@ public extension LazySequenceProtocol {
         )
     }
     
-    func appending(
-        _ element: Element
-    ) -> LazyInsertedSequence<[Element], Elements> {
-        appending(contentsOf: [element])
-    }
-    
-    func prepending<Elements: Sequence<Element>>(
-        contentsOf elementsToAppend: Elements
-    ) -> LazyInsertedSequence<Self.Elements, Elements> {
+    func appending<Elements: Sequence<Element>>(
+        contentsOf elementsToAppend: Elements,
+        if condition: Bool
+    ) -> LazyInsertedSequence<LazyIfElseSequence<Elements, EmptyCollection<Element>>, Self.Elements> {
         .init(
-            source: elements,
-            inserted: elementsToAppend,
+            source: .init(if: elementsToAppend, else: .init(), condition: condition),
+            inserted: elements,
             insertAt: 0
         )
     }
     
     func prepending(
         _ element: Element
-    ) -> LazyInsertedSequence<Elements, [Element]> {
-        prepending(contentsOf: [element])
+    ) -> LazyInsertedSequence<Elements, CollectionOfOne<Element>> {
+        prepending(contentsOf: .init(element))
     }
     
-    func inserting<Elements: Sequence<Element>>(
-        contentsOf elementsToAppend: Elements,
-        at index: Int
+    func prepending(
+        _ element: Element,
+        if condition: Bool
+    ) -> LazyInsertedSequence<Self.Elements, LazyIfElseSequence<CollectionOfOne<Element>, EmptyCollection<Element>>> {
+        inserting(
+            element,
+            at: 0,
+            if: condition
+        )
+    }
+    
+    func prepending<Elements: Sequence<Element>>(
+        contentsOf elementsToPrepend: Elements
     ) -> LazyInsertedSequence<Self.Elements, Elements> {
         .init(
             source: elements,
-            inserted: elementsToAppend,
-            insertAt: index
+            inserted: elementsToPrepend,
+            insertAt: 0
+        )
+    }
+    
+    func prepending<Elements: Sequence<Element>>(
+        contentsOf elementsToPrepend: Elements,
+        if condition: Bool
+    ) -> LazyInsertedSequence<Self.Elements, LazyIfElseSequence<Elements, EmptyCollection<Element>>> {
+        inserting(
+            contentsOf: elementsToPrepend,
+            at: 0,
+            if: condition
         )
     }
     
     func inserting(
         _ element: Element,
         at index: Int
-    ) -> LazyInsertedSequence<Elements, [Element]> {
-        inserting(contentsOf: [element], at: index)
+    ) -> LazyInsertedSequence<Elements, CollectionOfOne<Element>> {
+        inserting(
+            contentsOf: .init(element),
+            at: index
+        )
+    }
+    
+    func inserting(
+        _ element: Element,
+        at index: Int,
+        if condition: Bool
+    ) -> LazyInsertedSequence<Elements, LazyIfElseSequence<CollectionOfOne<Element>, EmptyCollection<Element>>> {
+        inserting(
+            contentsOf: .init(element),
+            at: index,
+            if: condition
+        )
+    }
+
+    func inserting<Elements: Sequence<Element>>(
+        contentsOf elementsToInsert: Elements,
+        at index: Int
+    ) -> LazyInsertedSequence<Self.Elements, Elements> {
+        .init(
+            source: elements,
+            inserted: elementsToInsert,
+            insertAt: index
+        )
+    }
+    
+    func inserting<Elements: Sequence<Element>>(
+        contentsOf elementsToInsert: Elements,
+        at index: Int,
+        if condition: Bool
+    ) -> LazyInsertedSequence<Self.Elements, LazyIfElseSequence<Elements, EmptyCollection<Element>>> {
+        .init(
+            source: elements,
+            inserted: .init(if: elementsToInsert, else: .init(), condition: condition) ,
+            insertAt: index
+        )
+    }
+    
+    func removing(at index: Int) -> LazyMapSequence<LazyFilterSequence<EnumeratedSequence<Self>>, Element> {
+        removing(at: CollectionOfOne(index))
     }
     
     func removing<Indices: Sequence<Int>>(at indices: Indices) -> LazyMapSequence<LazyFilterSequence<EnumeratedSequence<Self>>, Element> {
@@ -66,10 +140,6 @@ public extension LazySequenceProtocol {
             .lazy
             .removingAll { index, _ in indices.contains(index) }
             .map(\.element)
-    }
-    
-    func removing(at index: Int) -> LazyMapSequence<LazyFilterSequence<EnumeratedSequence<Self>>, Element> {
-        removing(at: [index])
     }
     
     func removingAll(
@@ -100,27 +170,20 @@ public extension LazySequenceProtocol {
 
     func removingDuplicates(
         by compare: @escaping (Element, Element) -> Bool
-    ) -> LazyFilterSequence<Elements> {
-        var checked = [Element]()
-
-        return filter { element in
-            if checked.contains(element, by: compare) {
-                return false
-            } else {
-                checked.append(element)
-                return true
-            }
-        }
+    ) -> RemoveDuplicatesSequence<Elements, NonSendableDuplicateCompare<Element>> {
+        .init(
+            source: elements,
+            compare: .init(_closure: compare)
+        )
     }
     
-    func cartesianProduct<Other: Sequence>(with other: Other) -> LazySequence<FlattenSequence<LazyMapSequence<Elements, LazyMapSequence<Other, (Element, Other.Element)>>>> {
-        flatMap { element in
-            other
-                .lazy
-                .map { otherElement in
-                    (element, otherElement)
-                }
-        }
+    func removingDuplicates(
+        by compare: @escaping @Sendable (Element, Element) -> Bool
+    ) -> RemoveDuplicatesSequence<Elements, SendableDuplicateCompare<Element>> {
+        .init(
+            source: elements,
+            compare: .init(_closure: compare)
+        )
     }
 
     var last: Element? {
@@ -134,20 +197,35 @@ public extension LazySequenceProtocol {
     }
     
     func count() -> Int {
-        reduce(0) { count, _ in count + 1 }
+        lazy
+            .map { _ in 1 }
+            .reduce(0, +)
     }
     
     func contains(atLeast count: Int) -> Bool {
         prefix(count).lazy.count() == count
     }
     
-    func accumulate<R>(_ initialValue: R, _ accumulate: @escaping (R, Element) -> R) -> LazyMapSequence<Elements, R> {
-        var accumulated = initialValue
-        
-        return map { element in
-            accumulated = accumulate(accumulated, element)
-            return accumulated
-        }
+    func accumulate<R>(
+        _ initialValue: R,
+        _ accumulate: @escaping (R, Element) -> R
+    ) -> LazyAccumulateSequence<Elements, NonSendableAcculuator<R, Element>> {
+        .init(
+            source: elements,
+            initial: initialValue,
+            accumulator: .init(_closure: accumulate)
+        )
+    }
+    
+    func accumulate<R>(
+        _ initialValue: R,
+        _ accumulate: @escaping @Sendable (R, Element) -> R
+    ) -> LazyAccumulateSequence<Elements, SendableAcculuator<R, Element>> {
+        .init(
+            source: elements,
+            initial: initialValue,
+            accumulator: .init(_closure: accumulate)
+        )
     }
 }
 
@@ -164,21 +242,21 @@ public extension LazySequenceProtocol where Element: Equatable {
         removingAll(of: elementToRemove, by: ==)
     }
 
-    func removingDuplicates() -> LazyFilterSequence<Elements> {
-        removingDuplicates(by: ==)
+    func removingDuplicates() -> RemoveDuplicatesSequence<Elements, SendableDuplicateCompare<Element>> {
+        removingDuplicates(by: { lhs, rhs in lhs == rhs })
     }
 }
 
 public extension LazySequenceProtocol {
     func cartesianProduct<each Others: Sequence>(
         with others: repeat each Others
-    ) -> LazyMapSequence<LazySequence<AnySequence<[Any]>>.Elements, (Element, repeat (each Others).Element)> {
+    ) -> LazyMapSequence<AnySequence<AnySequence<Any>>, (Element, repeat (each Others).Element)> {
         LazySequences.cartesianProduct(self, repeat each others)
     }
     
     func zip<each Others: Sequence>(
         with others: repeat each Others
-    ) -> LazyMapSequence<LazySequence<AnySequence<[Any]>>.Elements, (Element, repeat (each Others).Element)> {
+    ) -> LazyMapSequence<AnySequence<AnySequence<Any>>, (Element, repeat (each Others).Element)> {
         LazySequences.zip(self, repeat each others)
     }
 }
@@ -192,7 +270,7 @@ private func arrayToTuple<each Ts>(_ values: some Sequence) -> (repeat each Ts) 
 public enum LazySequences {
     static func cartesianProduct<each S: Sequence>(
         _ sequences: repeat each S
-    ) -> LazyMapSequence<LazySequence<AnySequence<[Any]>>.Elements, (repeat (each S).Element)> {
+    ) -> LazyMapSequence<AnySequence<AnySequence<Any>>, (repeat (each S).Element)> {
         var erasedSequences = [any Sequence]()
         
         repeat (erasedSequences.append(each sequences))
@@ -206,7 +284,7 @@ public enum LazySequences {
     
     static func zip<each S: Sequence>(
         _ sequences: repeat each S
-    ) -> LazyMapSequence<LazySequence<AnySequence<[Any]>>.Elements, (repeat (each S).Element)> {
+    ) -> LazyMapSequence<AnySequence<AnySequence<Any>>, (repeat (each S).Element)> {
         var erasedSequences = [any Sequence]()
         
         repeat (erasedSequences.append(each sequences))
@@ -220,9 +298,9 @@ public enum LazySequences {
     
     private static func cartesianProduct(
         _ sequences: [any Sequence]
-    ) -> AnySequence<[Any]> {
+    ) -> AnySequence<AnySequence<Any>> {
         guard !sequences.isEmpty else {
-            return [].erase()
+            return EmptyCollection().erase()
         }
         
         var sequences = sequences
@@ -231,7 +309,7 @@ public enum LazySequences {
             .removeFirst()
             .buffered()
             .lazy
-            .map { [$0] }
+            .map { CollectionOfOne($0).erase() }
             .erase()
         
         for sequence in sequences {
@@ -240,10 +318,10 @@ public enum LazySequences {
             
             result = result
                 .lazy
-                .flatMap { element in
+                .flatMap { (element: AnySequence<Any>) in
                     sequence
                         .lazy
-                        .map { element.appending($0) }
+                        .map { innerElement in element.lazy.appending(innerElement).erase() }
                 }
                 .erase()
         }
@@ -279,9 +357,9 @@ public enum LazySequences {
     
     private static func zip(
         _ sequences: [any Sequence]
-    ) -> AnySequence<[Any]> {
+    ) -> AnySequence<AnySequence<Any>> {
         guard !sequences.isEmpty else {
-            return [].erase()
+            return EmptyCollection().erase()
         }
         
         var sequences = sequences
@@ -290,14 +368,14 @@ public enum LazySequences {
             .removeFirst()
             .fullyErased()
             .lazy
-            .map { [$0] }
+            .map { CollectionOfOne($0).erase() }
             .erase()
         
     
         for sequence in sequences {
             result = LazyZipSequence(base1: result, base2: sequence.fullyErased())
                 .map { current, next in
-                    current.appending(next)
+                    current.lazy.appending(next).erase()
                 }
                 .erase()
         }

@@ -1,13 +1,10 @@
 import Foundation
+import CollectionExtensions
 import OptionalExtensions
 
 public enum StringParseError: LocalizedError {
     case invalidASCIICharacter
     case parseError
-}
-
-public func ==<Element: Equatable>(lhs: some Collection<Element>, rhs: some Collection<Element>) -> Bool {
-    lhs.elementsEqual(rhs)
 }
 
 public extension LazySequenceProtocol where Element == String.Element {
