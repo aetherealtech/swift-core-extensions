@@ -40,15 +40,15 @@ public struct LazySparseSubCollection<
         self.indices = indices
     }
     
-    private let source: Source
-    private let indices: Indices
+    public private(set) var source: Source
+    public let indices: Indices
 }
 
 extension LazySparseSubCollection: Sendable where Source: Sendable, Indices: Sendable {}
 
 extension LazySparseSubCollection: Collection where Indices: Collection {
     public subscript(position: Indices.Index) -> Source.Element {
-        source[indices[position]]
+        _read { yield source[indices[position]] }
     }
     
     public var startIndex: Indices.Index { indices.startIndex }
@@ -56,5 +56,28 @@ extension LazySparseSubCollection: Collection where Indices: Collection {
     
     public func index(after i: Indices.Index) -> Indices.Index {
         indices.index(after: i)
+    }
+}
+
+extension LazySparseSubCollection: BidirectionalCollection where Indices: BidirectionalCollection {
+    public func index(before i: Indices.Index) -> Indices.Index {
+        indices.index(before: i)
+    }
+}
+
+extension LazySparseSubCollection: RandomAccessCollection where Indices: RandomAccessCollection {
+    public func index(_ i: Indices.Index, offsetBy distance: Int) -> Indices.Index {
+        indices.index(i, offsetBy: distance)
+    }
+    
+    public func index(_ i: Indices.Index, offsetBy distance: Int, limitedBy limit: Indices.Index) -> Indices.Index? {
+        indices.index(i, offsetBy: distance, limitedBy: limit)
+    }
+}
+
+extension LazySparseSubCollection: MutableCollection where Source: MutableCollection, Indices: Collection {
+    public subscript(position: Indices.Index) -> Source.Element {
+        _read { yield source[indices[position]] }
+        _modify { yield &source[indices[position]]  }
     }
 }

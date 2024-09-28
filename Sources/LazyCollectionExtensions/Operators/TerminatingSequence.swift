@@ -58,7 +58,7 @@ public extension LazySequenceProtocol {
         )
     }
     
-    func terminate(when condition: @escaping @Sendable (Element) -> Bool) -> LazyTerminatingSequence<Elements, SendableTerminateCondition<Element>> {
+    func terminateSendable(when condition: @escaping @Sendable (Element) -> Bool) -> LazyTerminatingSequence<Elements, SendableTerminateCondition<Element>> {
         .init(
             base: elements,
             terminateCondition: .init(_closure: condition)

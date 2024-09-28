@@ -53,22 +53,15 @@ final class LazySendableMapTests: XCTestCase {
         }
         
         var index = 2
-        var resultIndex = index
-        
-        testArray.formIndex(after: &index)
-        result.formIndex(after: &resultIndex)
-        
-        try assertEqual(index, resultIndex)
-        
-        testArray.formIndex(before: &index)
-        result.formIndex(before: &resultIndex)
-        
-        try assertEqual(index, resultIndex)
-        
-        try assertEqual(testArray.index(index, offsetBy: 2), result.index(resultIndex, offsetBy: 2))
+  
+        try assertEqual(testArray.index(after: index), result.index(after: index))
 
-        try assertEqual(testArray.index(index, offsetBy: 1, limitedBy: 5), result.index(resultIndex, offsetBy: 1, limitedBy: 5))
+        try assertEqual(testArray.index(before: index), result.index(before: index))
         
-        try assertEqual(testArray.index(index, offsetBy: 5, limitedBy: 1), result.index(resultIndex, offsetBy: 5, limitedBy: 1))
+        try assertEqual(testArray.index(index, offsetBy: 2), result.index(index, offsetBy: 2))
+
+        try assertEqual(testArray.index(index, offsetBy: 1, limitedBy: 5), result.index(index, offsetBy: 1, limitedBy: 5))
+        
+        try assertEqual(testArray.index(index, offsetBy: 5, limitedBy: 1), result.index(index, offsetBy: 5, limitedBy: 1))
     }
 }
