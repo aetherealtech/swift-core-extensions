@@ -205,6 +205,13 @@ let package = Package(
             ]
         ),
         .testTarget(
+            name: "FileSystemExtensionsTests",
+            dependencies: [
+                "FileSystemExtensions",
+                .product(name: "Assertions", package: "swift-assertions"),
+            ]
+        ),
+        .testTarget(
             name: "LazyCollectionExtensionsTests",
             dependencies: [
                 "LazyCollectionExtensions",

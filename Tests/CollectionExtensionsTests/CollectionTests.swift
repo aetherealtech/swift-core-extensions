@@ -4,6 +4,86 @@ import XCTest
 @testable import CollectionExtensions
 
 final class CollectionTests: XCTestCase {
+    func testEqualsTrue() throws {
+        let testArray: [Character] = [
+            "H",
+            "e",
+            "l",
+            "l",
+            "o",
+            " ",
+            "W",
+            "o",
+            "r",
+            "l",
+            "d",
+        ]
+        
+        let testString = "Hello World"
+        
+        try assertTrue(testArray == testString)
+    }
+    
+    func testEqualsFalse() throws {
+        let testArray: [Character] = [
+            "H",
+            "e",
+            "l",
+            "l",
+            "o",
+            " ",
+            "W",
+            "o",
+            "r",
+            "l",
+            "d",
+        ]
+        
+        let testString = "Helloo World"
+        
+        try assertFalse(testArray == testString)
+    }
+    
+    func testNotEqualsTrue() throws {
+        let testArray: [Character] = [
+            "H",
+            "e",
+            "l",
+            "l",
+            "o",
+            " ",
+            "W",
+            "o",
+            "r",
+            "l",
+            "d",
+        ]
+        
+        let testString = "Helloo World"
+        
+        try assertTrue(testArray != testString)
+    }
+    
+    func testNotEqualsFalse() throws {
+        let testArray: [Character] = [
+            "H",
+            "e",
+            "l",
+            "l",
+            "o",
+            " ",
+            "W",
+            "o",
+            "r",
+            "l",
+            "d",
+        ]
+        
+        let testString = "Hello World"
+        
+        try assertFalse(testArray != testString)
+    }
+    
     func testIndexSafe() throws {
         let testArray = [
             1,

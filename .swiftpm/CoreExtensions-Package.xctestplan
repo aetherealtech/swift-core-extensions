@@ -15,8 +15,64 @@
     {
       "target" : {
         "containerPath" : "container:",
+        "identifier" : "CombineExtensionsTests",
+        "name" : "CombineExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "OptionalExtensionsTests",
+        "name" : "OptionalExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "LazyCollectionExtensionsTests",
+        "name" : "LazyCollectionExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "DateExtensionsTests",
+        "name" : "DateExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "NumericExtensionsTests",
+        "name" : "NumericExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "CompareFunctionsTests",
+        "name" : "CompareFunctionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
         "identifier" : "CollectionExtensionsTests",
         "name" : "CollectionExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "FileSystemExtensionsTests",
+        "name" : "FileSystemExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "URLExtensionsTests",
+        "name" : "URLExtensionsTests"
       }
     },
     {
@@ -36,57 +92,8 @@
     {
       "target" : {
         "containerPath" : "container:",
-        "identifier" : "DateExtensionsTests",
-        "name" : "DateExtensionsTests"
-      }
-    },
-    {
-      "target" : {
-        "containerPath" : "container:",
-        "identifier" : "OptionalExtensionsTests",
-        "name" : "OptionalExtensionsTests"
-      }
-    },
-    {
-      "target" : {
-        "containerPath" : "container:",
         "identifier" : "ResultExtensionsTests",
         "name" : "ResultExtensionsTests"
-      }
-    },
-    {
-      "target" : {
-        "containerPath" : "container:",
-        "identifier" : "URLExtensionsTests",
-        "name" : "URLExtensionsTests"
-      }
-    },
-    {
-      "target" : {
-        "containerPath" : "container:",
-        "identifier" : "NumericExtensionsTests",
-        "name" : "NumericExtensionsTests"
-      }
-    },
-    {
-      "target" : {
-        "containerPath" : "container:",
-        "identifier" : "CombineExtensionsTests",
-        "name" : "CombineExtensionsTests"
-      }
-    },
-    {
-      "target" : {
-        "containerPath" : "container:",
-        "identifier" : "CompareFunctionsTests",
-        "name" : "CompareFunctionsTests"
-      }
-    },
-    {
-      "target" : {
-        "containerPath" : "container:",
-        "identifier" : "LazyCollectionExtensionsTests",
-        "name" : "LazyCollectionExtensionsTests"
       }
     }
   ],

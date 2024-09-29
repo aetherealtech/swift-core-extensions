@@ -5,6 +5,10 @@ public func ==<Element: Equatable>(lhs: some Collection<Element>, rhs: some Coll
     lhs.elementsEqual(rhs)
 }
 
+public func !=<Element: Equatable>(lhs: some Collection<Element>, rhs: some Collection<Element>) -> Bool {
+    !(lhs == rhs)
+}
+
 public extension Collection {
     subscript(safe index: Index) -> Element? {
         guard indices.contains(index) else {
