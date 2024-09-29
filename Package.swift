@@ -78,7 +78,6 @@ let package = Package(
                 "OptionalExtensions",
                 "ResultExtensions",
                 "PrivateUtilities",
-                .product(name: "Synchronization", package: "swift-synchronization"),
             ]
         ),
         .target(
