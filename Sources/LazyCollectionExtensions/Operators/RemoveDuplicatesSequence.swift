@@ -4,8 +4,8 @@ public struct RemoveDuplicatesSequence<
     public struct Iterator: IteratorProtocol {
         public mutating func next() -> Source.Element? {
             while let next = source.next() {
-                if !checked.contains(where: { checking in compare(next, checking) }) {
-                    checked.append(next)
+                if !found.contains(where: { checking in compare(next, checking) }) {
+                    found.append(next)
                     return next
                 }
             }
@@ -15,7 +15,7 @@ public struct RemoveDuplicatesSequence<
         
         var source: Source.Iterator
         var compare: (Element, Element) -> Bool
-        var checked: [Element] = []
+        var found: [Element] = []
     }
     
     public func makeIterator() -> Iterator {

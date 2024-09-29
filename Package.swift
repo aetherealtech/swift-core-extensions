@@ -77,6 +77,7 @@ let package = Package(
                 "CollectionExtensions",
                 "OptionalExtensions",
                 "ResultExtensions",
+                "PrivateUtilities",
                 .product(name: "Synchronization", package: "swift-synchronization"),
             ]
         ),
@@ -163,9 +164,17 @@ let package = Package(
             name: "URLExtensions",
             dependencies: []
         ),
+        .target(
+            name: "PrivateUtilities",
+            dependencies: []
+        ),
         .testTarget(
             name: "AsyncCollectionExtensionsTests",
-            dependencies: ["AsyncCollectionExtensions"]
+            dependencies: [
+                "AsyncCollectionExtensions",
+                .product(name: "Assertions", package: "swift-assertions"),
+                .product(name: "Stubbing", package: "swift-stubbing"),
+            ]
         ),
         .testTarget(
             name: "AsyncExtensionsTests",

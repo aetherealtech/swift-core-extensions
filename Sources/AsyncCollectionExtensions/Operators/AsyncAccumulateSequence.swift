@@ -4,11 +4,11 @@ public struct AsyncAccumulateSequence<Source: AsyncSequence, Result>: AsyncSeque
      
     public struct AsyncIterator: AsyncIteratorProtocol {
         public mutating func next() async rethrows -> Result? {
-            guard let next = try await source.next() else {
+            guard let current else {
                 return nil
             }
-            
-            current = await accumulator(current, next)
+                        
+            self.current = try await source.next().mapAsync { next in await accumulator(current, next) }
             
             return current
         }
@@ -24,7 +24,7 @@ public struct AsyncAccumulateSequence<Source: AsyncSequence, Result>: AsyncSeque
         }
         
         private var source: Source.AsyncIterator
-        private var current: Result
+        private var current: Result?
         private let accumulator: (Result, Source.Element) async -> Result
     }
     
@@ -46,7 +46,7 @@ extension AsyncAccumulateSequence: Sendable where Source: Sendable, Result: Send
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension AsyncSequence {
-    func accumulate<R>(_ initialValue: R, _ accumulate: @escaping @Sendable (R, Element) -> R) async throws -> AsyncAccumulateSequence<Self, R> {
+    func accumulate<R>(_ initialValue: R, _ accumulate: @escaping @Sendable (R, Element) async -> R) -> AsyncAccumulateSequence<Self, R> {
         .init(
             source: self,
             initial: initialValue,

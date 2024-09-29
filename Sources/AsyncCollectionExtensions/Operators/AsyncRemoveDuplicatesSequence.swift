@@ -4,13 +4,14 @@ public struct AsyncRemoveDuplicatesSequence<Source: AsyncSequence>: AsyncSequenc
      
     public struct AsyncIterator: AsyncIteratorProtocol {
         public mutating func next() async rethrows -> Element? {
-            guard let next = try await source.next(), !found.contains(next, by: compare) else {
-                return nil
+            while let next = try await source.next() {
+                if !found.contains(where: { checking in compare(next, checking) }) {
+                    found.append(next)
+                    return next
+                }
             }
             
-            found.append(next)
-            
-            return next
+            return nil
         }
         
         var source: Source.AsyncIterator

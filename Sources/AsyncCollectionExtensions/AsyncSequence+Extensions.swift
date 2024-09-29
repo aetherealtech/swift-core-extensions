@@ -1,5 +1,6 @@
 import CollectionExtensions
 import Foundation
+import PrivateUtilities
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension AsyncSequence {
@@ -27,10 +28,15 @@ public extension AsyncSequence {
     
     @_alwaysEmitIntoClient @inlinable
     func store<Key, Value>(in type: [Key: Value].Type = [Key: Value].self) async rethrows -> [Key: Value] where Element == (Key, Value) {
-        try await store(
-            in: type,
-            uniquingKeysWith: { first, second in second }
-        )
+        var result: [Key: Value] = [:]
+        
+        for try await (key, value) in self {
+            result.insertOrFailOnDuplicate(key: key, value: value)
+        }
+        
+        return result
+        
+        
     }
     
     @_alwaysEmitIntoClient @inlinable

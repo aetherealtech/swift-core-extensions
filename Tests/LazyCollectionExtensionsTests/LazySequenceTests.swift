@@ -777,68 +777,6 @@ final class LazySequenceTests: XCTestCase {
         try assertEqual(expectedResult, Array(result))
     }
 
-    func testCartesianProduct() async throws {
-        let firstSource = [0, 1, 2, 3]
-        let secondSource = ["A", "B", "C"]
-        let thirdSource = [SomeEnum.thisCase, SomeEnum.thatCase]
-        let fourthSource = [1.1, 1.2, 1.3]
-        
-        var first: DestructiveSequence<[Int]> { .init(firstSource) }
-        var second: DestructiveSequence<[String]> { .init(secondSource) }
-        var third: DestructiveSequence<[SomeEnum]> { .init(thirdSource) }
-        var fourth: DestructiveSequence<[Double]> { .init(fourthSource) }
-   
-        let result1 = Array(LazySequences.cartesianProduct(first, second, third))
-        let result2 = Array(LazySequences.cartesianProduct(first, second, third, fourth))
-        
-        let result1Member = Array(first.lazy.cartesianProduct(with: second, third))
-        let result2Member = Array(first.lazy.cartesianProduct(with: second, third, fourth))
-
-        var index = 0
-
-        for x in 0..<firstSource.count {
-            for y in 0..<secondSource.count {
-                for z in 0..<thirdSource.count {
-                    let result = result1[index]
-                    try assertEqual(result.0, firstSource[x])
-                    try assertEqual(result.1, secondSource[y])
-                    try assertEqual(result.2, thirdSource[z])
-                    
-                    let resultMember = result1Member[index]
-                    try assertEqual(resultMember.0, firstSource[x])
-                    try assertEqual(resultMember.1, secondSource[y])
-                    try assertEqual(resultMember.2, thirdSource[z])
-                    
-                    index += 1
-                }
-            }
-        }
-        
-        index = 0
-        
-        for x in 0..<firstSource.count {
-            for y in 0..<secondSource.count {
-                for z in 0..<thirdSource.count {
-                    for w in 0..<fourthSource.count {
-                        let result = result2[index]
-                        try assertEqual(result.0, firstSource[x])
-                        try assertEqual(result.1, secondSource[y])
-                        try assertEqual(result.2, thirdSource[z])
-                        try assertEqual(result.3, fourthSource[w])
-                        
-                        let resultMember = result2Member[index]
-                        try assertEqual(resultMember.0, firstSource[x])
-                        try assertEqual(resultMember.1, secondSource[y])
-                        try assertEqual(resultMember.2, thirdSource[z])
-                        try assertEqual(resultMember.3, fourthSource[w])
-                        
-                        index += 1
-                    }
-                }
-            }
-        }
-    }
-    
     func testRemovingAllOf() throws {
         let testSequence = DestructiveSequence([
             1,
@@ -916,10 +854,70 @@ final class LazySequenceTests: XCTestCase {
         let result = testSequence
             .lazy
             .removingDuplicates()
+                
+        try assertEqual(expectedResult, Array(result))
+    }
+    
+    func testCartesianProduct() async throws {
+        let firstSource = [0, 1, 2, 3]
+        let secondSource = ["A", "B", "C"]
+        let thirdSource = [SomeEnum.thisCase, SomeEnum.thatCase]
+        let fourthSource = [1.1, 1.2, 1.3]
         
-        let finalResult = Array(result)
+        var first: DestructiveSequence<[Int]> { .init(firstSource) }
+        var second: DestructiveSequence<[String]> { .init(secondSource) }
+        var third: DestructiveSequence<[SomeEnum]> { .init(thirdSource) }
+        var fourth: DestructiveSequence<[Double]> { .init(fourthSource) }
+   
+        let result1 = Array(LazySequences.cartesianProduct(first, second, third))
+        let result2 = Array(LazySequences.cartesianProduct(first, second, third, fourth))
         
-        try assertEqual(expectedResult, finalResult)
+        let result1Member = Array(first.lazy.cartesianProduct(with: second, third))
+        let result2Member = Array(first.lazy.cartesianProduct(with: second, third, fourth))
+
+        var index = 0
+
+        for x in 0..<firstSource.count {
+            for y in 0..<secondSource.count {
+                for z in 0..<thirdSource.count {
+                    let result = result1[index]
+                    try assertEqual(result.0, firstSource[x])
+                    try assertEqual(result.1, secondSource[y])
+                    try assertEqual(result.2, thirdSource[z])
+                    
+                    let resultMember = result1Member[index]
+                    try assertEqual(resultMember.0, firstSource[x])
+                    try assertEqual(resultMember.1, secondSource[y])
+                    try assertEqual(resultMember.2, thirdSource[z])
+                    
+                    index += 1
+                }
+            }
+        }
+        
+        index = 0
+        
+        for x in 0..<firstSource.count {
+            for y in 0..<secondSource.count {
+                for z in 0..<thirdSource.count {
+                    for w in 0..<fourthSource.count {
+                        let result = result2[index]
+                        try assertEqual(result.0, firstSource[x])
+                        try assertEqual(result.1, secondSource[y])
+                        try assertEqual(result.2, thirdSource[z])
+                        try assertEqual(result.3, fourthSource[w])
+                        
+                        let resultMember = result2Member[index]
+                        try assertEqual(resultMember.0, firstSource[x])
+                        try assertEqual(resultMember.1, secondSource[y])
+                        try assertEqual(resultMember.2, thirdSource[z])
+                        try assertEqual(resultMember.3, fourthSource[w])
+                        
+                        index += 1
+                    }
+                }
+            }
+        }
     }
     
     func testCartesianProductCollection() async throws {
