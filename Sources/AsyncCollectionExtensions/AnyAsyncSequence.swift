@@ -110,4 +110,9 @@ extension AsyncSequence {
     func erase() -> AnyAsyncSequence<Element, any Error> {
         .init(erasing: self)
     }
+    
+    func fullyErased() -> AnyAsyncSequence<Any, any Error> {
+        map { $0 }
+            .erase()
+    }
 }

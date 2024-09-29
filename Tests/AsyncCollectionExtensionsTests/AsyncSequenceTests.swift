@@ -1515,17 +1515,17 @@ final class AsyncSequenceTests: XCTestCase {
 //        let secondSource = ["A", "B", "C"]
 //        let thirdSource = [SomeEnum.thisCase, SomeEnum.thatCase]
 //        let fourthSource = [1.1, 1.2, 1.3]
-//
+//        
 //        var first: DestructiveSequence<[Int]> { .init(firstSource) }
 //        var second: DestructiveSequence<[String]> { .init(secondSource) }
 //        var third: DestructiveSequence<[SomeEnum]> { .init(thirdSource) }
 //        var fourth: DestructiveSequence<[Double]> { .init(fourthSource) }
-//
-//        let result1 = Array(LazySequences.cartesianProduct(first, second, third))
-//        let result2 = Array(LazySequences.cartesianProduct(first, second, third, fourth))
-//
-//        let result1Member = Array(first.lazy.cartesianProduct(with: second, third))
-//        let result2Member = Array(first.lazy.cartesianProduct(with: second, third, fourth))
+//   
+//        let result1 = try await AsyncSequences.cartesianProduct(first, second, third).store(in: Array.self)
+//        let result2 = try await AsyncSequences.cartesianProduct(first, second, third, fourth).store(in: Array.self)
+//        
+//        let result1Member = try await first.cartesianProduct(with: second, third).store(in: Array.self)
+//        let result2Member = try await first.cartesianProduct(with: second, third, fourth).store(in: Array.self)
 //
 //        var index = 0
 //
@@ -1536,19 +1536,19 @@ final class AsyncSequenceTests: XCTestCase {
 //                    try assertEqual(result.0, firstSource[x])
 //                    try assertEqual(result.1, secondSource[y])
 //                    try assertEqual(result.2, thirdSource[z])
-//
+//                    
 //                    let resultMember = result1Member[index]
 //                    try assertEqual(resultMember.0, firstSource[x])
 //                    try assertEqual(resultMember.1, secondSource[y])
 //                    try assertEqual(resultMember.2, thirdSource[z])
-//
+//                    
 //                    index += 1
 //                }
 //            }
 //        }
-//
+//        
 //        index = 0
-//
+//        
 //        for x in 0..<firstSource.count {
 //            for y in 0..<secondSource.count {
 //                for z in 0..<thirdSource.count {
@@ -1558,69 +1558,12 @@ final class AsyncSequenceTests: XCTestCase {
 //                        try assertEqual(result.1, secondSource[y])
 //                        try assertEqual(result.2, thirdSource[z])
 //                        try assertEqual(result.3, fourthSource[w])
-//
+//                        
 //                        let resultMember = result2Member[index]
 //                        try assertEqual(resultMember.0, firstSource[x])
 //                        try assertEqual(resultMember.1, secondSource[y])
 //                        try assertEqual(resultMember.2, thirdSource[z])
 //                        try assertEqual(resultMember.3, fourthSource[w])
-//
-//                        index += 1
-//                    }
-//                }
-//            }
-//        }
-//    }
-//
-//    func testCartesianProductCollection() async throws {
-//        let first = [0, 1, 2, 3]
-//        let second = ["A", "B", "C"]
-//        let third = [SomeEnum.thisCase, SomeEnum.thatCase]
-//        let fourth = [1.1, 1.2, 1.3]
-//
-//        let result1 = Array(LazySequences.cartesianProduct(first, second, third))
-//        let result2 = Array(LazySequences.cartesianProduct(first, second, third, fourth))
-//
-//        let result1Member = Array(first.lazy.cartesianProduct(with: second, third))
-//        let result2Member = Array(first.lazy.cartesianProduct(with: second, third, fourth))
-//
-//        var index = 0
-//
-//        for x in 0..<first.count {
-//            for y in 0..<second.count {
-//                for z in 0..<third.count {
-//                    let result = result1[index]
-//                    try assertEqual(result.0, first[x])
-//                    try assertEqual(result.1, second[y])
-//                    try assertEqual(result.2, third[z])
-//                    
-//                    let resultMember = result1Member[index]
-//                    try assertEqual(resultMember.0, first[x])
-//                    try assertEqual(resultMember.1, second[y])
-//                    try assertEqual(resultMember.2, third[z])
-//                    
-//                    index += 1
-//                }
-//            }
-//        }
-//        
-//        index = 0
-//        
-//        for x in 0..<first.count {
-//            for y in 0..<second.count {
-//                for z in 0..<third.count {
-//                    for w in 0..<fourth.count {
-//                        let result = result2[index]
-//                        try assertEqual(result.0, first[x])
-//                        try assertEqual(result.1, second[y])
-//                        try assertEqual(result.2, third[z])
-//                        try assertEqual(result.3, fourth[w])
-//                        
-//                        let resultMember = result2Member[index]
-//                        try assertEqual(resultMember.0, first[x])
-//                        try assertEqual(resultMember.1, second[y])
-//                        try assertEqual(resultMember.2, third[z])
-//                        try assertEqual(resultMember.3, fourth[w])
 //                        
 //                        index += 1
 //                    }
@@ -1630,9 +1573,9 @@ final class AsyncSequenceTests: XCTestCase {
 //    }
 //    
 //    func testCartesianProductEmpty() async throws {
-//        let result = LazySequences.cartesianProduct()
+//        let result = AsyncSequences.cartesianProduct()
 //        
-//        try assertTrue(result.count() == 0)
+//        try await assertTrue(result.count() == 0)
 //    }
 //    
 //    func testZip() async throws {
@@ -1646,11 +1589,11 @@ final class AsyncSequenceTests: XCTestCase {
 //        var third: DestructiveSequence<[SomeEnum]> { .init(thirdSource) }
 //        var fourth: DestructiveSequence<[Double]> { .init(fourthSource) }
 // 
-//        let result1 = Array(LazySequences.zip(first, second, third))
-//        let result2 = Array(LazySequences.zip(first, second, third, fourth))
+//        let result1 = try await AsyncSequences.zip(first, second, third).store(in: Array.self)
+//        let result2 = try await AsyncSequences.zip(first, second, third, fourth).store(in: Array.self)
 //        
-//        let result1Member = Array(first.lazy.zip(with: second, third))
-//        let result2Member = Array(first.lazy.zip(with: second, third, fourth))
+//        let result1Member = try await first.zip(with: second, third).store(in: Array.self)
+//        let result2Member = try await first.zip(with: second, third, fourth).store(in: Array.self)
 //  
 //        for index in 0..<2 {
 //            let result = result1[index]
@@ -1680,8 +1623,8 @@ final class AsyncSequenceTests: XCTestCase {
 //    }
 //    
 //    func testZipEmpty() async throws {
-//        let result = LazySequences.zip()
+//        let result = AsyncSequences.zip()
 //        
-//        try assertTrue(result.count() == 0)
+//        try await assertTrue(result.count() == 0)
 //    }
 }

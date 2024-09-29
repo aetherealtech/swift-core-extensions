@@ -188,17 +188,7 @@ public extension AsyncSequence {
             compare: compare
         )
     }
-    
-    @_alwaysEmitIntoClient @inlinable
-    func cartesianProduct<Other: AsyncSequence & Sendable>(with other: Other) -> AsyncThrowingFlatMapSequence<Self, AsyncMapSequence<Other, (Self.Element, Other.Element)>> where Element: Sendable, Other.Element: Sendable {
-        flatMap { element in
-            other
-                .map { otherElement in
-                    (element, otherElement)
-                }
-        }
-    }
-    
+
     @_alwaysEmitIntoClient @inlinable
     func first() async rethrows -> Element? {
         for try await element in self {
@@ -251,3 +241,142 @@ public extension AsyncSequence where Element: Equatable {
         removingDuplicates { lhs, rhs in lhs == rhs }
     }
 }
+
+// These crash, likely to be same as this issue: https://github.com/swiftlang/swift/issues/68698
+
+//public extension AsyncSequence {
+//    func cartesianProduct<each Others: AsyncSequence>(
+//        with others: repeat each Others
+//    ) -> AsyncThrowingMapSequence<AnyAsyncSequence<AnyAsyncSequence<Any, any Error>, any Error>, (Element, repeat (each Others).Element)> {
+//        AsyncSequences.cartesianProduct(self, repeat each others)
+//    }
+//    
+//    func zip<each Others: AsyncSequence>(
+//        with others: repeat each Others
+//    ) -> AsyncThrowingMapSequence<AnyAsyncSequence<AnyAsyncSequence<Any, any Error>, any Error>, (Element, repeat (each Others).Element)> {
+//        AsyncSequences.zip(self, repeat each others)
+//    }
+//}
+//
+//@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+//private func arrayToTuple<each Ts>(_ values: some AsyncSequence) async rethrows -> (repeat each Ts) {
+//    var iterator = values.makeAsyncIterator()
+//    
+//    return (repeat try await iterator.next() as! each Ts)
+//}
+//
+//@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+//public enum AsyncSequences {
+//    static func cartesianProduct<each S: AsyncSequence>(
+//        _ sequences: repeat each S
+//    ) -> AsyncThrowingMapSequence<AnyAsyncSequence<AnyAsyncSequence<Any, any Error>, any Error>, (repeat (each S).Element)> {
+//        var erasedSequences = [any AsyncSequence]()
+//        
+//        repeat (erasedSequences.append(each sequences))
+//        
+//        let erasedResult = cartesianProduct(erasedSequences)
+//        
+//        return erasedResult
+//            .map { erasedValue in
+//                try await arrayToTuple(erasedValue)
+//            }
+//    }
+//    
+//    static func zip<each S: AsyncSequence>(
+//        _ sequences: repeat each S
+//    ) -> AsyncThrowingMapSequence<AnyAsyncSequence<AnyAsyncSequence<Any, any Error>, any Error>, (repeat (each S).Element)> {
+//        var erasedSequences = [any AsyncSequence]()
+//        
+//        repeat (erasedSequences.append(each sequences))
+//        
+//        let erasedResult = zip(erasedSequences)
+//        
+//        return erasedResult
+//            .map { erasedValue in try await arrayToTuple(erasedValue) }
+//    }
+//    
+//    private static func cartesianProduct(
+//        _ sequences: [any AsyncSequence]
+//    ) -> AnyAsyncSequence<AnyAsyncSequence<Any, any Error>, any Error> {
+//        guard !sequences.isEmpty else {
+//            return EmptyCollection().async.erase()
+//        }
+//        
+//        var sequences = sequences
+//        
+//        var result = sequences
+//            .removeFirst()
+//            .buffered()
+//            .map { CollectionOfOne($0).async.erase() }
+//            .erase()
+//        
+//        for sequence in sequences {
+//            nonisolated(unsafe) let sequence = sequence
+//                .buffered()
+//            
+//            result = result
+//                .flatMap { (element: AnyAsyncSequence<Any, any Error>) in
+//                    nonisolated(unsafe) let element = element
+//                    
+//                    return sequence
+//                        .map { innerElement in element.appending(innerElement).erase() }
+//                }
+//                .erase()
+//        }
+//        
+//        return result
+//    }
+//    
+//    private struct AsyncZipSequence<Base1: AsyncSequence, Base2: AsyncSequence> : AsyncSequence {
+//        struct AsyncIterator: AsyncIteratorProtocol {
+//            mutating func next() async rethrows -> (Base1.Element, Base2.Element)? {
+//                guard let first = try await base1.next(),
+//                      let second = try await base2.next() else {
+//                    return nil
+//                }
+//                
+//                return (first, second)
+//            }
+//            
+//            var base1: Base1.AsyncIterator
+//            var base2: Base2.AsyncIterator
+//        }
+//        
+//        func makeAsyncIterator() -> AsyncIterator {
+//            .init(
+//                base1: base1.makeAsyncIterator(),
+//                base2: base2.makeAsyncIterator()
+//            )
+//        }
+//        
+//        let base1: Base1
+//        let base2: Base2
+//    }
+//    
+//    private static func zip(
+//        _ sequences: [any AsyncSequence]
+//    ) -> AnyAsyncSequence<AnyAsyncSequence<Any, any Error>, any Error> {
+//        guard !sequences.isEmpty else {
+//            return EmptyCollection().async.erase()
+//        }
+//        
+//        var sequences = sequences
+//        
+//        var result = sequences
+//            .removeFirst()
+//            .fullyErased()
+//            .map { CollectionOfOne($0).async.erase() }
+//            .erase()
+//        
+//    
+//        for sequence in sequences {
+//            result = AsyncZipSequence(base1: result, base2: sequence.fullyErased())
+//                .map { current, next in
+//                    current.appending(next).erase()
+//                }
+//                .erase()
+//        }
+//        
+//        return result
+//    }
+//}
