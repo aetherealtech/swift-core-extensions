@@ -31,9 +31,9 @@ public struct AsyncLazyInsertedSequence<Source: AsyncSequence, Inserted: AsyncSe
         )
     }
     
-    let source: Source
-    let inserted: Inserted
-    let insertAt: Int
+    public let source: Source
+    public let inserted: Inserted
+    public let insertAt: Int
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)

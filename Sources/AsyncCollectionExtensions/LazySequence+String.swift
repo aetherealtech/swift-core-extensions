@@ -7,8 +7,8 @@ public enum StringParseError: LocalizedError {
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension AsyncSequence where Element == String.Element {
-    var ascii: AsyncMapSequence<Self, Result<UInt8, any Error>> {
-        tryMap { character in
+    var ascii: AsyncThrowingMapSequence<Self, UInt8> {
+        map { character in
             try character.asciiValue.require(StringParseError.invalidASCIICharacter)
         }
     }
@@ -43,8 +43,8 @@ public extension AsyncSequence {
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension AsyncSequence where Element == UInt8 {
-    var asciiString: AsyncMapSequence<Self, Result<Character, any Error>> {
-        tryMap { byte in
+    var asciiString: AsyncThrowingMapSequence<Self, Character> {
+        map { byte in
             guard Unicode.ASCII.isASCII(byte) else {
                 throw StringParseError.invalidASCIICharacter
             }

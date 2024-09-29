@@ -28,7 +28,7 @@ public extension Sequence {
         _ transform: @escaping (Element) async throws -> R?
     ) async rethrows -> [R] {
         var results = [R]()
-        if let collection = self as? any Collection {
+        if let collection = self as? any RandomAccessCollection {
             results.reserveCapacity(collection.count)
         }
         
@@ -80,12 +80,16 @@ public extension Sequence {
         
         return results
     }
-    
+}
+
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+public extension Sequence where Self: Sendable {
     func parallelForEach(
         maxConcurrency: Int = .max,
         _ body: @escaping @Sendable (Element) async -> Void
     ) async where Element: Sendable {
-        await map { element in { @Sendable in await body(element) } }
+        await lazy
+            .mapSendable { element in { @Sendable in await body(element) } }
             .awaitAll(maxConcurrency: maxConcurrency)
     }
     
@@ -93,7 +97,8 @@ public extension Sequence {
         maxConcurrency: Int = .max,
         _ body: @escaping @Sendable (Element) async throws -> Void
     ) async throws where Element: Sendable {
-        try await map { element in { @Sendable in try await body(element) } }
+        try await lazy
+            .mapSendable { element in { @Sendable in try await body(element) } }
             .awaitAll(maxConcurrency: maxConcurrency)
     }
     
@@ -101,7 +106,8 @@ public extension Sequence {
         maxConcurrency: Int = .max,
         _ transform: @escaping @Sendable (Element) async -> R
     ) async -> [R] where Element: Sendable {
-        await map { element in { @Sendable in await transform(element) } }
+        await lazy
+            .mapSendable { element in { @Sendable in await transform(element) } }
             .awaitAll(maxConcurrency: maxConcurrency)
     }
     
@@ -109,23 +115,60 @@ public extension Sequence {
         maxConcurrency: Int = .max,
         _ transform: @escaping @Sendable (Element) async throws -> R
     ) async throws -> [R] where Element: Sendable {
-        try await map { element in { @Sendable in try await transform(element) } }
+        try await lazy
+            .mapSendable { element in { @Sendable in try await transform(element) } }
             .awaitAll(maxConcurrency: maxConcurrency)
+    }
+    
+    func parallelCompactMap<R>(
+        maxConcurrency: Int = .max,
+        _ transform: @escaping @Sendable (Element) async -> R?
+    ) async -> [R] where Element: Sendable {
+        await lazy
+            .mapSendable { element in { @Sendable in await transform(element) } }
+            .awaitAll(maxConcurrency: maxConcurrency)
+            .compact()
+    }
+    
+    func parallelCompactMap<R>(
+        maxConcurrency: Int = .max,
+        _ transform: @escaping @Sendable (Element) async throws -> R?
+    ) async throws -> [R] where Element: Sendable {
+        try await lazy
+            .mapSendable { element in { @Sendable in try await transform(element) } }
+            .awaitAll(maxConcurrency: maxConcurrency)
+            .compact()
     }
     
     func parallelFlatMap<R: Collection & Sendable, InnerR>(
         maxConcurrency: Int = .max,
         _ transform: @escaping @Sendable (Element) async -> R
-    ) async -> [InnerR] where Element: Sendable, R.Element == AsyncElement<InnerR> {
+    ) async -> [InnerR] where Element: Sendable, R.Element == InnerR {
         await map { element in { @Sendable in await transform(element) } }
-            .flattenAwaitAll(maxConcurrency: maxConcurrency)
+            .awaitAll(maxConcurrency: maxConcurrency)
+            .flatten()
     }
     
     func parallelFlatMap<R: Collection & Sendable, InnerR>(
         maxConcurrency: Int = .max,
         _ transform: @escaping @Sendable (Element) async throws -> R
-    ) async throws -> [InnerR] where Element: Sendable, R.Element == AsyncThrowingElement<InnerR> {
+    ) async throws -> [InnerR] where Element: Sendable, R.Element == InnerR {
         try await map { element in { @Sendable in try await transform(element) } }
-            .flattenAwaitAll(maxConcurrency: maxConcurrency)
+            .awaitAll(maxConcurrency: maxConcurrency)
+            .flatten()
+    }
+    
+    func parallelFilter(
+        maxConcurrency: Int = .max,
+        _ condition: @escaping @Sendable (Element) async -> Bool
+    ) async -> [Element] where Element: Sendable {
+        await parallelCompactMap { element in await condition(element) ? element : nil }
+    }
+    
+    func parallelFilter(
+        maxConcurrency: Int = .max,
+        _ condition: @escaping @Sendable (Element) async throws -> Bool
+    ) async throws -> [Element] where Element: Sendable {
+        try await parallelCompactMap { element in try await condition(element) ? element : nil }
     }
 }
