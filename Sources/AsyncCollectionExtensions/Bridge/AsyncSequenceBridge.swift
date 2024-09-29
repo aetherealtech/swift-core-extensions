@@ -31,7 +31,7 @@ public struct AsyncSequenceBridge<Source: Sequence, Element>: AsyncSequence wher
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-extension Sequence {
+extension LazySequenceProtocol {
     func await<R>() -> AsyncSequenceBridge<LazyMapSequence<LazySequence<Self>.Elements, AsyncFunction<R>>, R> where Element == () async -> R {
         .init(source: lazy.map(AsyncFunction.init))
     }
@@ -68,7 +68,7 @@ public struct AsyncThrowingSequenceBridge<Source: Sequence, Element>: AsyncSeque
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-extension Sequence {
+extension LazySequenceProtocol {
     func await<R>() -> AsyncThrowingSequenceBridge<LazyMapSequence<LazySequence<Self>.Elements, AsyncThrowingFunction<R>>, R> where Element == () async throws -> R {
         .init(source: lazy.map(AsyncThrowingFunction.init))
     }
