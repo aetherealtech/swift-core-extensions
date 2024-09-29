@@ -646,6 +646,76 @@ final class AsyncSequenceTests: XCTestCase {
         try assertEqual(expectedResult, try await result.store(in: Array.self))
     }
     
+    @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
+    func testFlattenNoThrows() async throws {
+        let testSequence = DestructiveSequence([
+            DestructiveSequence([1, 2, 3]),
+            DestructiveSequence([4, 5, 6]),
+            DestructiveSequence([7, 8, 9]),
+            DestructiveSequence([10, 11, 12])
+        ])
+        
+        let expectedResult = Array(1...12)
+        
+        let result = testSequence
+            .flatten()
+        
+        try assertEqual(expectedResult, await result.store(in: Array.self))
+    }
+    
+    func testFlattenSyncInner() async throws {
+        let testSequence = DestructiveSequence([
+            SyncDestructiveSequence([1, 2, 3]),
+            SyncDestructiveSequence([4, 5, 6]),
+            SyncDestructiveSequence([7, 8, 9]),
+            SyncDestructiveSequence([10, 11, 12])
+        ])
+        
+        let expectedResult = Array(1...12)
+        
+        let result = testSequence
+            .flatten()
+        
+        try assertEqual(expectedResult, await result.store(in: Array.self))
+    }
+    
+    func testFlatMapSyncInner() async throws {
+        let testSequence = DestructiveSequence([
+            1,
+            3,
+            2,
+            8,
+            5
+        ])
+        
+        let expectedResult = [
+            "1",
+            "3",
+            "3",
+            "3",
+            "2",
+            "2",
+            "8",
+            "8",
+            "8",
+            "8",
+            "8",
+            "8",
+            "8",
+            "8",
+            "5",
+            "5",
+            "5",
+            "5",
+            "5",
+        ]
+        
+        let result = testSequence
+            .flatMap { Array(repeating: $0.description, count: $0) }
+        
+        try assertEqual(expectedResult, await result.store(in: Array.self))
+    }
+    
     func testAppending() async throws {
         let testSequence = DestructiveSequence([
             1,
