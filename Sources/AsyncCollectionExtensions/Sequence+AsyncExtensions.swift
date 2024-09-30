@@ -13,7 +13,7 @@ public extension Sequence {
         _ transform: @escaping (Element) async throws -> R
     ) async rethrows -> [R] {
         var results = [R]()
-        if let collection = self as? any Collection {
+        if let collection = self as? any RandomAccessCollection {
             results.reserveCapacity(collection.count)
         }
         
@@ -200,7 +200,7 @@ public extension Sequence where Self: Sendable {
             .compact()
     }
     
-    func parallelFlatMap<R: Collection & Sendable, InnerR>(
+    func parallelFlatMap<R: Sequence & Sendable, InnerR>(
         maxConcurrency: Int = .max,
         _ transform: @escaping @Sendable (Element) async -> R
     ) async -> [InnerR] where Element: Sendable, R.Element == InnerR {
@@ -209,7 +209,7 @@ public extension Sequence where Self: Sendable {
             .flatten()
     }
     
-    func parallelFlatMap<R: Collection & Sendable, InnerR>(
+    func parallelFlatMap<R: Sequence & Sendable, InnerR>(
         maxConcurrency: Int = .max,
         _ transform: @escaping @Sendable (Element) async throws -> R
     ) async throws -> [InnerR] where Element: Sendable, R.Element == InnerR {
