@@ -8,3 +8,7 @@ public extension Dictionary {
         self[key] = value
     }
 }
+
+public func notSupportedOnThisPlatform<each Ts, E: Error, R>() -> (_: repeat each Ts) throws(E) -> R {
+    { (_: repeat each Ts) throws(E) -> R in fatalError("Not supported on this platform") }
+}

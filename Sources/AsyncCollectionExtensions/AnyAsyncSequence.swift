@@ -1,3 +1,5 @@
+import PrivateUtilities
+
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public struct AnyAsyncIterator<Element, Failure: Error>: AsyncIteratorProtocol {
     public mutating func next() async throws -> Element? {
@@ -20,7 +22,7 @@ public struct AnyAsyncIterator<Element, Failure: Error>: AsyncIteratorProtocol {
             return try await iterator.next()
         }
         
-        nextIsolation_imp = { _, _ in fatalError("Not supported on this platform") }
+        nextIsolation_imp = notSupportedOnThisPlatform()
     }
     
     @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)

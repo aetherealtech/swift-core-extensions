@@ -3,7 +3,7 @@ import XCTest
 
 @testable import LazyCollectionExtensions
 
-final class TerminateSequenceTests: XCTestCase {
+final class TerminatingSequenceTests: XCTestCase {
     func testTerminate() throws {
         let testSequence = DestructiveSequence([
             1,
