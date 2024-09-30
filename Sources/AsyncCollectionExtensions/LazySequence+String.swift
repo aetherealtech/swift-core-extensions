@@ -77,15 +77,15 @@ public extension AsyncSequence where Element == UTF32.CodeUnit {
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public struct AsyncParsedUnicodeSequence<Codec: UnicodeCodec, Source: AsyncSequence>: AsyncSequence where Source.Element == Codec.CodeUnit {
-    public typealias Element = Result<UnicodeScalar, Error>
+    public typealias Element = Character
     
     public struct AsyncIterator: AsyncIteratorProtocol {
-        public mutating func next() async rethrows -> Element? {
+        public mutating func next() async throws -> Element? {
             var buffer: [Codec.CodeUnit] = []
             
             while true {
                 guard let next = try await source.next() else {
-                    return nil
+                    break
                 }
                 
                 buffer.append(next)
@@ -94,13 +94,17 @@ public struct AsyncParsedUnicodeSequence<Codec: UnicodeCodec, Source: AsyncSeque
                 let result = codec.decode(&bufferIterator)
                 
                 switch result {
-                    case .emptyInput:
-                        break
                     case let .scalarValue(scalar):
-                        return .success(scalar)
-                    case .error:
-                        return .failure(StringParseError.parseError)
+                        return .init(scalar)
+                    default:
+                        continue
                 }
+            }
+            
+            if buffer.isEmpty {
+                return nil
+            } else {
+                throw StringParseError.parseError
             }
         }
         
