@@ -10,11 +10,6 @@ enum SomeEnum {
 }
 
 final class AsyncSequenceTests: XCTestCase {
-    enum SomeEnum {
-        case thisCase
-        case thatCase
-    }
-    
     func testStore() async throws {
         let expectedResult = [
             1,

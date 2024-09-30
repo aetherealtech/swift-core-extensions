@@ -30,7 +30,7 @@ final class DestructiveSequence<Base: Sequence>: AsyncSequence, AsyncIteratorPro
     private var iterator: Base.Iterator
 }
 
-final class SyncDestructiveSequence<Base: Sequence>: Sequence, IteratorProtocol {
+final class SyncDestructiveSequence<Base: Sequence>: Sequence, IteratorProtocol, @unchecked Sendable {
     func next() -> Base.Element? {
         return iterator.next()
     }

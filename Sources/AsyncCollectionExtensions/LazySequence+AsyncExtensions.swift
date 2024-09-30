@@ -46,15 +46,29 @@ public extension LazySequenceProtocol {
     }
     
     func flatMap<R: AsyncSequence, InnerR>(
+        _ transform: @escaping @Sendable (Element) -> R
+    ) -> AsyncThrowingFlatMapSequence<AsyncSequenceBridge<LazyMapSequence<LazyMapSequence<Self.Elements, () async -> R>, AsyncFunction<R>>, R>, R> where R.Element == InnerR {
+        map(transform)
+            .flatten()
+    }
+    
+    func flatMap<R: AsyncSequence, InnerR>(
+        _ transform: @escaping @Sendable (Element) throws -> R
+    ) -> AsyncThrowingFlatMapSequence<AsyncThrowingSequenceBridge<LazyMapSequence<LazyMapSequence<Self.Elements, () async throws -> R>, AsyncThrowingFunction<R>>, R>, R> where R.Element == InnerR {
+        map(transform)
+            .flatten()
+    }
+    
+    func flatMap<R: AsyncSequence, InnerR>(
         _ transform: @escaping @Sendable (Element) async -> R
-    ) -> AsyncFlatMapSequence<AsyncSequenceBridge<LazyMapSequence<LazyMapSequence<Self.Elements, () async -> R>, AsyncFunction<R>>, R>, SequenceAsyncWrapper<R>> where R.Element == InnerR {
+    ) -> AsyncThrowingFlatMapSequence<AsyncSequenceBridge<LazyMapSequence<LazyMapSequence<Self.Elements, () async -> R>, AsyncFunction<R>>, R>, R> where R.Element == InnerR {
         map(transform)
             .flatten()
     }
     
     func flatMap<R: AsyncSequence, InnerR>(
         _ transform: @escaping @Sendable (Element) async throws -> R
-    ) -> AsyncFlatMapSequence<AsyncThrowingSequenceBridge<LazyMapSequence<LazyMapSequence<Self.Elements, () async throws -> R>, AsyncThrowingFunction<R>>, R>, SequenceAsyncWrapper<R>> where R.Element == InnerR {
+    ) -> AsyncThrowingFlatMapSequence<AsyncThrowingSequenceBridge<LazyMapSequence<LazyMapSequence<Self.Elements, () async throws -> R>, AsyncThrowingFunction<R>>, R>, R> where R.Element == InnerR {
         map(transform)
             .flatten()
     }
