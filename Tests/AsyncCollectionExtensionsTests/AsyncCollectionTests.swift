@@ -59,6 +59,15 @@ final class AsyncCollectionTests: XCTestCase {
     }
     
     @MainActor
+    func testAwaitAllEmpty() async throws {
+        let jobs: [@Sendable () async -> Int] = []
+        
+        let result = await jobs.awaitAll(maxConcurrency: 5)
+        
+        try assertEqual([], result)
+    }
+    
+    @MainActor
     func testAwaitAllThrowingNoThrows() async throws {
         var concurrency = 0
         var maxConcurrency = 0
@@ -167,5 +176,14 @@ final class AsyncCollectionTests: XCTestCase {
         try assertEqual(5, maxConcurrency)
         
         withExtendedLifetime(subscription) { }
+    }
+    
+    @MainActor
+    func testAwaitAllThrowingEmpty() async throws {
+        let jobs: [@Sendable () async throws -> Int] = []
+        
+        let result = try await jobs.awaitAll(maxConcurrency: 5)
+        
+        try assertEqual([], result)
     }
 }

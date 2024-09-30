@@ -88,21 +88,25 @@ public extension Sequence where Self: Sendable {
         let collection = self
             .makeRandomAccess
   
+        guard collection.count > 0 else {
+            return []
+        }
+        
         let stream = collection
             .enumerated()
             .lazy
             .mapSendable { (offset, work) in { @Sendable in (offset, await work()) } }
             .stream(maxConcurrency: maxConcurrency)
         
-        var theBuffer: UnsafeMutableBufferPointer<R>!
+        var theBuffer: UnsafeMutablePointer<R>?
         
         let result = [R](unsafeUninitializedCapacity: collection.count) { buffer, initializedCount in
-            theBuffer = buffer
+            theBuffer = buffer.baseAddress.unsafelyUnwrapped
             initializedCount = collection.count
         }
 
         for await (offset, element) in stream {
-            (theBuffer.baseAddress! + offset).initialize(to: element)
+            (theBuffer.unsafelyUnwrapped + offset).initialize(to: element)
         }
 
         return result
@@ -111,22 +115,26 @@ public extension Sequence where Self: Sendable {
     func awaitAll<R>(maxConcurrency: Int = .max) async throws -> [R] where Element == AsyncThrowingElement<R> {
         let collection = self
             .makeRandomAccess
-
+        
+        guard collection.count > 0 else {
+            return []
+        }
+        
         let stream = collection
             .enumerated()
             .lazy
             .mapSendable { (offset, work) in { @Sendable in (offset, try await work()) } }
             .stream(maxConcurrency: maxConcurrency)
         
-        var theBuffer: UnsafeMutableBufferPointer<R>!
+        var theBuffer: UnsafeMutablePointer<R>!
         
         let result = [R](unsafeUninitializedCapacity: collection.count) { buffer, initializedCount in
-            theBuffer = buffer
+            theBuffer = buffer.baseAddress.unsafelyUnwrapped
             initializedCount = collection.count
         }
 
         for try await (offset, element) in stream {
-            (theBuffer.baseAddress! + offset).initialize(to: element)
+            (theBuffer.unsafelyUnwrapped + offset).initialize(to: element)
         }
 
         return result
