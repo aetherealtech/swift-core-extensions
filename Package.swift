@@ -88,7 +88,9 @@ let package = Package(
         ),
         .target(
             name: "CodableExtensions",
-            dependencies: []
+            dependencies: [
+                "PrivateUtilities",
+            ]
         ),
         .target(
             name: "CollectionExtensions",
@@ -179,6 +181,13 @@ let package = Package(
             name: "AsyncExtensionsTests",
             dependencies: [
                 "AsyncExtensions",
+                .product(name: "Assertions", package: "swift-assertions"),
+            ]
+        ),
+        .testTarget(
+            name: "CodableExtensionsTests",
+            dependencies: [
+                "CodableExtensions",
                 .product(name: "Assertions", package: "swift-assertions"),
             ]
         ),
