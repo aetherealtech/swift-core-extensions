@@ -39,7 +39,7 @@ public struct TimerPublisher<S: Scheduler>: Publisher {
         self.interval = interval
     }
 
-    public func receive<Sub: Subscriber<Output, Failure>>(subscriber: Sub) {
+    public func receive(subscriber: some Subscriber<Output, Failure>) {
         subscriber.receive(subscription: TimerSubscription(
             subscriber: subscriber,
             scheduler: scheduler,
@@ -48,7 +48,7 @@ public struct TimerPublisher<S: Scheduler>: Publisher {
         ))
     }
     
-    private struct TimerSubscription<Sub: Subscriber<Void, Never>>: Subscription {
+    private struct TimerSubscription<Sub: Subscriber<Output, Failure>>: Subscription {
         var combineIdentifier: CombineIdentifier { subscriber.combineIdentifier }
         
         func receive() {

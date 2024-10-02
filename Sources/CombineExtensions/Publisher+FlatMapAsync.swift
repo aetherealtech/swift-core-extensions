@@ -1,8 +1,6 @@
 import AsyncExtensions
 import Combine
 
-// Opaque types crashe compiler
-
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension Publisher where Failure == Never {
     func flatMapAsync<R: Publisher, InnerR>(
@@ -32,7 +30,7 @@ public extension Publisher where Failure == Never {
 public extension Publisher {
     func flatMapAsync<R: Publisher & Sendable, InnerR>(
         _ transform: @escaping @Sendable (Output) async -> R
-    ) -> some Publisher<InnerR, Failure> where Output: Sendable, R.Output == InnerR, R.Failure == Failure {
+    ) -> Publishers.FlatMap<R, Publishers.FlatMap<Publishers.SetFailureType<AsyncFuture<NonThrowingAsyncFutureReceiver<R>>, Self.Failure>, Publishers.Map<Self, @Sendable () async -> R>>> where Output: Sendable, R.Output == InnerR, R.Failure == Failure {
         mapAsync(transform)
             .flatten()
     }

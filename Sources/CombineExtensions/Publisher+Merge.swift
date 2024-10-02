@@ -3,15 +3,15 @@ import Synchronization
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension Sequence where Element: Publisher {
-    func merge() -> some Publisher<Element.Output, Element.Failure> {
+    func merge() -> MergePublisher<Self> {
         MergePublisher(sources: self)
     }
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-struct MergePublisher<Sources: Sequence>: Publisher where Sources.Element: Publisher {
-    typealias Output = Sources.Element.Output
-    typealias Failure = Sources.Element.Failure
+public struct MergePublisher<Sources: Sequence>: Publisher where Sources.Element: Publisher {
+    public typealias Output = Sources.Element.Output
+    public typealias Failure = Sources.Element.Failure
 
     init(
         sources: Sources
@@ -19,14 +19,14 @@ struct MergePublisher<Sources: Sequence>: Publisher where Sources.Element: Publi
         self.sources = sources
     }
 
-    func receive<S>(subscriber: S) where S: Subscriber, S.Failure == Failure, S.Input == Output {
+    public func receive(subscriber: some Subscriber<Output, Failure>) {
         subscriber.receive(subscription: MergeSubscription(
             sources: sources,
             subscriber: subscriber
         ))
     }
 
-    private final class MergeSubscription<S: Subscriber>: Subscription where S.Input == Output, S.Failure == Failure {
+    private final class MergeSubscription<S: Subscriber<Output, Failure>>: Subscription {
         init(
             sources: Sources,
             subscriber: S

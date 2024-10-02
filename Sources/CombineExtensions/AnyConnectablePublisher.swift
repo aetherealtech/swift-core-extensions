@@ -11,9 +11,9 @@ public extension ConnectablePublisher {
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public struct AnyConnectablePublisher<Output, Failure: Error>: ConnectablePublisher {
-    public init<P: ConnectablePublisher>(
+    public init<P: ConnectablePublisher<Output, Failure>>(
         erasing: P
-    ) where P.Output == Output, P.Failure == Failure {
+    ) {
         unwrap = erasing
     }
 
@@ -21,7 +21,7 @@ public struct AnyConnectablePublisher<Output, Failure: Error>: ConnectablePublis
         unwrap.connect()
     }
 
-    public func receive<S: Subscriber<Output, Failure>>(subscriber: S) {
+    public func receive(subscriber: some Subscriber<Output, Failure>) {
         unwrap.receive(subscriber: subscriber)
     }
     

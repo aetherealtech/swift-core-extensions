@@ -9,7 +9,7 @@ public extension Publisher {
         receiveValue: @escaping @Sendable (Output) -> Void,
         receiveCompletion: @escaping @Sendable (Subscribers.Completion<Failure>) -> Void,
         until: @escaping @Sendable (Output) -> Bool
-    ) -> some Cancellable {
+    ) -> UntilSubscriber<Output, Failure> {
         let subscriber = UntilSubscriber(
             receiveValue: receiveValue,
             receiveCompletion: receiveCompletion,
@@ -28,7 +28,7 @@ public extension Publisher where Failure == Never {
     func subscribe(
         receiveValue: @escaping @Sendable (Output) -> Void,
         until: @escaping @Sendable (Output) -> Bool
-    ) -> some Cancellable {
+    ) -> UntilSubscriber<Output, Failure> {
         subscribe(
             receiveValue: receiveValue,
             receiveCompletion: { _ in },

@@ -20,14 +20,14 @@ public struct CombineLatestPublisher<Sources: Collection>: Publisher where Sourc
         self.sources = sources
     }
 
-    public func receive<S>(subscriber: S) where S: Subscriber, S.Failure == Failure, S.Input == Output {
+    public func receive(subscriber: some Subscriber<Output, Failure>) {
         subscriber.receive(subscription: CombineLatestSubscription(
             sources: sources,
             subscriber: subscriber
         ))
     }
 
-    private final class CombineLatestSubscription<S: Subscriber>: Subscription where S.Input == Output, S.Failure == Failure {
+    private final class CombineLatestSubscription<S: Subscriber<Output, Failure>>: Subscription {
         init(
             sources: Sources,
             subscriber: S
