@@ -4,154 +4,154 @@ import Synchronization
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension Collection where Element: Publisher {
-    func combineLatest() -> CombineLatestPublisher<Self> {
-        CombineLatestPublisher<Self>(sources: self)
+    func combineLatest() -> Publishers.CombineLatestCollection<Self> {
+        .init(sources: self)
     }
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public struct CombineLatestPublisher<Sources: Collection>: Publisher where Sources.Element: Publisher {
-    public typealias Output = [Sources.Element.Output]
-    public typealias Failure = Sources.Element.Failure
-
-    init(
-        sources: Sources
-    ) {
-        self.sources = sources
-    }
-
-    public func receive(subscriber: some Subscriber<Output, Failure>) {
-        subscriber.receive(subscription: CombineLatestSubscription(
-            sources: sources,
-            subscriber: subscriber
-        ))
-    }
-
-    private final class CombineLatestSubscription<S: Subscriber<Output, Failure>>: Subscription {
+public extension Publishers {
+    struct CombineLatestCollection<Sources: Collection>: Publisher where Sources.Element: Publisher {
+        public typealias Output = [Sources.Element.Output]
+        public typealias Failure = Sources.Element.Failure
+        
         init(
-            sources: Sources,
-            subscriber: S
+            sources: Sources
         ) {
-            state = .init(
-                subscriber: subscriber,
-                subscriptions: .init(repeating: nil, count: sources.count),
-                currentValues: .init(repeating: nil, count: sources.count)
-            )
-
-            sources.enumerated().forEach { index, source in
-                source.receive(subscriber: CombineLatestSubscriber(
-                    index: index,
-                    state: _state
-                ))
-            }
+            self.sources = sources
         }
-
-        func request(_ demand: Subscribers.Demand) {
-            guard demand > .none else { return }
-            
-            let requestUpstream = _state.write { state -> () -> Void in
-                state.demand += demand
-                let pendingValues = state.pendingValues.dropFirst(state.demand.max ?? .max)
-                state.demand -= pendingValues.count
-                
-                for pendingValue in pendingValues {
-                    state.demand += state.subscriber.receive(pendingValue)
-                }
-             
-                return { [demand = state.demand, subscriptions = state.subscriptions.compact()] in
-                    if demand > .none {
-                        let upstreamDemand: Subscribers.Demand = demand == .unlimited ? .unlimited : .max(1)
-                        subscriptions.forEach { subscription in subscription.request(upstreamDemand) }
-                    }
-                }
-            }
-            
-            requestUpstream()
+        
+        public func receive(subscriber: some Subscriber<Output, Failure>) {
+            subscriber.receive(subscription: CombineLatestSubscription(
+                sources: sources,
+                subscriber: subscriber
+            ))
         }
-
-        func cancel() {
-            _state.write { state in
-                state.subscriptions.forEach { subscription in subscription?.cancel() }
-            }
-        }
-
-        private func makeSubscriber(index: Int) -> CombineLatestSubscriber {
-            .init(
-                index: index,
-                state: _state
-            )
-        }
-
-        private struct State {
-            var subscriber: S
-            var subscriptions: [Subscription?]
-            var demand: Subscribers.Demand = .none
-            var currentValues: [Sources.Element.Output?]
-            var pendingValues: [[Sources.Element.Output]] = []
-        }
-
-        private final class CombineLatestSubscriber: Subscriber {
-            typealias Input = Sources.Element.Output
-            typealias Failure = Sources.Element.Failure
-
+        
+        private final class CombineLatestSubscription<S: Subscriber<Output, Failure>>: Subscription {
             init(
-                index: Int,
-                state: Synchronized<State>
+                sources: Sources,
+                subscriber: S
             ) {
-                self.index = index
-
-                _state = state
+                _state = .init(wrappedValue: .init(
+                    subscriber: subscriber,
+                    subscriptions: .init(repeating: nil, count: sources.count),
+                    currentValues: .init(repeating: nil, count: sources.count)
+                ))
+                
+                sources.enumerated().forEach { index, source in
+                    source.receive(subscriber: CombineLatestSubscriber(
+                        index: index,
+                        state: _state
+                    ))
+                }
             }
-
-            func receive(subscription: Subscription) {
-                _state.subscriptions[index] = subscription
-            }
-
-            func receive(_ input: Sources.Element.Output) -> Subscribers.Demand {
-                _state.write { state -> Subscribers.Demand in
-                    state.currentValues[index] = input
-
-                    let readyValues = state.currentValues.compact()
-
-                    if readyValues.count == state.currentValues.count {
-                        if state.demand > .none {
-                            state.demand -= 1
-                            state.demand += state.subscriber.receive(readyValues)
-                        } else {
-                            state.pendingValues.append(readyValues)
-                        }
-                        
-                        return state.demand > .none ? .max(1) : .none
+            
+            func request(_ demand: Subscribers.Demand) {
+                guard demand > .none else { return }
+                
+                let requestUpstream = _state.write { state -> () -> Void in
+                    state.demand += demand
+                    let pendingValues = state.pendingValues.dropFirst(state.demand.max ?? .max)
+                    state.demand -= pendingValues.count
+                    
+                    for pendingValue in pendingValues {
+                        state.demand += state.subscriber.receive(pendingValue)
                     }
                     
-                    return .max(1)
-                }
-            }
-
-            func receive(completion: Subscribers.Completion<Sources.Element.Failure>) {
-                _state.write { state in
-                    switch completion {
-                        case let .failure(error):
-                            state.subscriber.receive(completion: .failure(error))
-                        case .finished:
-                            state.subscriptions[index] = nil
-                            
-                            if state.currentValues[index] == nil || state.subscriptions.compact().isEmpty {
-                                state.subscriber.receive(completion: .finished)
-                            }
+                    return { [demand = state.demand, subscriptions = state.subscriptions.compact()] in
+                        if demand > .none {
+                            let upstreamDemand: Subscribers.Demand = demand == .unlimited ? .unlimited : .max(1)
+                            subscriptions.forEach { subscription in subscription.request(upstreamDemand) }
+                        }
                     }
                 }
+                
+                requestUpstream()
             }
-
-            private let index: Int
-
-            @Synchronized
-            private var state: State
+            
+            func cancel() {
+                _state.write { state in
+                    state.subscriptions.forEach { subscription in subscription?.cancel() }
+                }
+            }
+            
+            private func makeSubscriber(index: Int) -> CombineLatestSubscriber {
+                .init(
+                    index: index,
+                    state: _state
+                )
+            }
+            
+            private struct State {
+                var subscriber: S
+                var subscriptions: [Subscription?]
+                var demand: Subscribers.Demand = .none
+                var currentValues: [Sources.Element.Output?]
+                var pendingValues: [[Sources.Element.Output]] = []
+            }
+            
+            private final class CombineLatestSubscriber: Subscriber {
+                typealias Input = Sources.Element.Output
+                typealias Failure = Sources.Element.Failure
+                
+                init(
+                    index: Int,
+                    state: Synchronized<State>
+                ) {
+                    self.index = index
+                    
+                    _state = state
+                }
+                
+                func receive(subscription: Subscription) {
+                    _state.subscriptions[index] = subscription
+                }
+                
+                func receive(_ input: Sources.Element.Output) -> Subscribers.Demand {
+                    _state.write { state -> Subscribers.Demand in
+                        state.currentValues[index] = input
+                        
+                        let readyValues = state.currentValues.compact()
+                        
+                        if readyValues.count == state.currentValues.count {
+                            if state.demand > .none {
+                                state.demand -= 1
+                                state.demand += state.subscriber.receive(readyValues)
+                            } else {
+                                state.pendingValues.append(readyValues)
+                            }
+                            
+                            return state.demand > .none ? .max(1) : .none
+                        }
+                        
+                        return .max(1)
+                    }
+                }
+                
+                func receive(completion: Subscribers.Completion<Sources.Element.Failure>) {
+                    _state.write { state in
+                        switch completion {
+                            case let .failure(error):
+                                state.subscriber.receive(completion: .failure(error))
+                            case .finished:
+                                state.subscriptions[index] = nil
+                                
+                                if state.currentValues[index] == nil || state.subscriptions.compact().isEmpty {
+                                    state.subscriber.receive(completion: .finished)
+                                }
+                        }
+                    }
+                }
+                
+                private let index: Int
+                
+                private let _state: Synchronized<State>
+            }
+            
+            private let _state: Synchronized<State>
         }
-
-        @Synchronized
-        private var state: State
+        
+        private let sources: Sources
     }
-
-    private let sources: Sources
 }

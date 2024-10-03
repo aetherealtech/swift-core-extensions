@@ -13,12 +13,6 @@ public extension Publisher {
     }
 }
 
-struct PublisherEndedBeforeCondition: LocalizedError {
-    var errorDescription: String? {
-        "Publisher ended before condition was met"
-    }
-}
-
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
 public extension Publisher {
     @discardableResult
@@ -87,7 +81,7 @@ public extension Publisher where Output: Equatable & Sendable, Failure == Never 
     func wait(for value: Output) async {
         await values.waitUntil { $0 == value }
         
-        // This requires a try, not sure why
+        // This requires a try, not sure why (hey that rhymes)
 //        await values.wait(for: value)
     }
 }
