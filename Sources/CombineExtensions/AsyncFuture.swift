@@ -60,7 +60,7 @@ private struct AsyncFutureSubscription<S: Subscriber, R: AsyncFutureReceiver<S.I
         self.receiver = receiver
     }
     
-    var combineIdentifier: CombineIdentifier { subscriber.combineIdentifier }
+    let combineIdentifier = CombineIdentifier()
 
     func request(_ demand: Subscribers.Demand) {
         guard demand > .none else {
@@ -81,7 +81,6 @@ private struct AsyncFutureSubscription<S: Subscriber, R: AsyncFutureReceiver<S.I
     func cancel() {
         _task.write { task in
             task?.cancel()
-            task = nil
         }
     }
 
