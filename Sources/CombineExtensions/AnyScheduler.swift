@@ -5,29 +5,13 @@ import Foundation
 public struct AnyScheduler: Scheduler {
     public struct AnyTime: Strideable {
         public struct Stride: Comparable, SignedNumeric, SchedulerTimeIntervalConvertible {
-            public static func seconds(_ s: Int) -> Self {
-                .init(nanoseconds: Int64(s) * 1_000_000_000)
-            }
-
-            public static func seconds(_ s: Double) -> Self {
-                .init(nanoseconds: Int64(s * 1e9))
-            }
-
-            public static func milliseconds(_ ms: Int) -> Self {
-                .init(nanoseconds: Int64(ms) * 1_000_000)
-            }
-
-            public static func microseconds(_ us: Int) -> Self {
-                .init(nanoseconds: Int64(us) * 1_000)
-            }
-
-            public static func nanoseconds(_ ns: Int) -> Self {
-                .init(nanoseconds: Int64(ns))
-            }
+            public static func seconds(_ s: Int) -> Self { .init(nanoseconds: Int64(s) * 1_000_000_000) }
+            public static func seconds(_ s: Double) -> Self { .init(nanoseconds: Int64(s * 1e9)) }
+            public static func milliseconds(_ ms: Int) -> Self { .init(nanoseconds: Int64(ms) * 1_000_000) }
+            public static func microseconds(_ us: Int) -> Self { .init(nanoseconds: Int64(us) * 1_000) }
+            public static func nanoseconds(_ ns: Int) -> Self { .init(nanoseconds: Int64(ns)) }
             
-            public static func < (lhs: Self, rhs: Self) -> Bool {
-                lhs.nanoseconds < rhs.nanoseconds
-            }
+            public static func < (lhs: Self, rhs: Self) -> Bool { lhs.nanoseconds < rhs.nanoseconds }
                         
             public init(integerLiteral value: Int64) {
                 nanoseconds = value

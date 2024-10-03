@@ -242,6 +242,57 @@ public extension AsyncSequence where Element: Equatable {
     }
 }
 
+public extension AsyncSequence {
+    func next() async rethrows -> Element? {
+        var iterator = makeAsyncIterator()
+        return try await iterator.next()
+    }
+
+    func waitForNext() async rethrows {
+        _ = try await next()
+    }
+    
+    @discardableResult
+    func waitUntil(_ condition: @Sendable (Element) throws -> Bool) async rethrows -> Element? {
+        try await withoutActuallyEscaping(condition) { condition in
+            try await filter(condition)
+                .next()
+        }
+    }
+
+    @discardableResult
+    func waitUntil(_ condition: @Sendable (Element) async throws -> Bool) async rethrows -> Element? {
+        try await withoutActuallyEscaping(condition) { condition in
+            try await filter(condition)
+                .next()
+        }
+    }
+    
+    @discardableResult
+    func waitUntilNotNil<Wrapped>() async rethrows -> Wrapped? where Element == Wrapped? {
+        try await waitUntil { $0 != nil } ?? nil
+    }
+    
+    @discardableResult
+    func waitUntilNil<Wrapped>() async rethrows -> Bool where Element == Wrapped? {
+        let result = try await waitUntil { $0 == nil }
+        
+        // The type of `result` is `Wrapped??`.  If a `nil` was found, the `result` will be `Wrapped??.some(Wrapped?.none)` (the outer optional will be set, the inner one will be unset).  If the sequence ended without finding a `nil`, the result will be `Wrapped??.none`.  We have to treat an outer `nil` differently than an inner `nil`, which is why we can't just do an `result == nil`.
+        return switch result {
+            case .some: true
+            default: false
+        }
+    }
+}
+
+public extension AsyncSequence where Element: Equatable & Sendable {
+    @discardableResult
+    func wait(for value: Element) async rethrows -> Element? {
+        try await waitUntil { $0 == value }
+    }
+}
+
+
 // These crash, likely to be same as this issue: https://github.com/swiftlang/swift/issues/68698
 
 //public extension AsyncSequence {

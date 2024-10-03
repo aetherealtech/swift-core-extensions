@@ -6,7 +6,7 @@ public protocol AsyncFutureReceiver<Output, Failure>: Sendable {
     associatedtype Output
     associatedtype Failure: Error
     
-    func callAsFunction<S: Subscriber<Output, Failure>>() async -> (S) -> Void
+    func callAsFunction(_ subscriber: some Subscriber<Output, Failure>) async
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
@@ -15,13 +15,13 @@ public struct NonThrowingAsyncFutureReceiver<Output>: AsyncFutureReceiver {
     
     let work: @Sendable () async -> Output
     
-    public func callAsFunction<S: Subscriber<Output, Failure>>() async -> (S) -> Void {
+    public func callAsFunction(_ subscriber: some Subscriber<Output, Failure>) async {
         let result = await work()
         
-        return { subscriber in
-            _ = subscriber.receive(result)
-            subscriber.receive(completion: .finished)
-        }
+        try? Task.checkCancellation()
+        
+        _ = subscriber.receive(result)
+        subscriber.receive(completion: .finished)
     }
 }
 
@@ -31,18 +31,16 @@ public struct ThrowingAsyncFutureReceiver<Output>: AsyncFutureReceiver {
     
     let work: @Sendable () async throws -> Output
     
-    public func callAsFunction<S: Subscriber<Output, Failure>>() async -> (S) -> Void {
+    public func callAsFunction(_ subscriber: some Subscriber<Output, Failure>) async {
         do {
             let result = try await work()
             
-            return { subscriber in
-                _ = subscriber.receive(result)
-                subscriber.receive(completion: .finished)
-            }
+            try? Task.checkCancellation()
+            
+            _ = subscriber.receive(result)
+            subscriber.receive(completion: .finished)
         } catch {
-            return { subscriber in
-                subscriber.receive(completion: .failure(error))
-            }
+            subscriber.receive(completion: .failure(error))
         }
     }
 }
@@ -73,13 +71,9 @@ private struct AsyncFutureSubscription<S: Subscriber, R: AsyncFutureReceiver<S.I
             guard task == nil else {
                 return
             }
-                        
+                                    
             task = .init { [subscriber = SendableSubscriber(value: subscriber), receiver] in
-                let receiveValue: (S) -> Void = await receiver()
-                
-                try? Task.checkCancellation()
-                
-                receiveValue(subscriber.value)
+                await receiver(subscriber.value)
             }
         }
     }

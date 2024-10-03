@@ -12,15 +12,7 @@ final class LazyIfElseSequenceTests: XCTestCase {
             5,
             6,
         ]
-        
-        let testElseArray = [
-            7,
-            8,
-            9,
-            12,
-            13,
-        ]
-        
+    
         let expectedResult = testIfArray
         
         let result = LazyIfElseSequence<[Int], [Int]>.if(
@@ -31,14 +23,6 @@ final class LazyIfElseSequenceTests: XCTestCase {
     }
     
     func testElse() throws {
-        let testIfArray = [
-            1,
-            2,
-            4,
-            5,
-            6,
-        ]
-        
         let testElseArray = [
             7,
             8,
