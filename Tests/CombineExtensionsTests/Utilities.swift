@@ -2,19 +2,23 @@ import Combine
 
 struct TestError: Error {}
 
-struct NoDemandSubscriber<Input, Failure: Error>: Subscriber {
+final class NoDemandSubscriber<Input, Failure: Error>: Subscriber {
     func receive(subscription: any Subscription) { subscription.request(.none) }
     
-    func receive(_ input: Input) -> Subscribers.Demand { .none }
+    func receive(_ input: Input) -> Subscribers.Demand { received.append(input); return .none }
     
     func receive(completion: Subscribers.Completion<Failure>) { }
     
     let combineIdentifier = CombineIdentifier()
+    
+    var received: [Input] = []
 }
 
 extension Publisher {
-    func subscribeNoDemand() {
-        receive(subscriber: NoDemandSubscriber())
+    func subscribeNoDemand() -> NoDemandSubscriber<Output, Failure> {
+        let subscriber = NoDemandSubscriber<Output, Failure>()
+        receive(subscriber: subscriber)
+        return subscriber
     }
 }
 

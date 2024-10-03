@@ -1,35 +1,79 @@
 import Assertions
+import Combine
 import XCTest
 
 @testable import CombineExtensions
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 final class TimerTests: XCTestCase {
+    @MainActor
     func testTimer() async throws {
-        let timer = DispatchQueue.global().timer(
-            interval: .milliseconds(2000)
+        let timer = DispatchQueue.main.timer(
+            interval: .milliseconds(20)
         )
+        
+        let times = CurrentValueSubject<[Date], Never>([])
                 
-        let subscription1 = timer.sink { print("Received 1") }
+        let subscription = timer.sink {
+            times.value.append(.now)
+        }
         
-        try await Task.sleep(timeInterval: 0.5)
+        for try await currentTimes in times.values {
+            if currentTimes.count == 10 {
+                break
+            }
+        }
+                        
+        let intervals = Array(times.value
+            .indices)[1...]
+            .map { index in
+                times.value[index].timeIntervalSince(times.value[index - 1])
+            }
         
-        let subscription2 = timer.sink { print("Received 2") }
+        for interval in intervals {
+            try assertEqual(0.02, interval, accuracy: 0.0075)
+        }
         
-        try await Task.sleep(timeInterval: 0.5)
+        withExtendedLifetime(subscription) { }
+    }
+    
+    @MainActor
+    func testTimerNoDemand() async throws {
+        let timer = DispatchQueue.main.timer(
+            interval: .milliseconds(20)
+        )
         
-        let subscription3 = timer.sink { print("Received 3") }
+        let subscriber = timer.subscribeNoDemand()
+
+        try await Task.sleep(nanoseconds: 1_000_000)
         
-        try await Task.sleep(timeInterval: 0.5)
+        try assertTrue(subscriber.received.isEmpty)
+    }
+    
+    @MainActor
+    func testTimerNoMoreDemand() async throws {
+        let timer = DispatchQueue.main.timer(
+            interval: .milliseconds(20)
+        )
         
-        try await Task.sleep(timeInterval: 10)
+        var times: [Date] = []
         
-        subscription2.cancel()
+        for await _ in timer.values {
+            times.append(.now)
+            
+            if times.count == 10 {
+                break
+            }
+        }
+
+        let intervals = Array(times
+            .indices)[1...]
+            .map { index in
+                times[index].timeIntervalSince(times[index - 1])
+            }
         
-        try await Task.sleep(timeInterval: 10)
-        
-        withExtendedLifetime(subscription1) { }
-        withExtendedLifetime(subscription2) { }
-        withExtendedLifetime(subscription3) { }
+        for interval in intervals {
+            try assertEqual(0.02, interval, accuracy: 0.0075)
+        }
     }
 }

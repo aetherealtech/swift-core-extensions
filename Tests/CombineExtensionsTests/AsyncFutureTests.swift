@@ -234,11 +234,12 @@ final class AsyncFutureTests: XCTestCase {
             run = true
         }
         
-        future.subscribeNoDemand()
+        let subscriber = future.subscribeNoDemand()
         
         try await Task.sleep(nanoseconds: 1_000_000)
         
         try assertFalse(run)
+        try assertTrue(subscriber.received.isEmpty)
     }
     
     @MainActor
@@ -306,7 +307,7 @@ final class AsyncFutureTests: XCTestCase {
             .compactMap { $0[0] }
             .waitUntilNotNil()!
         
-        var subscription2 = future.sink(
+        let subscription2 = future.sink(
             receiveCompletion: { @Sendable completion in
                 Task { @MainActor in
                     completions.value[1] = completion

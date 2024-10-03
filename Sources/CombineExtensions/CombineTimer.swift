@@ -49,16 +49,13 @@ public struct TimerPublisher<S: Scheduler>: Publisher {
     }
     
     private struct TimerSubscription<Sub: Subscriber<Output, Failure>>: Subscription {
-        var combineIdentifier: CombineIdentifier { subscriber.combineIdentifier }
+        let combineIdentifier = CombineIdentifier()
         
         func receive() {
             _state.write { state in
-                state.demand -= 1
-                state.demand += subscriber.receive(())
-                
-                if state.demand == .none {
-                    state.subscription?.cancel()
-                    state.subscription = nil
+                if state.demand > .none {
+                    state.demand -= 1
+                    state.demand += subscriber.receive(())
                 }
             }
         }
@@ -88,6 +85,19 @@ public struct TimerPublisher<S: Scheduler>: Publisher {
                 state.subscription = nil
             }
         }
+        
+        // Explicit initializer adds test coverage to the lines that initialize members in-line
+        init(
+            subscriber: Sub,
+            scheduler: S,
+            start: S.SchedulerTimeType,
+            interval: S.SchedulerTimeType.Stride
+        ) {
+            self.subscriber = subscriber
+            self.scheduler = scheduler
+            self.start = start
+            self.interval = interval
+        }
 
         let subscriber: Sub
         let scheduler: S
@@ -99,8 +109,7 @@ public struct TimerPublisher<S: Scheduler>: Publisher {
             var demand: Subscribers.Demand = .none
         }
         
-        @Synchronized
-        private var state: State = .init()
+        private let _state = Synchronized<State>(wrappedValue: .init())
     }
 
     public let scheduler: S
