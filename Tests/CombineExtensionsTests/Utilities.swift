@@ -33,7 +33,13 @@ final class ManualDemandSubscriber<Input, Failure: Error>: Subscriber {
     
     let combineIdentifier = CombineIdentifier()
     
-    func request(demand: Subscribers.Demand) { subscription!.request(demand) }
+    func request(demand: Subscribers.Demand) {
+        subscription!.request(demand)
+    }
+    
+    func cancel() {
+        subscription?.cancel()
+    }
     
     private let receiveValue: @Sendable (Input) -> Void
     private var subscription: (any Subscription)?

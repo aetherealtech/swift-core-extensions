@@ -3,7 +3,7 @@ import Combine
 import Synchronization
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension Collection where Element: Publisher {
+public extension RandomAccessCollection where Element: Publisher {
     func combineLatest() -> Publishers.CombineLatestCollection<Self> {
         .init(sources: self)
     }
@@ -11,7 +11,7 @@ public extension Collection where Element: Publisher {
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension Publishers {
-    struct CombineLatestCollection<Sources: Collection>: Publisher where Sources.Element: Publisher {
+    struct CombineLatestCollection<Sources: RandomAccessCollection>: Publisher where Sources.Element: Publisher {
         public typealias Output = [Sources.Element.Output]
         public typealias Failure = Sources.Element.Failure
         
@@ -33,15 +33,17 @@ public extension Publishers {
                 sources: Sources,
                 subscriber: S
             ) {
+                self.subscriber = subscriber
+                
                 _state = .init(wrappedValue: .init(
-                    subscriber: subscriber,
                     subscriptions: .init(repeating: nil, count: sources.count),
                     currentValues: .init(repeating: nil, count: sources.count)
                 ))
                 
-                sources.enumerated().forEach { index, source in
+                for (index, source) in sources.enumerated() {
                     source.receive(subscriber: CombineLatestSubscriber(
                         index: index,
+                        subscriber: subscriber,
                         state: _state
                     ))
                 }
@@ -60,13 +62,16 @@ public extension Publishers {
             }
             
             func cancel() {
-                _state.write { state in
-                    state.subscriptions.forEach { subscription in subscription?.cancel() }
+                let subscriptions = _state.write { state in
+                    state.subscriptions
+                        .compact()
                 }
+                
+                subscriptions
+                    .forEach { subscription in subscription.cancel() }
             }
   
             private struct State {
-                var subscriber: S
                 var subscriptions: [Subscription?]
                 var currentValues: [Sources.Element.Output?]
             }
@@ -77,9 +82,11 @@ public extension Publishers {
                 
                 init(
                     index: Int,
+                    subscriber: S,
                     state: Synchronized<State>
                 ) {
                     self.index = index
+                    self.subscriber = subscriber
                     
                     _state = state
                 }
@@ -95,7 +102,7 @@ public extension Publishers {
                         let readyValues = state.currentValues.compact()
                         
                         if readyValues.count == state.currentValues.count {
-                            return state.subscriber.receive(readyValues)
+                            return subscriber.receive(readyValues)
                         } else {
                             return .none
                         }
@@ -103,25 +110,36 @@ public extension Publishers {
                 }
                 
                 func receive(completion: Subscribers.Completion<Sources.Element.Failure>) {
-                    _state.write { state in
-                        switch completion {
-                            case let .failure(error):
-                                state.subscriber.receive(completion: .failure(error))
-                            case .finished:
-                                state.subscriptions[index] = nil
-                                
-                                if state.currentValues[index] == nil || state.subscriptions.compact().isEmpty {
-                                    state.subscriber.receive(completion: .finished)
-                                }
+                    let allFinished = _state.write { state in
+                        if case .finished = completion {
+                            state.subscriptions[index] = nil
+                            
+                            // The combined publisher is finished if either all of its upstream publishers are finished (the `subscriptions` are all `nil`) or if the one publisher that just finished here never published a value, since that means the combined publisher can never publish one either.
+                            return state.currentValues[index] == nil || state.subscriptions
+                                .lazy
+                                .compact()
+                                .isEmpty
                         }
+                        
+                        return false
+                    }
+                    
+                    switch completion {
+                        case let .failure(error):
+                            subscriber.receive(completion: .failure(error))
+                        case .finished:
+                            if allFinished {
+                                subscriber.receive(completion: .finished)
+                            }
                     }
                 }
                 
                 private let index: Int
-                
+                private let subscriber: S
                 private let _state: Synchronized<State>
             }
             
+            private let subscriber: S
             private let _state: Synchronized<State>
         }
         
