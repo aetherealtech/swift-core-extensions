@@ -50,24 +50,13 @@ public extension Publishers {
             func request(_ demand: Subscribers.Demand) {
                 guard demand > .none else { return }
                 
-                let requestUpstream = _state.write { state -> () -> Void in
-                    state.demand += demand
-                    let pendingValues = state.pendingValues.dropFirst(state.demand.max ?? .max)
-                    state.demand -= pendingValues.count
-                    
-                    for pendingValue in pendingValues {
-                        state.demand += state.subscriber.receive(pendingValue)
-                    }
-                    
-                    return { [demand = state.demand, subscriptions = state.subscriptions.compact()] in
-                        if demand > .none {
-                            let upstreamDemand: Subscribers.Demand = demand == .unlimited ? .unlimited : .max(1)
-                            subscriptions.forEach { subscription in subscription.request(upstreamDemand) }
-                        }
-                    }
+                let subscriptions = _state.write { state in
+                    state.subscriptions.compact()
                 }
                 
-                requestUpstream()
+                for subscription in subscriptions {
+                    subscription.request(demand)
+                }
             }
             
             func cancel() {
@@ -75,20 +64,11 @@ public extension Publishers {
                     state.subscriptions.forEach { subscription in subscription?.cancel() }
                 }
             }
-            
-            private func makeSubscriber(index: Int) -> CombineLatestSubscriber {
-                .init(
-                    index: index,
-                    state: _state
-                )
-            }
-            
+  
             private struct State {
                 var subscriber: S
                 var subscriptions: [Subscription?]
-                var demand: Subscribers.Demand = .none
                 var currentValues: [Sources.Element.Output?]
-                var pendingValues: [[Sources.Element.Output]] = []
             }
             
             private final class CombineLatestSubscriber: Subscriber {
@@ -115,17 +95,10 @@ public extension Publishers {
                         let readyValues = state.currentValues.compact()
                         
                         if readyValues.count == state.currentValues.count {
-                            if state.demand > .none {
-                                state.demand -= 1
-                                state.demand += state.subscriber.receive(readyValues)
-                            } else {
-                                state.pendingValues.append(readyValues)
-                            }
-                            
-                            return state.demand > .none ? .max(1) : .none
+                            return state.subscriber.receive(readyValues)
+                        } else {
+                            return .none
                         }
-                        
-                        return .max(1)
                     }
                 }
                 

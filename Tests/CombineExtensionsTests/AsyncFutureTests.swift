@@ -236,7 +236,7 @@ final class AsyncFutureTests: XCTestCase {
         
         let subscriber = future.subscribeNoDemand()
         
-        try await Task.sleep(nanoseconds: 1_000_000)
+        try await Task.sleep(nanoseconds: 1_000)
         
         try assertFalse(run)
         try assertTrue(subscriber.received.isEmpty)

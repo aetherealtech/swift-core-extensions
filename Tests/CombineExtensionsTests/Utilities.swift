@@ -28,7 +28,7 @@ final class ManualDemandSubscriber<Input, Failure: Error>: Subscriber {
     }
     
     func receive(subscription: any Subscription) { self.subscription = subscription }
-    func receive(_ input: Input) -> Subscribers.Demand { receiveValue(input); return .none }
+    func receive(_ input: Input) -> Subscribers.Demand { receiveValue(input); return extraDemand }
     func receive(completion: Subscribers.Completion<Failure>) { }
     
     let combineIdentifier = CombineIdentifier()
@@ -37,6 +37,8 @@ final class ManualDemandSubscriber<Input, Failure: Error>: Subscriber {
     
     private let receiveValue: @Sendable (Input) -> Void
     private var subscription: (any Subscription)?
+    
+    var extraDemand: Subscribers.Demand = .none
 }
 
 extension Publisher {
