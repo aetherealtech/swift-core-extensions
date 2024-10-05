@@ -22,21 +22,30 @@ public extension Publisher {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension Publisher {
+public extension Publisher where Failure == any Error {
     func mapAsync<R>(
         _ transform: @escaping @Sendable (Output) async throws -> R
-    ) -> Publishers.FlatMap<ThrowingAsyncFuture<R>, Publishers.MapError<Publishers.Map<Self, AsyncThrowingElement<R>>, any Error>> where Output: Sendable {
+    ) -> Publishers.FlatMap<ThrowingAsyncFuture<R>, Publishers.Map<Self, AsyncThrowingElement<R>>> where Output: Sendable {
         map { value in { @Sendable in try await transform(value) } }
-            .eraseErrorType()
             .await()
     }
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension Publisher where Failure == Error {
+public extension Publisher where Failure == Never {
     func mapAsync<R>(
         _ transform: @escaping @Sendable (Output) async throws -> R
-    ) -> Publishers.FlatMap<ThrowingAsyncFuture<R>, Publishers.Map<Self, AsyncThrowingElement<R>>> where Output: Sendable {
+    ) -> Publishers.FlatMap<ThrowingAsyncFuture<R>, Publishers.SetFailureType<Publishers.Map<Self, AsyncThrowingElement<R>>, any Error>> where Output: Sendable {
+        map { value in { @Sendable in try await transform(value) } }
+            .await()
+    }
+}
+
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+public extension Publisher {
+    func mapAsync<R>(
+        _ transform: @escaping @Sendable (Output) async throws -> R
+    ) -> Publishers.FlatMap<ThrowingAsyncFuture<R>, Publishers.MapError<Publishers.Map<Self, AsyncThrowingElement<R>>, any Error>> where Output: Sendable {
         map { value in { @Sendable in try await transform(value) } }
             .await()
     }

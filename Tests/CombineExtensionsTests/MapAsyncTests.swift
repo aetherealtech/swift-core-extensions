@@ -6,25 +6,20 @@ import XCTest
 @testable import CombineExtensions
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-final class AwaitTests: XCTestCase {
+final class MapAsyncTests: XCTestCase {
     @MainActor
-    func testAwaitNoThrows() async throws {
+    func testMapAsyncNoThrows() async throws {
         try await withTimeout(timeInterval: 1.0) {
             let continuations = CurrentValueSubject<[Int: CheckedContinuation<Void, Never>], Never>([:])
-            
-            let jobs = (0..<10)
-                .map { index in
-                    { @Sendable @MainActor in
-                        await withCheckedContinuation { continuation in
-                            continuations.value[index] = continuation
-                        }
-                        
-                        return index
+ 
+            let publisher = (0..<10).publisher
+                .mapAsync { @MainActor index in
+                    await withCheckedContinuation { continuation in
+                        continuations.value[index] = continuation
                     }
+                    
+                    return index
                 }
-            
-            let publisher = jobs.publisher
-                .await()
             
             nonisolated(unsafe) let receivedValues = CurrentValueSubject<Set<Int>, Never>([])
             
@@ -60,24 +55,19 @@ final class AwaitTests: XCTestCase {
     }
     
     @MainActor
-    func testAwaitOuterThrows() async throws {
+    func testMapAsyncOuterThrows() async throws {
         try await withTimeout(timeInterval: 1.0) {
             let continuations = CurrentValueSubject<[Int: CheckedContinuation<Void, Never>], Never>([:])
             
-            let jobs = (0..<10)
-                .map { index in
-                    { @Sendable @MainActor in
-                        await withCheckedContinuation { continuation in
-                            continuations.value[index] = continuation
-                        }
-                        
-                        return index
-                    }
-                }
-            
-            let publisher = jobs.publisher
+            let publisher = (0..<10).publisher
                 .setFailureType(to: TestError.self)
-                .await()
+                .mapAsync { @MainActor index in
+                    await withCheckedContinuation { continuation in
+                        continuations.value[index] = continuation
+                    }
+                    
+                    return index
+                }
             
             nonisolated(unsafe) let receivedValues = CurrentValueSubject<Set<Int>, Never>([])
             
@@ -115,23 +105,18 @@ final class AwaitTests: XCTestCase {
     }
     
     @MainActor
-    func testAwaitThrowingNoThrows() async throws {
+    func testMapAsyncThrowingNoThrows() async throws {
         try await withTimeout(timeInterval: 1.0) {
             let continuations = CurrentValueSubject<[Int: CheckedContinuation<Void, any Error>], Never>([:])
             
-            let jobs = (0..<10)
-                .map { index in
-                    { @Sendable @MainActor in
-                        try await withCheckedThrowingContinuation { continuation in
-                            continuations.value[index] = continuation
-                        }
-                        
-                        return index
+            let publisher = (0..<10).publisher
+                .mapAsync { @MainActor index in
+                    try await withCheckedThrowingContinuation { continuation in
+                        continuations.value[index] = continuation
                     }
+                    
+                    return index
                 }
-            
-            let publisher = jobs.publisher
-                .await()
             
             nonisolated(unsafe) let receivedValues = CurrentValueSubject<Set<Int>, Never>([])
             
@@ -169,23 +154,18 @@ final class AwaitTests: XCTestCase {
     }
     
     @MainActor
-    func testAwaitThrowingThrows() async throws {
+    func testMapAsyncThrowingThrows() async throws {
         try await withTimeout(timeInterval: 5.0) {
             let continuations = CurrentValueSubject<[Int: CheckedContinuation<Void, any Error>], Never>([:])
             
-            let jobs = (0..<10)
-                .map { index in
-                    { @Sendable @MainActor in
-                        try await withCheckedThrowingContinuation { continuation in
-                            continuations.value[index] = continuation
-                        }
-                        
-                        return index
+            let publisher = (0..<10).publisher
+                .mapAsync { @MainActor index in
+                    try await withCheckedThrowingContinuation { continuation in
+                        continuations.value[index] = continuation
                     }
+                    
+                    return index
                 }
-            
-            let publisher = jobs.publisher
-                .await()
             
             nonisolated(unsafe) let receivedCompletion = CurrentValueSubject<Subscribers.Completion<any Error>?, Never>(nil)
             
@@ -231,24 +211,19 @@ final class AwaitTests: XCTestCase {
     }
     
     @MainActor
-    func testAwaitOuterAndInnerThrows() async throws {
+    func testMapAsyncOuterAndInnerThrows() async throws {
         try await withTimeout(timeInterval: 1.0) {
             let continuations = CurrentValueSubject<[Int: CheckedContinuation<Void, any Error>], Never>([:])
             
-            let jobs = (0..<10)
-                .map { index in
-                    { @Sendable @MainActor in
-                        try await withCheckedThrowingContinuation { continuation in
-                            continuations.value[index] = continuation
-                        }
-                        
-                        return index
-                    }
-                }
-            
-            let publisher = jobs.publisher
+            let publisher = (0..<10).publisher
                 .setFailureType(to: TestError.self)
-                .await()
+                .mapAsync { @MainActor index in
+                    try await withCheckedThrowingContinuation { continuation in
+                        continuations.value[index] = continuation
+                    }
+                    
+                    return index
+                }
             
             nonisolated(unsafe) let receivedValues = CurrentValueSubject<Set<Int>, Never>([])
             
@@ -286,24 +261,19 @@ final class AwaitTests: XCTestCase {
     }
     
     @MainActor
-    func testAwaitOuterAndInnerUntypedThrows() async throws {
+    func testMapAsyncOuterAndInnerUntypedThrows() async throws {
         try await withTimeout(timeInterval: 1.0) {
             let continuations = CurrentValueSubject<[Int: CheckedContinuation<Void, any Error>], Never>([:])
             
-            let jobs = (0..<10)
-                .map { index in
-                    { @Sendable @MainActor in
-                        try await withCheckedThrowingContinuation { continuation in
-                            continuations.value[index] = continuation
-                        }
-                        
-                        return index
-                    }
-                }
-            
-            let publisher = jobs.publisher
+            let publisher = (0..<10).publisher
                 .setFailureType(to: (any Error).self)
-                .await()
+                .mapAsync { @MainActor index in
+                    try await withCheckedThrowingContinuation { continuation in
+                        continuations.value[index] = continuation
+                    }
+                    
+                    return index
+                }
             
             nonisolated(unsafe) let receivedValues = CurrentValueSubject<Set<Int>, Never>([])
             

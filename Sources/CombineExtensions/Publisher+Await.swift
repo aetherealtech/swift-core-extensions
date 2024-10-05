@@ -30,10 +30,19 @@ public extension Publisher where Failure == any Error {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension Publisher {
-    func await<R>() -> Publishers.FlatMap<AsyncFuture<ThrowingAsyncFutureReceiver<R>>, Publishers.SetFailureType<Self, (any Error)>> where Output == @Sendable () async throws -> R {
+public extension Publisher where Failure == Never {
+    func await<R>() -> Publishers.FlatMap<AsyncFuture<ThrowingAsyncFutureReceiver<R>>, Publishers.SetFailureType<Self, any Error>> where Output == @Sendable () async throws -> R {
         self
             .setFailureType(to: (any Error).self)
+            .await()
+    }
+}
+
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+public extension Publisher {
+    func await<R>() -> Publishers.FlatMap<AsyncFuture<ThrowingAsyncFutureReceiver<R>>, Publishers.MapError<Self, any Error>> where Output == @Sendable () async throws -> R {
+        self
+            .eraseErrorType()
             .await()
     }
 }
