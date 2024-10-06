@@ -6,9 +6,9 @@ import Synchronization
 public extension Publisher {
     @discardableResult
     func subscribeNext(
-        receiveValue: @escaping @Sendable (Output) -> Void,
-        receiveCompletion: @escaping @Sendable (Subscribers.Completion<Failure>) -> Void
-    ) -> SingleValueSubscriber<Output, Failure> {
+        receiveCompletion: @escaping @Sendable (Subscribers.Completion<Failure>) -> Void,
+        receiveValue: @escaping @Sendable (Output) -> Void
+    ) -> SingleValueSubscriber<Output, Failure>.CancelHandle {
         let subscriber = SingleValueSubscriber(
             receiveValue: receiveValue,
             receiveCompletion: receiveCompletion
@@ -16,7 +16,7 @@ public extension Publisher {
         
         subscribe(subscriber)
         
-        return subscriber
+        return .init(subscriber: subscriber)
     }
 }
 
@@ -25,29 +25,27 @@ public extension Publisher where Failure == Never {
     @discardableResult
     func subscribeNext(
         receiveValue: @escaping @Sendable (Output) -> Void
-    ) -> SingleValueSubscriber<Output, Failure> {
+    ) -> SingleValueSubscriber<Output, Failure>.CancelHandle {
         subscribeNext(
-            receiveValue: receiveValue,
-            receiveCompletion: { _ in }
+            receiveCompletion: { _ in },
+            receiveValue: receiveValue
         )
     }
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public final class SingleValueSubscriber<Input, Failure: Error>: Subscriber, Cancellable, Sendable {
-    private enum State {
-        case ready
-        case subscribed(Subscription)
-        case cancelled
+public struct SingleValueSubscriber<Input, Failure: Error>: Subscriber, Sendable {
+    public struct CancelHandle: Cancellable {
+        init(subscriber: SingleValueSubscriber) {
+            self.subscriber = subscriber
+        }
+        
+        public func cancel() { subscriber.cancel() }
+        
+        private let subscriber: SingleValueSubscriber
     }
-    
-    init(
-        receiveValue: @escaping @Sendable (Input) -> Void,
-        receiveCompletion: @escaping @Sendable (Subscribers.Completion<Failure>) -> Void
-    ) {
-        self.receiveValue = receiveValue
-        self.receiveCompletion = receiveCompletion
-    }
+
+    public nonisolated(unsafe) let combineIdentifier = CombineIdentifier()
 
     public func receive(subscription: Subscription) {
         _state.write { state in
@@ -62,38 +60,23 @@ public final class SingleValueSubscriber<Input, Failure: Error>: Subscriber, Can
     }
 
     public func receive(_ input: Input) -> Subscribers.Demand {
-        let send = _state.write { state in
-            if case let .subscribed(subscription) = state {
-                subscription.cancel()
-                return true
-            } else {
-                return false
-            }
-        }
-        
-        if send {
-            receiveValue(input)
-        }
-        
+        receiveValue(input)
         return .none
     }
 
     public func receive(completion: Subscribers.Completion<Failure>) {
-        let send = _state.write { state in
-            if case let .subscribed(subscription) = state {
-                subscription.cancel()
-                return true
-            } else {
-                return false
-            }
-        }
-        
-        if send {
-            receiveCompletion(completion)
-        }
+        receiveCompletion(completion)
     }
     
-    public func cancel() {
+    init(
+        receiveValue: @escaping @Sendable (Input) -> Void,
+        receiveCompletion: @escaping @Sendable (Subscribers.Completion<Failure>) -> Void
+    ) {
+        self.receiveValue = receiveValue
+        self.receiveCompletion = receiveCompletion
+    }
+    
+    func cancel() {
         _state.write { state in
             if case let .subscribed(subscription) = state {
                 subscription.cancel()
@@ -101,6 +84,12 @@ public final class SingleValueSubscriber<Input, Failure: Error>: Subscriber, Can
             
             state = .cancelled
         }
+    }
+    
+    private enum State {
+        case ready
+        case subscribed(Subscription)
+        case cancelled
     }
 
     private let receiveValue: @Sendable (Input) -> Void

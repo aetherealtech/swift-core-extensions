@@ -9,7 +9,7 @@ public extension Publisher {
         receiveValue: @escaping @Sendable (Output) -> Void,
         receiveCompletion: @escaping @Sendable (Subscribers.Completion<Failure>) -> Void,
         until: @escaping @Sendable (Output) -> Bool
-    ) -> UntilSubscriber<Output, Failure> {
+    ) -> UntilSubscriber<Output, Failure>.CancelHandle {
         let subscriber = UntilSubscriber(
             receiveValue: receiveValue,
             receiveCompletion: receiveCompletion,
@@ -18,7 +18,7 @@ public extension Publisher {
         
         subscribe(subscriber)
         
-        return subscriber
+        return .init(subscriber: subscriber)
     }
 }
 
@@ -28,7 +28,7 @@ public extension Publisher where Failure == Never {
     func subscribe(
         receiveValue: @escaping @Sendable (Output) -> Void,
         until: @escaping @Sendable (Output) -> Bool
-    ) -> UntilSubscriber<Output, Failure> {
+    ) -> UntilSubscriber<Output, Failure>.CancelHandle {
         subscribe(
             receiveValue: receiveValue,
             receiveCompletion: { _ in },
@@ -38,22 +38,18 @@ public extension Publisher where Failure == Never {
 }
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public final class UntilSubscriber<Input, Failure: Error>: Subscriber, Cancellable, Sendable {
-    private enum State {
-        case ready
-        case subscribed(Subscription)
-        case cancelled
+public struct UntilSubscriber<Input, Failure: Error>: Subscriber, Cancellable, Sendable {
+    public struct CancelHandle: Cancellable {
+        init(subscriber: UntilSubscriber) {
+            self.subscriber = subscriber
+        }
+        
+        public func cancel() { subscriber.cancel() }
+        
+        private let subscriber: UntilSubscriber
     }
-    
-    init(
-        receiveValue: @escaping @Sendable (Input) -> Void,
-        receiveCompletion: @escaping @Sendable (Subscribers.Completion<Failure>) -> Void,
-        until: @escaping @Sendable (Input) -> Bool
-    ) {
-        self.receiveValue = receiveValue
-        self.receiveCompletion = receiveCompletion
-        self.until = until
-    }
+
+    public nonisolated(unsafe) let combineIdentifier = CombineIdentifier()
 
     public func receive(subscription: Subscription) {
         _state.write { state in
@@ -110,6 +106,22 @@ public final class UntilSubscriber<Input, Failure: Error>: Subscriber, Cancellab
             
             state = .cancelled
         }
+    }
+    
+    init(
+        receiveValue: @escaping @Sendable (Input) -> Void,
+        receiveCompletion: @escaping @Sendable (Subscribers.Completion<Failure>) -> Void,
+        until: @escaping @Sendable (Input) -> Bool
+    ) {
+        self.receiveValue = receiveValue
+        self.receiveCompletion = receiveCompletion
+        self.until = until
+    }
+    
+    private enum State {
+        case ready
+        case subscribed(Subscription)
+        case cancelled
     }
     
     private let receiveValue: @Sendable (Input) -> Void
