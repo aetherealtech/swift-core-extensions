@@ -1,7 +1,6 @@
 import Combine
 
 /// enables ConnectablePublishers to be wrapped in the same way instances of Publisher can be wrapped in AnyPublisher.
-/// This gives API designers the ability to hide implementation details behind a type-erased facade while not giving up the power of ConnectablePublisher.
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension ConnectablePublisher {
     func eraseToAnyConnectablePublisher() -> AnyConnectablePublisher<Output, Failure> {
