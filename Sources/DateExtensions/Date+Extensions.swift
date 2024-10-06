@@ -13,6 +13,12 @@ private extension Date {
     }
 }
 
+#if DEBUG
+nonisolated(unsafe) var __forceBackport = false
+#else
+let __forceBackport = false
+#endif
+
 @available(macOS, obsoleted: 13.0, message: "Date itself is now Strideable")
 @available(iOS, obsoleted: 16.0, message: "Date itself is now Strideable")
 @available(tvOS, obsoleted: 16.0, message: "Date itself is now Strideable")
@@ -21,7 +27,7 @@ public struct StrideableDate: Strideable {
     public typealias Stride = TimeInterval
 
     public func distance(to other: Self) -> TimeInterval {
-        if #available(macOS 10.15, iOS 16.0, tvOS 16.0, watchOS 9.0, *) {
+        if #available(macOS 10.15, iOS 16.0, tvOS 16.0, watchOS 9.0, *), !__forceBackport {
             return date.distance(to: other.date)
         } else {
             return date.distance_backport(to: other.date)
@@ -29,7 +35,7 @@ public struct StrideableDate: Strideable {
     }
 
     public func advanced(by n: TimeInterval) -> Self {
-        if #available(macOS 10.15, iOS 16.0, tvOS 16.0, watchOS 9.0, *) {
+        if #available(macOS 10.15, iOS 16.0, tvOS 16.0, watchOS 9.0, *), !__forceBackport {
             return .init(date: date.advanced(by: n))
         } else {
             return .init(date: date.advanced_backport(by: n))
