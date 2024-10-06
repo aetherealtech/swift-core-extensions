@@ -6,8 +6,8 @@ import Synchronization
 public extension Publisher {
     @discardableResult
     func subscribe(
-        receiveValue: @escaping @Sendable (Output) -> Void,
         receiveCompletion: @escaping @Sendable (Subscribers.Completion<Failure>) -> Void,
+        receiveValue: @escaping @Sendable (Output) -> Void,
         until: @escaping @Sendable (Output) -> Bool
     ) -> UntilSubscriber<Output, Failure>.CancelHandle {
         let subscriber = UntilSubscriber(
@@ -30,8 +30,8 @@ public extension Publisher where Failure == Never {
         until: @escaping @Sendable (Output) -> Bool
     ) -> UntilSubscriber<Output, Failure>.CancelHandle {
         subscribe(
-            receiveValue: receiveValue,
             receiveCompletion: { _ in },
+            receiveValue: receiveValue,
             until: until
         )
     }
@@ -64,38 +64,12 @@ public struct UntilSubscriber<Input, Failure: Error>: Subscriber, Cancellable, S
     }
 
     public func receive(_ input: Input) -> Subscribers.Demand {
-        let (send, extra) = _state.write { state -> (Bool, Subscribers.Demand) in
-            if case let .subscribed(subscription) = state {
-                let stop = until(input)
-                if stop {
-                    subscription.cancel()
-                }
-                return (true, stop ? .none : .max(1))
-            } else {
-                return (false, .none)
-            }
-        }
-        
-        if send {
-            receiveValue(input)
-        }
-
-        return extra
+        receiveValue(input)
+        return until(input) ? .none : .max(1)
     }
 
     public func receive(completion: Subscribers.Completion<Failure>) {
-        let send = _state.write { state in
-            if case let .subscribed(subscription) = state {
-                subscription.cancel()
-                return true
-            } else {
-                return false
-            }
-        }
-        
-        if send {
-            receiveCompletion(completion)
-        }
+        receiveCompletion(completion)
     }
 
     public func cancel() {
