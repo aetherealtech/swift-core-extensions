@@ -15,6 +15,20 @@
     {
       "target" : {
         "containerPath" : "container:",
+        "identifier" : "CompareFunctionsTests",
+        "name" : "CompareFunctionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "URLExtensionsTests",
+        "name" : "URLExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
         "identifier" : "CombineExtensionsTests",
         "name" : "CombineExtensionsTests"
       }
@@ -22,8 +36,8 @@
     {
       "target" : {
         "containerPath" : "container:",
-        "identifier" : "OptionalExtensionsTests",
-        "name" : "OptionalExtensionsTests"
+        "identifier" : "ResultExtensionsTests",
+        "name" : "ResultExtensionsTests"
       }
     },
     {
@@ -31,27 +45,6 @@
         "containerPath" : "container:",
         "identifier" : "LazyCollectionExtensionsTests",
         "name" : "LazyCollectionExtensionsTests"
-      }
-    },
-    {
-      "target" : {
-        "containerPath" : "container:",
-        "identifier" : "DateExtensionsTests",
-        "name" : "DateExtensionsTests"
-      }
-    },
-    {
-      "target" : {
-        "containerPath" : "container:",
-        "identifier" : "NumericExtensionsTests",
-        "name" : "NumericExtensionsTests"
-      }
-    },
-    {
-      "target" : {
-        "containerPath" : "container:",
-        "identifier" : "CompareFunctionsTests",
-        "name" : "CompareFunctionsTests"
       }
     },
     {
@@ -71,20 +64,6 @@
     {
       "target" : {
         "containerPath" : "container:",
-        "identifier" : "URLExtensionsTests",
-        "name" : "URLExtensionsTests"
-      }
-    },
-    {
-      "target" : {
-        "containerPath" : "container:",
-        "identifier" : "AsyncCollectionExtensionsTests",
-        "name" : "AsyncCollectionExtensionsTests"
-      }
-    },
-    {
-      "target" : {
-        "containerPath" : "container:",
         "identifier" : "AsyncExtensionsTests",
         "name" : "AsyncExtensionsTests"
       }
@@ -92,8 +71,36 @@
     {
       "target" : {
         "containerPath" : "container:",
-        "identifier" : "ResultExtensionsTests",
-        "name" : "ResultExtensionsTests"
+        "identifier" : "NumericExtensionsTests",
+        "name" : "NumericExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "OptionalExtensionsTests",
+        "name" : "OptionalExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "CodableExtensionsTests",
+        "name" : "CodableExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "DateExtensionsTests",
+        "name" : "DateExtensionsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AsyncCollectionExtensionsTests",
+        "name" : "AsyncCollectionExtensionsTests"
       }
     }
   ],

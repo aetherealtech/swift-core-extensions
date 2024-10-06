@@ -248,8 +248,8 @@ public extension AsyncSequence {
         return try await iterator.next()
     }
 
-    func waitForNext() async rethrows {
-        _ = try await next()
+    func waitForNext() async rethrows -> Bool {
+        try await next() != nil
     }
     
     @discardableResult
