@@ -1,6 +1,11 @@
 import Combine
 
 struct TestError: Error {}
+struct TestOtherError: Error {}
+
+struct ErrorWithPayload: Error, Equatable {
+    let payload: Int
+}
 
 final class NoDemandSubscriber<Input, Failure: Error>: Subscriber {
     func receive(subscription: any Subscription) { subscription.request(.none) }

@@ -8,7 +8,22 @@ public extension Publisher {
         compactMap { $0 }
     }
     
-    func flatten<InnerOutput>() -> Publishers.FlatMap<Self.Output, Self> where Output: Publisher, Output.Output == InnerOutput, Output.Failure == Failure {
+    func flatten<InnerOutput>() -> Publishers.FlatMap<Output, Self> where Output: Publisher, Output.Output == InnerOutput, Output.Failure == Failure {
+        flatMap { $0 }
+    }
+}
+
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
+public extension Publisher where Output: Publisher {
+    func flatten() -> Publishers.FlatMap<Output, Publishers.SetFailureType<Self, Output.Failure>> where Failure == Never {
+        flatMap { $0 }
+    }
+    
+    func flatten() -> Publishers.FlatMap<Output, Self> where Failure == Never, Output.Failure == Never {
+        flatMap { $0 }
+    }
+    
+    func flatten() -> Publishers.FlatMap<Publishers.SetFailureType<Output, Self.Failure>, Self> where Output.Failure == Never {
         flatMap { $0 }
     }
 }

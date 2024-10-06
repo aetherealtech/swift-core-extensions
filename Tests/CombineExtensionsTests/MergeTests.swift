@@ -7,10 +7,6 @@ import XCTest
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 final class MergeTests: XCTestCase {
-    struct ErrorWithPayload: Error {
-        let payload: Int
-    }
-    
     @MainActor
     func testMergeNoThrows() async throws {
         let publishers = (0..<10)
@@ -151,7 +147,7 @@ final class MergeTests: XCTestCase {
     func testMergeOnDemand() async throws {
         let publishers = (0..<10)
             .map { index in
-                (0..<10).publisher.print("PUB \(index)")
+                (0..<10).publisher
             }
         
         let mergedPublisher = publishers
@@ -159,7 +155,7 @@ final class MergeTests: XCTestCase {
         
         var receivedValues: [Int] = []
         
-        for await value in mergedPublisher.print("MERGED").values {
+        for await value in mergedPublisher.values {
             receivedValues.append(value)
         }
         
@@ -170,7 +166,7 @@ final class MergeTests: XCTestCase {
     func testMergeDelayedUnlimitedDemand() async throws {
         let publishers = (0..<10)
             .map { index in
-                (0..<10).publisher.print("PUB \(index)")
+                (0..<10).publisher
             }
         
         let mergedPublisher = publishers
@@ -194,7 +190,7 @@ final class MergeTests: XCTestCase {
     func testMergeDelayedFiniteSynchronousDemand() async throws {
         let publishers = (0..<10)
             .map { index in
-                (0..<10).publisher.print("PUB \(index)")
+                (0..<10).publisher
             }
         
         let mergedPublisher = publishers
@@ -220,7 +216,7 @@ final class MergeTests: XCTestCase {
     func testMergeDelayedUnlimitedSynchronousDemand() async throws {
         let publishers = (0..<10)
             .map { index in
-                (0..<10).publisher.print("PUB \(index)")
+                (0..<10).publisher
             }
         
         let mergedPublisher = publishers
@@ -246,7 +242,7 @@ final class MergeTests: XCTestCase {
     func testMergeCancel() async throws {
         let publishers = (0..<10)
             .map { index in
-                (0..<10).publisher.print("PUB \(index)")
+                (0..<10).publisher
             }
         
         let mergedPublisher = publishers
@@ -255,7 +251,6 @@ final class MergeTests: XCTestCase {
         var receivedValues: [Int] = []
         
         let subscriber = mergedPublisher
-            .print("MERGED")
             .subscribeManualDemand { value in
                 MainActor.assumeIsolated {
                     receivedValues.append(value)
@@ -282,7 +277,6 @@ final class MergeTests: XCTestCase {
         var receivedValues: [Int] = []
         
         let subscriber = mergedPublisher
-            .print("MERGED")
             .subscribeManualDemand { value in
                 MainActor.assumeIsolated {
                     receivedValues.append(value)

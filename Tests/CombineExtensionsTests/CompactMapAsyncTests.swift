@@ -125,7 +125,6 @@ final class CompactMapAsyncTests: XCTestCase {
                     
                     return index.isMultiple(of: 2) ? index : nil
                 }
-                .print("TEST")
             
             nonisolated(unsafe) let receivedValues = CurrentValueSubject<Set<Int>, Never>([])
             

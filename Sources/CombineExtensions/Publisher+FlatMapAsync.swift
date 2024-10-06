@@ -1,116 +1,80 @@
 import AsyncExtensions
 import Combine
 
+public struct BlahBlahError: Error {}
+
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension Publisher where Failure == Never {
+public extension Publisher where Output: Sendable, Failure == Never {
     func flatMapAsync<R: Publisher, InnerR>(
         _ transform: @escaping @Sendable (Output) async -> R
-    ) -> Publishers.FlatMap<R, Publishers.FlatMap<NonThrowingAsyncFuture<R>, Publishers.Map<Self, AsyncElement<R>>>> where Output: Sendable, R.Output == InnerR, R.Failure == Never {
+    ) -> Publishers.FlatMap<R, Publishers.FlatMap<NonThrowingAsyncFuture<R>, Publishers.Map<Self, AsyncElement<R>>>> where R.Output == InnerR, R.Failure == Never {
+        mapAsync(transform)
+            .flatten()
+    }
+}
+
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
+public extension Publisher where Output: Sendable, Failure == Never {
+    func flatMapAsync<R: Publisher>(
+        _ transform: @escaping @Sendable (Output) async -> R
+    ) -> Publishers.FlatMap<R, Publishers.SetFailureType<Publishers.FlatMap<NonThrowingAsyncFuture<R>, Publishers.Map<Self, AsyncElement<R>>>, R.Failure>> {
+        mapAsync(transform)
+            .flatten()
+    }
+
+    // Causes ambiguous lookup.  Can replace the first extension in this file if we drop support for older targets
+//    func flatMapAsync<R: Publisher>(
+//        _ transform: @escaping @Sendable (Output) async -> R
+//    ) -> Publishers.FlatMap<R, Publishers.FlatMap<NonThrowingAsyncFuture<R>, Publishers.Map<Self, AsyncElement<R>>>> where R.Failure == Never {
+//        mapAsync(transform)
+//            .flatten()
+//    }
+    
+    func flatMapAsync<R: Publisher>(
+        _ transform: @escaping @Sendable (Output) async throws -> R
+    ) -> Publishers.FlatMap<Publishers.SetFailureType<R, any Error>, Publishers.FlatMap<AsyncFuture<ThrowingAsyncFutureReceiver<R>>, Publishers.SetFailureType<Publishers.Map<Self, AsyncThrowingElement<R>>, any Error>>> where R.Failure == Never {
+        mapAsync(transform)
+            .flatten()
+    }
+}
+
+@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
+public extension Publisher where Output: Sendable {
+    func flatMapAsync<R: Publisher, InnerR>(
+        _ transform: @escaping @Sendable (Output) async -> R
+    ) -> Publishers.FlatMap<R, Publishers.FlatMap<Publishers.SetFailureType<NonThrowingAsyncFuture<R>, Self.Failure>, Publishers.Map<Self, AsyncElement<R>>>> where R.Output == InnerR, R.Failure == Failure {
+        mapAsync(transform)
+            .flatten()
+    }
+    
+    func flatMapAsync<R: Publisher>(
+        _ transform: @escaping @Sendable (Output) async -> R
+    ) -> Publishers.FlatMap<Publishers.SetFailureType<R, Failure>, Publishers.FlatMap<Publishers.SetFailureType<NonThrowingAsyncFuture<Publishers.SetFailureType<R, Failure>>, Failure>, Publishers.Map<Self, AsyncElement<Publishers.SetFailureType<R, Failure>>>>> where R.Failure == Never {
+        mapAsync { element in await transform(element).setFailureType(to: Failure.self) }
+            .flatten()
+    }
+    
+    func flatMapAsync<R: Publisher>(
+        _ transform: @escaping @Sendable (Output) async throws -> R
+    ) -> Publishers.FlatMap<Publishers.SetFailureType<R, any Error>, Publishers.FlatMap<AsyncFuture<ThrowingAsyncFutureReceiver<R>>, Publishers.MapError<Publishers.Map<Self, AsyncThrowingElement<R>>, any Error>>> where R.Failure == Never {
         mapAsync(transform)
             .flatten()
     }
     
     func flatMapAsync<R: Publisher, InnerR>(
-        _ transform: @escaping (Output) -> R
-    ) -> Publishers.FlatMap<NonThrowingAsyncFuture<InnerR>, Publishers.FlatMap<R, Self>> where Output: Sendable, R.Output == AsyncElement<InnerR>, R.Failure == Never {
-        flatMap(transform)
-            .await()
-    }
-
-    func flatMapAsync<R: Publisher, InnerR>(
-        _ transform: @escaping @Sendable (Output) async -> R
-    ) -> Publishers.FlatMap<NonThrowingAsyncFuture<InnerR>, Publishers.FlatMap<R, Publishers.FlatMap<NonThrowingAsyncFuture<R>, Publishers.Map<Self, AsyncElement<R>>>>> where Output: Sendable, R.Output == AsyncElement<InnerR>, R.Failure == Never {
-        mapAsync(transform)
-            .flatten()
-            .await()
-    }
-}
-
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
-public extension Publisher {
-    func flatMapAsync<R: Publisher & Sendable, InnerR>(
-        _ transform: @escaping @Sendable (Output) async -> R
-    ) -> Publishers.FlatMap<R, Publishers.FlatMap<Publishers.SetFailureType<AsyncFuture<NonThrowingAsyncFutureReceiver<R>>, Self.Failure>, Publishers.Map<Self, @Sendable () async -> R>>> where Output: Sendable, R.Output == InnerR, R.Failure == Failure {
-        mapAsync(transform)
-            .flatten()
-    }
-
-    func flatMapAsync<R: Publisher, InnerR>(
-        _ transform: @escaping (Output) -> R
-    ) -> Publishers.FlatMap<Publishers.SetFailureType<NonThrowingAsyncFuture<InnerR>, Self.Failure>, Publishers.FlatMap<R, Self>> where R.Output == AsyncElement<InnerR>, R.Failure == Failure {
-        flatMap(transform)
-            .await()
-    }
-
-    func flatMapAsync<R: Publisher, InnerR>(
-        _ transform: @escaping @Sendable (Output) async -> R
-    ) -> Publishers.FlatMap<Publishers.SetFailureType<NonThrowingAsyncFuture<InnerR>, Self.Failure>, Publishers.FlatMap<R, Publishers.FlatMap<Publishers.SetFailureType<NonThrowingAsyncFuture<R>, Self.Failure>, Publishers.Map<Self, AsyncElement<R>>>>> where Output: Sendable, R.Output == AsyncElement<InnerR>, R.Failure == Failure {
-        mapAsync(transform)
-            .flatten()
-            .await()
-    }
-}
-
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension Publisher {
-    func flatMapAsync<R: Publisher, InnerR>(
         _ transform: @escaping @Sendable (Output) async throws -> R
-    ) -> Publishers.FlatMap<Publishers.MapError<R, any Error>, Publishers.FlatMap<ThrowingAsyncFuture<Publishers.MapError<R, any Error>>, Publishers.MapError<Publishers.Map<Self, AsyncThrowingElement<Publishers.MapError<R, any Error>>>, any Error>>> where Output: Sendable, R.Output == InnerR, R.Failure == Never {
+    ) -> Publishers.FlatMap<Publishers.MapError<R, any Error>, Publishers.FlatMap<ThrowingAsyncFuture<Publishers.MapError<R, any Error>>, Publishers.MapError<Publishers.Map<Self, AsyncThrowingElement<Publishers.MapError<R, any Error>>>, any Error>>> where R.Output == InnerR, R.Failure == Failure {
         mapAsync { element in try await transform(element).eraseErrorType() }
             .flatten()
     }
 }
 
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
-public extension Publisher {
-    func flatMapAsync<R: Publisher, InnerR>(
-        _ transform: @escaping (Output) throws -> R
-    ) -> Publishers.FlatMap<Publishers.SetFailureType<NonThrowingAsyncFuture<InnerR>, any Error>, Publishers.FlatMap<Publishers.MapError<R, any Error>, Publishers.TryMap<Self, Publishers.MapError<R, any Error>>>> where R.Output == AsyncElement<InnerR> {
-        tryMap { element in try transform(element).eraseErrorType() }
-            .flatten()
-            .await()
-    }
-    
-    func flatMapAsync<R: Publisher, InnerR>(
-        _ transform: @escaping (Output) -> R
-    ) -> Publishers.FlatMap<Publishers.SetFailureType<NonThrowingAsyncFuture<InnerR>, any Error>, Publishers.FlatMap<R, Publishers.MapError<Self, any Error>>> where R.Output == AsyncElement<InnerR>, R.Failure == Error {
-        eraseErrorType()
-            .flatMap(transform)
-            .await()
-    }
-}
-
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-public extension Publisher where Failure == Error {
-    func flatMapAsync<R: Publisher, InnerR>(
-        _ transform: @escaping @Sendable (Output) async -> R
-    ) -> Publishers.FlatMap<R, Publishers.FlatMap<ThrowingAsyncFuture<R>, Publishers.Map<Self, AsyncThrowingElement<R>>>> where Output: Sendable, R.Output == InnerR {
-        mapAsync(transform)
-            .flatten()
-    }
-    
+public extension Publisher where Output: Sendable {
     func flatMapAsync<R: Publisher, InnerR>(
         _ transform: @escaping @Sendable (Output) async throws -> R
-    ) -> Publishers.FlatMap<R, Publishers.FlatMap<ThrowingAsyncFuture<R>, Publishers.Map<Self, AsyncThrowingElement<R>>>> where Output: Sendable, R.Output == InnerR {
-        mapAsync(transform)
+    ) -> Publishers.FlatMap<Publishers.MapError<R, any Error>, Publishers.FlatMap<ThrowingAsyncFuture<Publishers.MapError<R, any Error>>, Publishers.MapError<Publishers.Map<Self, AsyncThrowingElement<Publishers.MapError<R, any Error>>>, any Error>>> where R.Output == InnerR {
+        mapAsync { element in try await transform(element).eraseErrorType() }
             .flatten()
-    }
-}
-
-@available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
-public extension Publisher where Failure == Error {
-    func flatMapAsync<R: Publisher, InnerR>(
-        _ transform: @escaping (Output) -> R
-    ) -> Publishers.FlatMap<Publishers.SetFailureType<NonThrowingAsyncFuture<InnerR>, any Error>, Publishers.FlatMap<Publishers.SetFailureType<R, any Error>, Self>> where R.Output == AsyncElement<InnerR> {
-        flatMap(transform)
-            .await()
-    }
-    
-    func flatMapAsync<R: Publisher, InnerR>(
-        _ transform: @escaping (Output) throws -> R
-    ) -> Publishers.FlatMap<Publishers.SetFailureType<NonThrowingAsyncFuture<InnerR>, any Error>, Publishers.FlatMap<Publishers.MapError<R, any Error>, Publishers.TryMap<Self, Publishers.MapError<R, any Error>>>> where R.Output == AsyncElement<InnerR> {
-        tryMap { element in try transform(element).eraseErrorType() }
-            .flatten()
-            .await()
     }
 }

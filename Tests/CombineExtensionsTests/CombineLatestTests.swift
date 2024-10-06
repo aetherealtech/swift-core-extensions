@@ -7,10 +7,6 @@ import XCTest
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 final class CombineLatestTests: XCTestCase {
-    struct ErrorWithPayload: Error {
-        let payload: Int
-    }
-    
     @MainActor
     func testCombineLatestNoThrows() async throws {
         let publishers = (0..<10)
