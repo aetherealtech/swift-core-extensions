@@ -52,20 +52,27 @@ public struct UntilSubscriber<Input, Failure: Error>: Subscriber, Cancellable, S
     public nonisolated(unsafe) let combineIdentifier = CombineIdentifier()
 
     public func receive(subscription: Subscription) {
-        _state.write { state in
-            switch state {
-                case .cancelled:
-                    subscription.cancel()
-                default:
-                    state = .subscribed(subscription)
-                    subscription.request(.max(1))
-            }
+        let cancelled = _state.write { state in
+            state.subscription = subscription
+            return state.cancelled
+        }
+        
+        if cancelled {
+            subscription.cancel()
+        } else {
+            subscription.request(.max(1))
         }
     }
 
     public func receive(_ input: Input) -> Subscribers.Demand {
         receiveValue(input)
-        return until(input) ? .none : .max(1)
+        
+        let finished = until(input)
+        if finished {
+            _state.subscription?.cancel()
+        }
+        
+        return finished ? .none : .max(1)
     }
 
     public func receive(completion: Subscribers.Completion<Failure>) {
@@ -73,13 +80,12 @@ public struct UntilSubscriber<Input, Failure: Error>: Subscriber, Cancellable, S
     }
 
     public func cancel() {
-        _state.write { state in
-            if case let .subscribed(subscription) = state {
-                subscription.cancel()
-            }
-            
-            state = .cancelled
+        let subscription = _state.write { state in
+            state.cancelled = true
+            return state.subscription
         }
+        
+        subscription?.cancel()
     }
     
     init(
@@ -92,15 +98,14 @@ public struct UntilSubscriber<Input, Failure: Error>: Subscriber, Cancellable, S
         self.until = until
     }
     
-    private enum State {
-        case ready
-        case subscribed(Subscription)
-        case cancelled
+    private struct State {
+        var subscription: Subscription?
+        var cancelled = false
     }
     
     private let receiveValue: @Sendable (Input) -> Void
     private let receiveCompletion: @Sendable (Subscribers.Completion<Failure>) -> Void
     private let until: @Sendable (Input) -> Bool
 
-    private let _state: Synchronized<State> = .init(wrappedValue: .ready)
+    private let _state: Synchronized<State> = .init(wrappedValue: .init())
 }

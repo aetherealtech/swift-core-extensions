@@ -48,19 +48,21 @@ public struct SingleValueSubscriber<Input, Failure: Error>: Subscriber, Sendable
     public nonisolated(unsafe) let combineIdentifier = CombineIdentifier()
 
     public func receive(subscription: Subscription) {
-        _state.write { state in
-            switch state {
-                case .cancelled:
-                    subscription.cancel()
-                default:
-                    state = .subscribed(subscription)
-                    subscription.request(.max(1))
-            }
+        let cancelled = _state.write { state in
+            state.subscription = subscription
+            return state.cancelled
+        }
+        
+        if cancelled {
+            subscription.cancel()
+        } else {
+            subscription.request(.max(1))
         }
     }
 
     public func receive(_ input: Input) -> Subscribers.Demand {
         receiveValue(input)
+        _state.subscription?.cancel()
         return .none
     }
 
@@ -77,24 +79,22 @@ public struct SingleValueSubscriber<Input, Failure: Error>: Subscriber, Sendable
     }
     
     func cancel() {
-        _state.write { state in
-            if case let .subscribed(subscription) = state {
-                subscription.cancel()
-            }
-            
-            state = .cancelled
+        let subscription = _state.write { state in
+            state.cancelled = true
+            return state.subscription
         }
+        
+        subscription?.cancel()
     }
     
-    private enum State {
-        case ready
-        case subscribed(Subscription)
-        case cancelled
+    private struct State {
+        var subscription: Subscription?
+        var cancelled = false
     }
 
     private let receiveValue: @Sendable (Input) -> Void
     private let receiveCompletion: @Sendable (Subscribers.Completion<Failure>) -> Void
 
-    private let _state: Synchronized<State> = .init(wrappedValue: .ready)
+    private let _state: Synchronized<State> = .init(wrappedValue: .init())
 }
 
