@@ -58,7 +58,7 @@ public extension Publisher {
 
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
 public extension Publisher where Output: Equatable & Sendable {
-    func wait(for value: Output) async throws {
+    func wait(for value: Output) async throws -> Bool {
         try await values.wait(for: value)
     }
 }
@@ -93,8 +93,8 @@ public extension Publisher where Failure == Never {
 
 @available(macOS 12.0, iOS 15.0, tvOS 15.0, watchOS 8.0, *)
 public extension Publisher where Output: Equatable & Sendable, Failure == Never {
-    func wait(for value: Output) async {
-        await values.waitUntil { $0 == value }
+    func wait(for value: Output) async -> Bool {
+        await values.waitUntil { $0 == value } != nil
         
         // This requires a try, not sure why (hey that rhymes)
 //        await values.wait(for: value)

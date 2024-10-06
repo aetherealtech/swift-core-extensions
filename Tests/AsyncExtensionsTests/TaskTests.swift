@@ -79,6 +79,17 @@ final class TaskTests: XCTestCase {
         try assertEqual(result, 5)
     }
     
+    func testWithTimeoutTimeIntervalNotTimedOutThrows() async throws {
+        try await assertThrowsError {
+            try await withTimeout(timeInterval: 2.0) {
+                try await Task.sleep(timeInterval: 0.1)
+                throw TestError()
+            }
+        } errorHandler: { error in
+            try assertTrue(error is TestError)
+        }
+    }
+    
     func testWithTimeoutTimeIntervalTimedOut() async throws {
         do {
             let _ = try await withTimeout(timeInterval: 0.05) {

@@ -286,9 +286,8 @@ public extension AsyncSequence {
 }
 
 public extension AsyncSequence where Element: Equatable & Sendable {
-    @discardableResult
-    func wait(for value: Element) async rethrows -> Element? {
-        try await waitUntil { $0 == value }
+    func wait(for value: Element) async rethrows -> Bool {
+        try await waitUntil { $0 == value } != nil
     }
 }
 
