@@ -56,10 +56,12 @@ final class AnyAsyncSequenceTests: XCTestCase {
         
         try assertEqual(results, testArray)
         
-        let erasedAgain: AnyAsyncSequence<Int, TestError> = testSequence.erase()
+        let erasedAgain: AnyAsyncSequence<Int, TestError> = TypedThrowDestructiveSequence<[Int], TestError>(testArray).erase()
         var iterator = erasedAgain.makeAsyncIterator()
         
         let next = try await iterator.next()
+        
+        try assertEqual(next, 1)
     }
     
     func testFullyErased() async throws {

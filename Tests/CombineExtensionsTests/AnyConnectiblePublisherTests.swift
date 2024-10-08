@@ -38,6 +38,7 @@ final class AnyConnectiblePublisherTests: XCTestCase {
         
         try assertEqual(expectedValues, receivedValues)
         
+        withExtendedLifetime(connection) {}
         withExtendedLifetime(subscription) {}
     }
 }
