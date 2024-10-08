@@ -77,7 +77,7 @@ let package = Package(
                 "CollectionExtensions",
                 "OptionalExtensions",
                 "ResultExtensions",
-                "PrivateUtilities",
+                "Untestable",
             ]
         ),
         .target(
@@ -89,7 +89,7 @@ let package = Package(
         .target(
             name: "CodableExtensions",
             dependencies: [
-                "PrivateUtilities",
+                "Untestable",
             ]
         ),
         .target(
@@ -166,7 +166,7 @@ let package = Package(
             dependencies: []
         ),
         .target(
-            name: "PrivateUtilities",
+            name: "Untestable",
             dependencies: []
         ),
         .testTarget(

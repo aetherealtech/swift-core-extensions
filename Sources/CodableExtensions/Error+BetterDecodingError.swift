@@ -1,5 +1,5 @@
 import Foundation
-import PrivateUtilities
+import Untestable
 
 public struct BetterDecodingError: LocalizedError {
     public let underlyingError: DecodingError
